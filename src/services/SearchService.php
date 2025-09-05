@@ -14,6 +14,67 @@ use craft\helpers\UrlHelper;
 
 class SearchService extends Component
 {
+    public function browseContentType(string $contentType): array
+    {
+        $settings = Launcher::$plugin->getSettings();
+        $results = [];
+
+        switch ($contentType) {
+            case 'entries':
+                if ($settings->searchableTypes['entries'] ?? false) {
+                    $results['entries'] = $this->getAllEntries($settings);
+                }
+                break;
+            case 'categories':
+                if ($settings->searchableTypes['categories'] ?? false) {
+                    $results['categories'] = $this->getAllCategories($settings);
+                }
+                break;
+            case 'assets':
+                if ($settings->searchableTypes['assets'] ?? false) {
+                    $results['assets'] = $this->getAllAssets($settings);
+                }
+                break;
+            case 'users':
+                if ($settings->searchableTypes['users'] ?? false) {
+                    $results['users'] = $this->getAllUsers($settings);
+                }
+                break;
+            case 'globals':
+                if ($settings->searchableTypes['globals'] ?? false) {
+                    $results['globals'] = $this->getAllGlobals($settings);
+                }
+                break;
+            case 'sections':
+                if ($settings->searchableTypes['sections'] ?? false) {
+                    $results['sections'] = $this->searchSections('');
+                }
+                break;
+            case 'groups':
+                if ($settings->searchableTypes['categoryGroups'] ?? false) {
+                    $results['groups'] = $this->searchCategoryGroups('');
+                }
+                break;
+            case 'volumes':
+                if ($settings->searchableTypes['assetVolumes'] ?? false) {
+                    $results['volumes'] = $this->searchAssetVolumes('');
+                }
+                break;
+            case 'fields':
+                if ($settings->searchableTypes['fields'] ?? false) {
+                    $results['fields'] = $this->searchFields('');
+                }
+                break;
+            case 'plugins':
+                if ($settings->searchableTypes['plugins'] ?? false) {
+                    $results['plugins'] = $this->searchPlugins('');
+                }
+                break;
+        }
+
+        return $results;
+    }
+
     public function search(string $query): array
     {
         if (empty($query)) {
@@ -289,6 +350,140 @@ class SearchService extends Component
                     'icon' => 'plug',
                 ];
             }
+        }
+
+        return $results;
+    }
+
+    private function getAllEntries($settings): array
+    {
+        $entryQuery = Entry::find()->limit($settings->maxResults);
+
+        if (!$settings->searchDrafts) {
+            $entryQuery->drafts(false);
+        }
+
+        if (!$settings->searchRevisions) {
+            $entryQuery->revisions(false);
+        }
+
+        if (!$settings->searchDisabled) {
+            $entryQuery->status(['live']);
+        }
+
+        if (!empty($settings->searchableSections)) {
+            $entryQuery->sectionId($settings->searchableSections);
+        }
+
+        $entries = $entryQuery->all();
+        $results = [];
+
+        foreach ($entries as $entry) {
+            $results[] = [
+                'title' => $entry->title,
+                'url' => $entry->getCpEditUrl(),
+                'type' => 'Entry',
+                'section' => $entry->getSection()->name,
+                'status' => $entry->getStatus(),
+                'icon' => 'newspaper',
+            ];
+        }
+
+        return $results;
+    }
+
+    private function getAllCategories($settings): array
+    {
+        $categoryQuery = Category::find()->limit($settings->maxResults);
+
+        if (!$settings->searchDisabled) {
+            $categoryQuery->status(['enabled']);
+        }
+
+        if (!empty($settings->searchableCategoryGroups)) {
+            $categoryQuery->groupId($settings->searchableCategoryGroups);
+        }
+
+        $categories = $categoryQuery->all();
+        $results = [];
+
+        foreach ($categories as $category) {
+            $results[] = [
+                'title' => $category->title,
+                'url' => $category->getCpEditUrl(),
+                'type' => 'Category',
+                'group' => $category->getGroup()->name,
+                'status' => $category->getStatus(),
+                'icon' => 'folder',
+            ];
+        }
+
+        return $results;
+    }
+
+    private function getAllAssets($settings): array
+    {
+        $assetQuery = Asset::find()->limit($settings->maxResults);
+
+        if (!empty($settings->searchableAssetVolumes)) {
+            $assetQuery->volumeId($settings->searchableAssetVolumes);
+        }
+
+        $assets = $assetQuery->all();
+        $results = [];
+
+        foreach ($assets as $asset) {
+            $results[] = [
+                'title' => $asset->title ?: $asset->filename,
+                'url' => $asset->getCpEditUrl(),
+                'type' => 'Asset',
+                'volume' => $asset->getVolume()->name,
+                'filename' => $asset->filename,
+                'icon' => 'photo',
+            ];
+        }
+
+        return $results;
+    }
+
+    private function getAllUsers($settings): array
+    {
+        $userQuery = User::find()->limit($settings->maxResults);
+
+        if (!$settings->searchDisabled) {
+            $userQuery->status(User::STATUS_ACTIVE);
+        }
+
+        $users = $userQuery->all();
+        $results = [];
+
+        foreach ($users as $user) {
+            $results[] = [
+                'title' => $user->getFriendlyName(),
+                'url' => $user->getCpEditUrl(),
+                'type' => 'User',
+                'email' => $user->email,
+                'status' => $user->getStatus(),
+                'icon' => 'users',
+            ];
+        }
+
+        return $results;
+    }
+
+    private function getAllGlobals($settings): array
+    {
+        $globals = GlobalSet::find()->limit($settings->maxResults)->all();
+        $results = [];
+
+        foreach ($globals as $global) {
+            $results[] = [
+                'title' => $global->name,
+                'url' => $global->getCpEditUrl(),
+                'type' => 'Global Set',
+                'handle' => $global->handle,
+                'icon' => 'globe',
+            ];
         }
 
         return $results;

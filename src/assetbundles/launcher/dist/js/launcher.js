@@ -11,6 +11,8 @@
         searchTimeout: null,
         currentResults: [],
         selectedIndex: 0,
+        browseMode: false,
+        currentContentType: null,
 
         init: function(config) {
             Object.assign(this.config, config);
@@ -64,7 +66,13 @@
                         const index = parseInt(e.key) - 1;
                         if (index < self.currentResults.length) {
                             e.preventDefault();
-                            self.navigateToResult(index);
+                            
+                            // In browse mode, use selectContentType, otherwise navigateToResult
+                            if (self.browseMode && !self.currentContentType) {
+                                self.selectContentType(index);
+                            } else {
+                                self.navigateToResult(index);
+                            }
                         }
                     }
                 }
@@ -73,8 +81,21 @@
             // Search input
             this.searchInput.addEventListener('input', function(e) {
                 clearTimeout(self.searchTimeout);
+                const query = e.target.value;
+                
+                // Check for browse mode (asterisk)
+                if (query === '*') {
+                    self.showBrowseMode();
+                    return;
+                }
+                
+                // Reset browse mode if not using asterisk
+                if (self.browseMode) {
+                    self.exitBrowseMode();
+                }
+                
                 self.searchTimeout = setTimeout(function() {
-                    self.performSearch(e.target.value);
+                    self.performSearch(query);
                 }, self.config.debounceDelay);
             });
 
@@ -138,6 +159,7 @@
             this.resultsContainer.innerHTML = '';
             this.currentResults = [];
             this.selectedIndex = 0;
+            this.exitBrowseMode();
         },
 
         performSearch: function(query) {
@@ -211,8 +233,13 @@
             const results = this.resultsContainer.querySelectorAll('.launcher-result');
 
             results.forEach(function(result, index) {
-                result.addEventListener('click', function() {
-                    self.navigateToResult(index);
+                result.addEventListener('click', function(e) {
+                    // In browse mode, use different logic
+                    if (self.browseMode && !self.currentContentType) {
+                        self.selectContentType(index);
+                    } else {
+                        self.navigateToResult(index);
+                    }
                 });
 
                 result.addEventListener('mouseenter', function() {
@@ -250,7 +277,12 @@
 
         navigateToSelected: function() {
             if (this.currentResults.length > 0) {
-                this.navigateToResult(this.selectedIndex);
+                // Handle browse mode navigation differently
+                if (this.browseMode && !this.currentContentType) {
+                    this.selectContentType(this.selectedIndex);
+                } else {
+                    this.navigateToResult(this.selectedIndex);
+                }
             }
         },
 
@@ -271,6 +303,108 @@
             // Navigate to URL
             window.location.href = result.url;
             this.closeModal();
+        },
+
+        showBrowseMode: function() {
+            this.browseMode = true;
+            this.currentContentType = null;
+            
+            // Get available content types from settings
+            const contentTypes = [
+                {type: 'entries', label: 'Entries', description: 'All entry content'},
+                {type: 'categories', label: 'Categories', description: 'Category items'},
+                {type: 'assets', label: 'Assets', description: 'Media and files'},
+                {type: 'users', label: 'Users', description: 'User accounts'},
+                {type: 'globals', label: 'Global Sets', description: 'Global content'},
+                {type: 'sections', label: 'Sections', description: 'Entry section settings'},
+                {type: 'groups', label: 'Category Groups', description: 'Category group settings'},
+                {type: 'volumes', label: 'Asset Volumes', description: 'Asset volume settings'},
+                {type: 'fields', label: 'Fields', description: 'Field definitions'},
+                {type: 'plugins', label: 'Plugins', description: 'Plugin settings'},
+                {type: 'settings', label: 'Settings', description: 'System settings'}
+            ];
+            
+            this.displayBrowseResults(contentTypes);
+        },
+
+        exitBrowseMode: function() {
+            this.browseMode = false;
+            this.currentContentType = null;
+        },
+
+        selectContentType: function(index) {
+            const contentType = this.currentResults[index];
+            
+            if (!contentType) {
+                return;
+            }
+            
+            this.currentContentType = contentType.type;
+            this.searchInput.value = `Browse ${contentType.label}`;
+            
+            // Perform search for all items of this type
+            this.performBrowseSearch(contentType.type);
+        },
+
+        displayBrowseResults: function(contentTypes) {
+            this.currentResults = contentTypes;
+            this.selectedIndex = 0;
+            
+            let html = '<div class="launcher-section-title">Browse Content Types</div>';
+            
+            contentTypes.forEach((contentType, index) => {
+                const iconSvg = this.getIconSvg(contentType.type);
+                const shortcutHtml = index < 9 ? `<span class="launcher-shortcut">${index + 1}</span>` : '';
+                
+                html += `
+                    <div class="launcher-result ${index === 0 ? 'selected' : ''}" data-index="${index}">
+                        <div class="launcher-result-icon">
+                            ${iconSvg}
+                        </div>
+                        <div class="launcher-result-content">
+                            <div class="launcher-result-title">${contentType.label}</div>
+                            <div class="launcher-result-meta">
+                                <span class="launcher-result-type">Browse</span>
+                                <span class="launcher-result-section">${contentType.description}</span>
+                            </div>
+                        </div>
+                        ${shortcutHtml}
+                    </div>
+                `;
+            });
+            
+            this.resultsContainer.innerHTML = html;
+            this.bindResultEvents();
+        },
+
+        performBrowseSearch: function(contentType) {
+            const self = this;
+            
+            // Send request to get all items of this content type
+            fetch(this.config.searchUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': Craft.csrfTokenValue
+                },
+                body: JSON.stringify({ 
+                    query: '', // Empty query to get all
+                    browseType: contentType 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    self.displayResults(data.results, false);
+                } else {
+                    self.resultsContainer.innerHTML = '<div class="launcher-error">Browse failed: ' + (data.error || 'Unknown error') + '</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Browse search error:', error);
+                self.resultsContainer.innerHTML = '<div class="launcher-error">Browse failed. Please try again.</div>';
+            });
         },
 
         getIconSvg: function(iconType) {

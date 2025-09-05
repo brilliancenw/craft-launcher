@@ -30,6 +30,21 @@ class SearchController extends Controller
         $this->requirePostRequest();
 
         $query = Craft::$app->getRequest()->getBodyParam('query', '');
+        $browseType = Craft::$app->getRequest()->getBodyParam('browseType', '');
+        
+        // Handle browse mode requests
+        if (!empty($browseType)) {
+            $results = Launcher::$plugin->search->browseContentType($browseType);
+            $formattedResults = Launcher::$plugin->launcher->formatResults($results);
+            
+            return $this->asJson([
+                'success' => true,
+                'results' => $formattedResults,
+                'isRecent' => false,
+                'isBrowse' => true,
+                'browseType' => $browseType,
+            ]);
+        }
         
         if (empty($query)) {
             $results = Launcher::$plugin->launcher->getRecentItems();

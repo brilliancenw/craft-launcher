@@ -1,99 +1,169 @@
 # Craft Launcher Plugin
 
-A universal search launcher for the Craft CMS admin panel that provides quick access to content, settings, and navigation throughout your Craft installation.
+A universal search launcher for the Craft CMS admin panel that provides quick access to content, settings, and navigation throughout your Craft installation. Think of it as Spotlight for macOS or Command Palette for VS Code, but specifically designed for Craft CMS.
 
-## Features
+## ✨ Features
 
-- **Universal Search**: Quickly search across entries, users, categories, tags, assets, and globals
-- **Smart Navigation**: Jump to any section of the Craft control panel instantly
+- **Universal Search**: Quickly search across entries, users, categories, assets, globals, and more
+- **Browse Mode**: Type `*` to explore all content types and drill down into specific areas
+- **Smart Navigation**: Jump to any section of the Craft control panel instantly  
 - **Keyboard Shortcuts**: Navigate entirely with your keyboard for maximum efficiency
-- **Recent Items**: Access your recently viewed items with ease
-- **Theme Integration**: Automatically matches your Craft admin panel theme (light/dark mode)
-- **Fuzzy Search**: Find what you're looking for even with partial matches
-- **Customizable**: Configure search behavior and shortcuts to match your workflow
+- **Recent Items**: Access your recently viewed items when you open the launcher
+- **Theme Integration**: Seamlessly matches your Craft admin panel theme and styling
+- **Fuzzy Search**: Find what you're looking for even with partial or approximate matches
+- **Customizable**: Configure search behavior, shortcuts, and content types to match your workflow
+- **Permission-Aware**: Only shows content you have permission to access
 
 ## Requirements
 
 - Craft CMS 5.0.0 or later
 - PHP 8.2 or later
 
-## Installation
+## 🚀 Installation
 
-### Via Composer
+### Method 1: Via Composer (Recommended)
 
-1. Open your terminal and navigate to your Craft project:
+1. **Navigate to your Craft project:**
    ```bash
-   cd /path/to/project
+   cd /path/to/your/craft/project
    ```
 
-2. Add the plugin with Composer:
+2. **Install the plugin:**
    ```bash
    composer require brilliance/craft-launcher
    ```
 
-3. Install the plugin via the CLI:
+3. **Enable the plugin:**
    ```bash
    php craft plugin/install launcher
    ```
 
-Or install via the Craft Control Panel by navigating to Settings → Plugins and clicking "Install" next to Launcher.
+### Method 2: Via Control Panel
 
-## Usage
+1. Navigate to **Settings → Plugins** in your Craft admin panel
+2. Click the **"Plugin Store"** button  
+3. Search for **"Launcher"**
+4. Click **"Install"** next to the Craft Launcher plugin
+5. Follow the on-screen installation instructions
+
+### Method 3: Manual Installation
+
+1. Download the plugin files from the [releases page](https://github.com/brilliance/craft-launcher/releases)
+2. Extract to `vendor/brilliance/craft-launcher/`  
+3. Run `php craft plugin/install launcher`
+
+### Post-Installation
+
+1. **Set Permissions**: Navigate to **Settings → Users → User Groups** and ensure your user groups have the "Access Launcher" permission
+2. **Configure Settings**: Visit **Settings → Launcher** to customize keyboard shortcuts and search behavior
+3. **Test It Out**: Press `Cmd+K` (Mac) or `Ctrl+K` (Windows/Linux) anywhere in the admin panel!
+
+## 📖 Usage Guide
 
 ### Opening the Launcher
 
 - **Keyboard Shortcut**: Press `Cmd+K` (Mac) or `Ctrl+K` (Windows/Linux) from anywhere in the Craft admin panel
-- **Click Method**: Click the search icon in the admin panel header (if enabled in settings)
+- **Same Shortcut to Close**: Press your keyboard shortcut again or `Esc` to close
+- When you first open the launcher, you'll see your recently accessed items
 
-### Search Commands
+### Search Modes
 
-The launcher supports several search commands and prefixes:
+#### 🔍 **Universal Search Mode** (Default)
+Just start typing to search across all enabled content types:
+- `homepage` - Finds entries, categories, assets with "homepage" in the title
+- `john` - Finds users, entries, or content authored by or mentioning "john"
+- `products` - Finds entries, categories, sections related to products
 
-| Prefix | Description | Example |
-|--------|-------------|---------|
-| None | Search all content types | `homepage` |
-| `>` | Navigate to control panel sections | `>settings` |
-| `@` | Search users | `@admin` |
-| `#` | Search categories | `#products` |
-| `:` | Search tags | `:featured` |
-| `!` | Search assets | `!logo` |
-| `*` | Search globals | `*sitename` |
+#### 🗂️ **Browse Mode** (New!)
+Type `*` to enter browse mode and explore your content systematically:
+
+1. **Type `*`** - Shows all available content types
+2. **Select a content type** - Use arrow keys or number keys (1-9) to select
+3. **Browse all items** - See all entries, users, categories, etc. of that type
+4. **Navigate normally** - Use Enter or click to open items
+
+**Available browse categories:**
+- **Entries** - All entry content
+- **Categories** - Category items  
+- **Assets** - Media and files
+- **Users** - User accounts
+- **Global Sets** - Global content
+- **Sections** - Entry section settings
+- **Category Groups** - Category group settings
+- **Asset Volumes** - Asset volume settings
+- **Fields** - Field definitions
+- **Plugins** - Plugin settings
+
+#### 🎯 **Quick Actions**
+The launcher intelligently surfaces the most relevant actions for each item:
+- **Entries**: Edit, view live site, duplicate, delete
+- **Users**: Edit profile, view permissions
+- **Settings**: Direct navigation to configuration panels
 
 ### Keyboard Navigation
 
 | Key | Action |
 |-----|--------|
-| `↑` `↓` | Navigate through results |
-| `Enter` | Open selected result |
-| `Esc` | Close launcher |
-| `Tab` | Switch between result sections |
-| `Cmd+Enter` | Open in new tab (when applicable) |
+| **Type anything** | Start searching |
+| **`*`** | Enter browse mode |
+| **`↑` `↓`** | Navigate through results |
+| **`Enter`** | Open selected result |
+| **`1-9`** | Jump to result by number |
+| **`Esc`** | Close launcher |
+| **`Cmd+K` / `Ctrl+K`** | Close launcher (same as open) |
 
-### Available Actions
+### Pro Tips
 
-When an item is selected, you can:
-- **View**: Navigate to the entry/element view page
-- **Edit**: Open the entry/element editor
-- **Preview**: Open the front-end preview (if available)
-- **Delete**: Remove the item (with confirmation)
+- **Recent Items**: When you first open the launcher, your most recently accessed items appear automatically
+- **Fuzzy Matching**: You don't need exact spelling - "homepg" will find "Homepage"  
+- **Permission Aware**: You'll only see content you have permission to access
+- **Fast Navigation**: Use number keys (1-9) to instantly jump to any visible result
 
-## Configuration
+## ⚙️ Configuration
 
-### Settings Page
+Navigate to **Settings → Launcher** to customize your experience:
 
-Navigate to Settings → Launcher to configure:
+### General Settings
 
-- **Enable Header Icon**: Show/hide the search icon in the admin header
-- **Keyboard Shortcut**: Customize the keyboard shortcut to open the launcher
-- **Search Limit**: Number of results to show per category
-- **Search Delay**: Debounce delay for search queries (in milliseconds)
-- **Enable Fuzzy Search**: Toggle fuzzy matching for search results
-- **Searchable Element Types**: Choose which element types to include in search
-- **Default Action**: Set the default action when selecting an item (view/edit)
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Keyboard Shortcut** | Hotkey to open/close launcher | `Cmd+K` / `Ctrl+K` |
+| **Search Debounce Delay** | Delay before search executes (milliseconds) | `300` |
+| **Maximum Results** | Number of results to show per content type | `10` |
+
+### Content Types
+
+Control which types of content appear in search results:
+
+- ✅ **Entries** - Blog posts, pages, and other entry content
+- ✅ **Categories** - Category taxonomies  
+- ✅ **Assets** - Images, documents, and media files
+- ✅ **Users** - User accounts and profiles
+- ✅ **Global Sets** - Site-wide content and settings
+- ✅ **Sections** - Entry section configurations
+- ✅ **Category Groups** - Category group settings  
+- ✅ **Asset Volumes** - Asset storage configurations
+- ✅ **Fields** - Custom field definitions
+- ✅ **Plugins** - Installed plugin settings
+
+### Content Filtering
+
+Fine-tune which content appears in results:
+
+- **Search Drafts**: Include draft entries in search results
+- **Search Revisions**: Include entry revisions in search results  
+- **Search Disabled Items**: Include disabled entries, users, etc.
+- **Searchable Sections**: Limit entry search to specific sections
+- **Searchable Entry Types**: Limit entry search to specific types
+- **Searchable Category Groups**: Limit category search to specific groups
+- **Searchable Asset Volumes**: Limit asset search to specific volumes
 
 ### Permissions
 
-The launcher respects all Craft permissions. Users will only see search results for content they have permission to access.
+The launcher respects all existing Craft permissions:
+- Users only see content they can access
+- The "Access Launcher" permission controls who can use the plugin
+- All element-level permissions are automatically enforced
 
 ## Advanced Features
 
@@ -133,35 +203,98 @@ Event::on(
 );
 ```
 
-## Troubleshooting
+## 🛠️ Troubleshooting
 
-### Launcher not opening
+### Common Issues
 
-1. Check that the plugin is installed and enabled
-2. Verify keyboard shortcuts aren't conflicting with browser or OS shortcuts
-3. Clear Craft's cache: `php craft clear-caches/all`
+#### Launcher Won't Open
+- **Check plugin status**: Ensure the plugin is installed and enabled in Settings → Plugins
+- **Verify permissions**: Make sure your user has the "Access Launcher" permission
+- **Keyboard conflicts**: Try changing the shortcut if it conflicts with browser/OS shortcuts
+- **Clear caches**: Run `php craft clear-caches/all`
 
-### Search not returning results
+#### No Search Results  
+- **Permission check**: Verify you can access the content you're searching for
+- **Content type settings**: Check that the content types are enabled in Settings → Launcher
+- **Rebuild indexes**: Run `php craft resave/entries` to rebuild search indexes
+- **Check filters**: Review content filtering settings (drafts, disabled items, etc.)
 
-1. Verify you have permission to view the content you're searching for
-2. Check that the element types are enabled in settings
-3. Rebuild search indexes: `php craft resave/entries`
+#### Browse Mode Not Working
+- **Clear storage**: Delete the `storage/` folder contents and reload
+- **JavaScript errors**: Check browser console for any error messages
+- **Browser cache**: Clear your browser cache completely
 
-### Styling issues
+#### Styling Problems
+- **Clear CP resources**: Run `php craft clear-caches/cp-resources`
+- **Browser cache**: Perform a hard refresh (Cmd+Shift+R / Ctrl+Shift+F5)
+- **Theme conflicts**: Check if other plugins are overriding CSS
 
-1. Clear browser cache
-2. Re-publish CP resources: `php craft clear-caches/cp-resources`
+### Debug Mode
 
-## Support
+To enable detailed logging, add this to your `config/general.php`:
 
-For bug reports and feature requests, please use the [GitHub issue tracker](https://github.com/brilliance/craft-launcher/issues).
+```php
+'devMode' => true,
+'enableTemplateCaching' => false,
+```
 
-## License
+## 🤝 Contributing
 
-This plugin is licensed under the MIT License. See [LICENSE.md](LICENSE.md) for details.
+We love contributions! Here's how you can help make Craft Launcher even better:
 
-## Credits
+### 🐛 **Bug Reports**
+Found a bug? Please [create an issue](https://github.com/brilliance/craft-launcher/issues/new?template=bug_report.md) with:
+- Clear description of the problem
+- Steps to reproduce the issue  
+- Your Craft CMS version and PHP version
+- Screenshots or videos if helpful
 
-Developed by [Brilliance](https://www.brilliancenw.com/)
+### 💡 **Feature Requests** 
+Have an idea for a new feature? [Open a feature request](https://github.com/brilliance/craft-launcher/issues/new?template=feature_request.md) and tell us:
+- What problem it would solve
+- How you envision it working
+- Any examples from other tools
 
-Special thanks to the Craft CMS team for creating an amazing platform.
+### 🔧 **Pull Requests**
+Ready to contribute code? We'd love your help! 
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)  
+3. **Make** your changes with clear, descriptive commits
+4. **Test** thoroughly (include new tests if applicable)
+5. **Submit** a pull request with a clear description
+
+### 📋 **Development Guidelines**
+- Follow [Craft CMS coding standards](https://docs.craftcms.com/4.x/contribute/coding-guidelines.html)
+- Write clear commit messages  
+- Include tests for new functionality
+- Update documentation for any user-facing changes
+
+### 🗨️ **Discussion**
+- Join the conversation in [GitHub Discussions](https://github.com/brilliance/craft-launcher/discussions)
+- Share your use cases, tips, and workflows
+- Help other users with questions
+
+## 📞 **Support & Community**
+
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/brilliance/craft-launcher/issues)
+- 💬 **General Discussion**: [GitHub Discussions](https://github.com/brilliance/craft-launcher/discussions)  
+- 📖 **Documentation**: This README and inline code comments
+- 🆘 **Help**: Tag us in the [Craft CMS Discord](https://craftcms.com/discord) #help channel
+
+## 📄 License
+
+This plugin is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## 🙏 Credits
+
+**Developed by [Brilliance](https://www.brilliancenw.com/)**
+
+Special thanks to:
+- The [Craft CMS team](https://craftcms.com/) for creating an incredible platform
+- The Craft community for inspiration and feedback  
+- All contributors who help make this plugin better
+
+---
+
+**Made with ❤️ for the Craft CMS community**
