@@ -22,7 +22,7 @@
     max-width: 640px;
     width: 90%;
     margin: 10vh auto 0;
-    background: var(--ui-control-bg-color, #fff);
+    background: #fff;
     border-radius: var(--large-border-radius, 8px);
     box-shadow: var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.3));
     overflow: hidden;
@@ -43,23 +43,34 @@
     font-size: 18px;
     border: none;
     outline: none;
-    background: transparent;
+    background: #fff;
     color: var(--text-color, #3f4d5a);
     font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
 }
 
-.launcher-hotkey-hint {
+.launcher-close {
     position: absolute;
-    right: 20px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
     color: var(--light-text-color, #8b92a1);
-    font-size: 12px;
-    padding: 4px 8px;
-    background: var(--gray-100, #f3f7fc);
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
     border-radius: var(--border-radius, 4px);
-    border: 1px solid var(--hairline-color, #e3e5e8);
-    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.launcher-close:hover {
+    background: var(--error-color, #cf1124);
+    color: white;
 }
 
 .launcher-results {
@@ -111,17 +122,27 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--ui-control-bg-color, #fff);
+    background: #fff;
     border-radius: var(--border-radius, 6px);
     margin-right: 12px;
     flex-shrink: 0;
     border: 1px solid var(--hairline-color, #e3e5e8);
+    font-size: 16px;
+}
+
+.launcher-result-icon svg {
+    width: 16px;
+    height: 16px;
+    color: var(--light-text-color, #8b92a1);
 }
 
 .launcher-result.selected .launcher-result-icon {
-    background: var(--submit-color, #0d78f2);
-    border-color: var(--submit-color, #0d78f2);
-    color: #fff;
+    background: var(--gray-600, #606d7b);
+    border-color: var(--gray-600, #606d7b);
+}
+
+.launcher-result.selected .launcher-result-icon svg {
+    color: white;
 }
 
 .launcher-result-content {
@@ -183,8 +204,8 @@
 }
 
 .launcher-result.selected .launcher-shortcut {
-    background: var(--submit-color, #0d78f2);
-    border-color: var(--submit-color, #0d78f2);
+    background: var(--gray-600, #606d7b);
+    border-color: var(--gray-600, #606d7b);
     color: #fff;
 }
 
@@ -209,7 +230,7 @@
 /* Craft CMS theme integration */
 body.ltr .launcher-dialog,
 body.rtl .launcher-dialog {
-    background: var(--ui-control-bg-color, #fff);
+    background: #fff !important;
     color: var(--text-color, #3f4d5a);
     border: 1px solid var(--hairline-color, #e3e5e8);
 }
@@ -222,7 +243,7 @@ body.rtl .launcher-search-wrapper {
 body.ltr .launcher-search,
 body.rtl .launcher-search {
     color: var(--text-color, #3f4d5a);
-    background: var(--ui-control-bg-color, #fff);
+    background: #fff !important;
 }
 
 body.ltr .launcher-search::placeholder,
@@ -230,12 +251,6 @@ body.rtl .launcher-search::placeholder {
     color: var(--light-text-color, #8b92a1);
 }
 
-body.ltr .launcher-hotkey-hint,
-body.rtl .launcher-hotkey-hint {
-    background: var(--gray-100, #f3f7fc);
-    color: var(--light-text-color, #8b92a1);
-    border: 1px solid var(--hairline-color, #e3e5e8);
-}
 
 body.ltr .launcher-loading,
 body.ltr .launcher-no-results,
@@ -260,15 +275,20 @@ body.rtl .launcher-result.selected {
 
 body.ltr .launcher-result-icon,
 body.rtl .launcher-result-icon {
-    background: var(--ui-control-bg-color, #fff);
+    background: #fff !important;
     border: 1px solid var(--hairline-color, #e3e5e8);
+    color: var(--light-text-color, #8b92a1);
 }
 
 body.ltr .launcher-result.selected .launcher-result-icon,
 body.rtl .launcher-result.selected .launcher-result-icon {
-    background: var(--submit-color, #0d78f2);
-    border-color: var(--submit-color, #0d78f2);
-    color: #fff;
+    background: var(--gray-600, #606d7b);
+    border-color: var(--gray-600, #606d7b);
+}
+
+body.ltr .launcher-result.selected .launcher-result-icon svg,
+body.rtl .launcher-result.selected .launcher-result-icon svg {
+    color: white;
 }
 
 body.ltr .launcher-result-title,
@@ -290,8 +310,8 @@ body.rtl .launcher-shortcut {
 
 body.ltr .launcher-result.selected .launcher-shortcut,
 body.rtl .launcher-result.selected .launcher-shortcut {
-    background: var(--submit-color, #0d78f2);
-    border-color: var(--submit-color, #0d78f2);
+    background: var(--gray-600, #606d7b);
+    border-color: var(--gray-600, #606d7b);
     color: #fff;
 }
 

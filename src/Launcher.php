@@ -41,13 +41,15 @@ class Launcher extends Plugin
                         
                         $settings = $this->getSettings();
                         $hotkey = $settings->hotkey;
+                        $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl('@brilliance/launcher/assetbundles/launcher/dist');
                         
                         $js = <<<JS
                         if (window.LauncherPlugin) {
                             window.LauncherPlugin.init({
                                 hotkey: '$hotkey',
                                 searchUrl: Craft.getActionUrl('launcher/search'),
-                                debounceDelay: {$settings->debounceDelay}
+                                debounceDelay: {$settings->debounceDelay},
+                                assetUrl: '$assetUrl'
                             });
                         }
                         JS;

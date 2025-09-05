@@ -25,7 +25,7 @@
                     <div class="launcher-dialog">
                         <div class="launcher-search-wrapper">
                             <input type="text" id="launcher-search" class="launcher-search" placeholder="Search for anything..." autocomplete="off">
-                            <span class="launcher-hotkey-hint">ESC to close</span>
+                            <button type="button" class="launcher-close" aria-label="Close" title="${this.config.hotkey.toUpperCase()} or ESC to close">×</button>
                         </div>
                         <div id="launcher-results" class="launcher-results"></div>
                     </div>
@@ -45,7 +45,7 @@
             document.addEventListener('keydown', function(e) {
                 if (self.isHotkeyPressed(e)) {
                     e.preventDefault();
-                    self.openModal();
+                    self.toggleModal();
                 }
 
                 if (self.modal && self.modal.style.display !== 'none') {
@@ -82,6 +82,11 @@
             this.modal.querySelector('.launcher-overlay').addEventListener('click', function() {
                 self.closeModal();
             });
+
+            // Close button
+            this.modal.querySelector('.launcher-close').addEventListener('click', function() {
+                self.closeModal();
+            });
         },
 
         isHotkeyPressed: function(e) {
@@ -109,6 +114,14 @@
             });
 
             return pressed;
+        },
+
+        toggleModal: function() {
+            if (this.modal && this.modal.style.display !== 'none') {
+                this.closeModal();
+            } else {
+                this.openModal();
+            }
         },
 
         openModal: function() {
@@ -166,13 +179,16 @@
             }
 
             results.forEach((result, index) => {
-                const iconClass = this.getIconClass(result.icon);
+                const iconType = result.type || result.icon;
+                console.log('Icon type for result:', iconType, result);
+                const iconSvg = this.getIconSvg(iconType);
+                console.log('Generated SVG:', iconSvg);
                 const shortcutHtml = result.shortcut ? `<span class="launcher-shortcut">${result.shortcut}</span>` : '';
                 
                 html += `
                     <div class="launcher-result ${index === 0 ? 'selected' : ''}" data-index="${index}">
                         <div class="launcher-result-icon">
-                            <span class="${iconClass}"></span>
+                            ${iconSvg}
                         </div>
                         <div class="launcher-result-content">
                             <div class="launcher-result-title">${result.title}</div>
@@ -259,17 +275,23 @@
             this.closeModal();
         },
 
-        getIconClass: function(icon) {
+        getIconSvg: function(iconType) {
             const iconMap = {
-                'newspaper': 'icon-newspaper',
-                'folder': 'icon-folder',
-                'photo': 'icon-photo',
-                'users': 'icon-users',
-                'globe': 'icon-globe',
-                'field': 'icon-field',
-                'plug': 'icon-plug'
+                'entries': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 6h6M5 8h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+                'categories': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3.5v9c0 .83.67 1.5 1.5 1.5h9c.83 0 1.5-.67 1.5-1.5v-7L11 3H3.5c-.83 0-1.5.67-1.5 1.5z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M11 3v3h3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>',
+                'assets': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6" cy="6" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M14 10l-3-3-2 2-3-3-4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>',
+                'users': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2 14c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
+                'globals': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2 8h12M8 2c2.21 0 4 2.69 4 6s-1.79 6-4 6-4-2.69-4-6 1.79-6 4-6z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
+                'sections': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2 6h12M6 2v12" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="4" r=".5" fill="currentColor"/></svg>',
+                'fields': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4 6h8M4 8h8M4 10h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 1v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+                'plugins': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6.5 1v4.5H2v3h4.5V14l3-3h4.5V2H6.5z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/><circle cx="8" cy="6" r="1" fill="currentColor"/><circle cx="11" cy="6" r="1" fill="currentColor"/></svg>',
+                'routes': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h4l2-4h4l2 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="8" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="13" cy="8" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
+                'volumes': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4 4V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6 7v2M8 7v2M10 7v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+                'groups': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="9" y="2" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="2" y="9" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="9" y="9" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
+                'settings': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6.7 2h2.6l.4 1.5c.3.1.6.3.9.5l1.4-.8 1.8 1.8-.8 1.4c.2.3.4.6.5.9L14 7.7v2.6l-1.5.4c-.1.3-.3.6-.5.9l.8 1.4-1.8 1.8-1.4-.8c-.3.2-.6.4-.9.5L9.3 14H6.7l-.4-1.5c-.3-.1-.6-.3-.9-.5l-1.4.8L2.2 11l.8-1.4c-.2-.3-.4-.6-.5-.9L1 8.3V5.7l1.5-.4c.1-.3.3-.6.5-.9L2.2 3L4 1.2l1.4.8c.3-.2.6-.4.9-.5L6.7 2z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>'
             };
-            return iconMap[icon] || 'icon-circle';
+            
+            return iconMap[iconType] || '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/></svg>';
         }
     };
 })();
