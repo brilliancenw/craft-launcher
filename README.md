@@ -10,7 +10,6 @@ A universal search launcher for the Craft CMS admin panel that provides quick ac
 - **Keyboard Shortcuts**: Navigate entirely with your keyboard for maximum efficiency
 - **Recent Items**: Access your recently viewed items when you open the launcher
 - **Theme Integration**: Seamlessly matches your Craft admin panel theme and styling
-- **Fuzzy Search**: Find what you're looking for even with partial or approximate matches
 - **Customizable**: Configure search behavior, shortcuts, and content types to match your workflow
 - **Permission-Aware**: Only shows content you have permission to access
 
@@ -45,12 +44,6 @@ A universal search launcher for the Craft CMS admin panel that provides quick ac
 3. Search for **"Launcher"**
 4. Click **"Install"** next to the Craft Launcher plugin
 5. Follow the on-screen installation instructions
-
-### Method 3: Manual Installation
-
-1. Download the plugin files from the [releases page](https://github.com/brilliance/craft-launcher/releases)
-2. Extract to `vendor/brilliance/craft-launcher/`  
-3. Run `php craft plugin/install launcher`
 
 ### Post-Installation
 
@@ -115,7 +108,6 @@ The launcher intelligently surfaces the most relevant actions for each item:
 ### Pro Tips
 
 - **Recent Items**: When you first open the launcher, your most recently accessed items appear automatically
-- **Fuzzy Matching**: You don't need exact spelling - "homepg" will find "Homepage"  
 - **Permission Aware**: You'll only see content you have permission to access
 - **Fast Navigation**: Use number keys (1-9) to instantly jump to any visible result
 
