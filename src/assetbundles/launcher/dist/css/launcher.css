@@ -136,6 +136,7 @@
     color: var(--light-text-color, #8b92a1);
 }
 
+
 .launcher-result.selected .launcher-result-icon {
     background: var(--gray-600, #606d7b);
     border-color: var(--gray-600, #606d7b);

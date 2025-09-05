@@ -33,7 +33,7 @@ class Launcher extends Plugin
 
     public function getIconPath(): ?string
     {
-        return $this->getBasePath() . DIRECTORY_SEPARATOR . 'icon' . DIRECTORY_SEPARATOR . 'icon.svg';
+        return $this->getBasePath() . DIRECTORY_SEPARATOR . 'icon.svg';
     }
 
     public function init(): void

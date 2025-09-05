@@ -180,9 +180,7 @@
 
             results.forEach((result, index) => {
                 const iconType = result.type || result.icon;
-                console.log('Icon type for result:', iconType, result);
                 const iconSvg = this.getIconSvg(iconType);
-                console.log('Generated SVG:', iconSvg);
                 const shortcutHtml = result.shortcut ? `<span class="launcher-shortcut">${result.shortcut}</span>` : '';
                 
                 html += `
@@ -276,6 +274,51 @@
         },
 
         getIconSvg: function(iconType) {
+            // Normalize the icon type and create a mapping
+            const normalizeType = (type) => {
+                if (!type) return 'default';
+                
+                const typeMap = {
+                    // Handle capitalized versions
+                    'Entry': 'entries',
+                    'Category': 'categories', 
+                    'Asset': 'assets',
+                    'User': 'users',
+                    'Global': 'globals',
+                    'Section': 'sections',
+                    'Field': 'fields',
+                    'Plugin': 'plugins',
+                    'Route': 'routes',
+                    'Volume': 'volumes',
+                    'Group': 'groups',
+                    'Category Group': 'categories',
+                    'Field Group': 'groups',
+                    'User Group': 'groups',
+                    'Asset Volume': 'volumes',
+                    // Handle lowercase versions
+                    'entries': 'entries',
+                    'categories': 'categories',
+                    'assets': 'assets',
+                    'users': 'users',
+                    'globals': 'globals',
+                    'sections': 'sections',
+                    'fields': 'fields',
+                    'plugins': 'plugins',
+                    'routes': 'routes',
+                    'volumes': 'volumes',
+                    'groups': 'groups',
+                    'settings': 'settings',
+                    // Handle icon names
+                    'folder': 'categories',
+                    'newspaper': 'entries',
+                    'photo': 'assets',
+                    'users': 'users',
+                    'globe': 'globals'
+                };
+                
+                return typeMap[type] || 'default';
+            };
+
             const iconMap = {
                 'entries': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 6h6M5 8h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
                 'categories': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3.5v9c0 .83.67 1.5 1.5 1.5h9c.83 0 1.5-.67 1.5-1.5v-7L11 3H3.5c-.83 0-1.5.67-1.5 1.5z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M11 3v3h3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>',
@@ -288,10 +331,12 @@
                 'routes': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h4l2-4h4l2 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="8" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="13" cy="8" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
                 'volumes': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4 4V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6 7v2M8 7v2M10 7v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
                 'groups': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="9" y="2" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="2" y="9" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="9" y="9" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
-                'settings': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6.7 2h2.6l.4 1.5c.3.1.6.3.9.5l1.4-.8 1.8 1.8-.8 1.4c.2.3.4.6.5.9L14 7.7v2.6l-1.5.4c-.1.3-.3.6-.5.9l.8 1.4-1.8 1.8-1.4-.8c-.3.2-.6.4-.9.5L9.3 14H6.7l-.4-1.5c-.3-.1-.6-.3-.9-.5l-1.4.8L2.2 11l.8-1.4c-.2-.3-.4-.6-.5-.9L1 8.3V5.7l1.5-.4c.1-.3.3-.6.5-.9L2.2 3L4 1.2l1.4.8c.3-.2.6-.4.9-.5L6.7 2z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>'
+                'settings': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6.7 2h2.6l.4 1.5c.3.1.6.3.9.5l1.4-.8 1.8 1.8-.8 1.4c.2.3.4.6.5.9L14 7.7v2.6l-1.5.4c-.1.3-.3.6-.5.9l.8 1.4-1.8 1.8-1.4-.8c-.3.2-.6.4-.9.5L9.3 14H6.7l-.4-1.5c-.3-.1-.6-.3-.9-.5l-1.4.8L2.2 11l.8-1.4c-.2-.3-.4-.6-.5-.9L1 8.3V5.7l1.5-.4c.1-.3.3-.6.5-.9L2.2 3L4 1.2l1.4.8c.3-.2.6-.4.9-.5L6.7 2z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
+                'default': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/></svg>'
             };
             
-            return iconMap[iconType] || '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/></svg>';
+            const normalizedType = normalizeType(iconType);
+            return iconMap[normalizedType] || iconMap['default'];
         }
     };
 })();
