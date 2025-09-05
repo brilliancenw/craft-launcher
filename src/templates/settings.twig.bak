@@ -123,7 +123,6 @@
                     id: 'searchableTypes-assets',
                     name: 'searchableTypes[assets]',
                     on: settings.searchableTypes.assets ?? true,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Search files and media assets</td>
@@ -135,7 +134,6 @@
                     id: 'searchableTypes-users',
                     name: 'searchableTypes[users]',
                     on: settings.searchableTypes.users ?? true,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Search user accounts</td>
@@ -147,7 +145,6 @@
                     id: 'searchableTypes-globals',
                     name: 'searchableTypes[globals]',
                     on: settings.searchableTypes.globals ?? true,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Search global content sets</td>
@@ -159,7 +156,6 @@
                     id: 'searchableTypes-sections',
                     name: 'searchableTypes[sections]',
                     on: settings.searchableTypes.sections ?? true,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Navigate to section settings</td>
@@ -171,7 +167,6 @@
                     id: 'searchableTypes-categoryGroups',
                     name: 'searchableTypes[categoryGroups]',
                     on: settings.searchableTypes.categoryGroups ?? true,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Navigate to category group settings</td>
@@ -183,7 +178,6 @@
                     id: 'searchableTypes-assetVolumes',
                     name: 'searchableTypes[assetVolumes]',
                     on: settings.searchableTypes.assetVolumes ?? true,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Navigate to asset volume settings</td>
@@ -195,7 +189,6 @@
                     id: 'searchableTypes-fields',
                     name: 'searchableTypes[fields]',
                     on: settings.searchableTypes.fields ?? true,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Navigate to field definitions</td>
@@ -207,7 +200,6 @@
                     id: 'searchableTypes-fieldGroups',
                     name: 'searchableTypes[fieldGroups]',
                     on: settings.searchableTypes.fieldGroups ?? true,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Navigate to field group settings</td>
@@ -219,7 +211,6 @@
                     id: 'searchableTypes-userGroups',
                     name: 'searchableTypes[userGroups]',
                     on: settings.searchableTypes.userGroups ?? true,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Navigate to user group settings</td>
@@ -231,7 +222,6 @@
                     id: 'searchableTypes-plugins',
                     name: 'searchableTypes[plugins]',
                     on: settings.searchableTypes.plugins ?? true,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Navigate to plugin settings</td>
@@ -243,7 +233,6 @@
                     id: 'searchableTypes-routes',
                     name: 'searchableTypes[routes]',
                     on: settings.searchableTypes.routes ?? false,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Navigate to route settings</td>
@@ -282,7 +271,6 @@
                     id: 'searchRevisions',
                     name: 'searchRevisions',
                     on: settings.searchRevisions,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Include entry revisions in search results</td>
@@ -294,7 +282,6 @@
                     id: 'searchDisabled',
                     name: 'searchDisabled',
                     on: settings.searchDisabled,
-                    disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
             <td class="light">Include disabled elements in search results</td>
@@ -316,7 +303,6 @@
         name: 'searchableSections',
         options: allSections|map(s => {label: s.name, value: s.id}),
         values: settings.searchableSections,
-        disabled: isProjectConfigReadOnly,
     }) }}
 {% endif %}
 
@@ -329,7 +315,6 @@
         name: 'searchableCategoryGroups',
         options: allCategoryGroups|map(g => {label: g.name, value: g.id}),
         values: settings.searchableCategoryGroups,
-        disabled: isProjectConfigReadOnly,
     }) }}
 {% endif %}
 
@@ -342,6 +327,5 @@
         name: 'searchableAssetVolumes',
         options: allAssetVolumes|map(v => {label: v.name, value: v.id}),
         values: settings.searchableAssetVolumes,
-        disabled: isProjectConfigReadOnly,
     }) }}
 {% endif %}

@@ -9,7 +9,9 @@ use brilliance\launcher\services\SearchService;
 use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\events\RebuildConfigEvent;
 use craft\events\RegisterTemplateRootsEvent;
+use craft\services\ProjectConfig;
 use craft\web\View;
 use craft\web\twig\variables\CraftVariable;
 use yii\base\Event;
@@ -45,6 +47,9 @@ class Launcher extends Plugin
             'launcher' => LauncherService::class,
             'search' => SearchService::class,
         ]);
+
+        // Handle project config changes
+        $this->attachProjectConfigEventListeners();
 
         if (Craft::$app->getRequest()->getIsCpRequest()) {
             Event::on(
@@ -93,6 +98,61 @@ class Launcher extends Plugin
         );
     }
 
+    /**
+     * Attaches event listeners for project config synchronization
+     */
+    protected function attachProjectConfigEventListeners(): void
+    {
+        // Listen to project config rebuild event
+        Event::on(
+            ProjectConfig::class,
+            ProjectConfig::EVENT_REBUILD,
+            function (RebuildConfigEvent $event) {
+                $event->config['plugins']['launcher'] = [
+                    'edition' => $this->edition,
+                    'enabled' => $this->isInstalled,
+                    'schemaVersion' => $this->schemaVersion,
+                    'settings' => $this->getSettings()->toArray(),
+                ];
+            }
+        );
+
+        // Handle project config changes for this plugin
+        Craft::$app->getProjectConfig()
+            ->onAdd('plugins.launcher', [$this, 'handleProjectConfigChange'])
+            ->onUpdate('plugins.launcher', [$this, 'handleProjectConfigChange'])
+            ->onRemove('plugins.launcher', [$this, 'handleProjectConfigDelete']);
+    }
+
+    /**
+     * Handles project config changes
+     */
+    public function handleProjectConfigChange(array $data): void
+    {
+        // Ensure the plugin is installed
+        if (!$this->isInstalled) {
+            return;
+        }
+
+        // Update the plugin settings
+        if (isset($data['settings']) && is_array($data['settings'])) {
+            $settings = new Settings($data['settings']);
+            
+            // Save the settings to the plugin
+            Craft::$app->getPlugins()->savePluginSettings($this, $settings->toArray());
+        }
+    }
+
+    /**
+     * Handles project config deletion
+     */
+    public function handleProjectConfigDelete(): void
+    {
+        // This would handle plugin removal via project config
+        // but typically plugins are managed separately from project config
+        Craft::warning('Launcher plugin removal via project config is not supported.', __METHOD__);
+    }
+
     public function getCpNavItem(): ?array
     {
         return null;
@@ -118,5 +178,26 @@ class Launcher extends Plugin
                 'settings' => $this->getSettings()
             ]
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setSettings(array $settings): void
+    {
+        parent::setSettings($settings);
+
+        // Save settings to project config when they change
+        if (Craft::$app->getIsInstalled() && !Craft::$app->getProjectConfig()->getIsApplyingExternalChanges()) {
+            $projectConfig = Craft::$app->getProjectConfig();
+            $pluginHandle = $this->handle;
+            
+            // Update the project config with the new settings
+            $projectConfig->set(
+                "plugins.{$pluginHandle}.settings",
+                $this->getSettings()->toArray(),
+                'Update Launcher plugin settings'
+            );
+        }
     }
 }
