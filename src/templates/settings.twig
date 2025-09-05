@@ -1,165 +1,281 @@
 {% import "_includes/forms" as forms %}
 
-{{ forms.textField({
-    label: 'Hotkey Combination',
-    instructions: 'The keyboard shortcut to open the launcher (e.g., cmd+k, ctrl+shift+p)',
-    id: 'hotkey',
-    name: 'hotkey',
-    value: settings.hotkey,
-    required: true,
-    errors: settings.getErrors('hotkey'),
-}) }}
+<h1>General Settings</h1>
+<p>Configure how the launcher behaves and responds to user input.</p>
 
-{{ forms.textField({
-    label: 'Search Delay',
-    instructions: 'Milliseconds to wait after typing before searching',
-    id: 'debounceDelay',
-    name: 'debounceDelay',
-    value: settings.debounceDelay,
-    type: 'number',
-    min: 100,
-    max: 1000,
-    errors: settings.getErrors('debounceDelay'),
-}) }}
-
-{{ forms.textField({
-    label: 'Maximum Results Per Type',
-    instructions: 'Maximum number of results to show for each content type',
-    id: 'maxResults',
-    name: 'maxResults',
-    value: settings.maxResults,
-    type: 'number',
-    min: 1,
-    max: 50,
-    errors: settings.getErrors('maxResults'),
-}) }}
-
-<hr>
-
-<h2>Searchable Content Types</h2>
-
-{{ forms.lightswitchField({
-    label: 'Search Entries',
-    id: 'searchableTypes-entries',
-    name: 'searchableTypes[entries]',
-    on: settings.searchableTypes.entries ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Categories',
-    id: 'searchableTypes-categories',
-    name: 'searchableTypes[categories]',
-    on: settings.searchableTypes.categories ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Assets',
-    id: 'searchableTypes-assets',
-    name: 'searchableTypes[assets]',
-    on: settings.searchableTypes.assets ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Users',
-    id: 'searchableTypes-users',
-    name: 'searchableTypes[users]',
-    on: settings.searchableTypes.users ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Global Sets',
-    id: 'searchableTypes-globals',
-    name: 'searchableTypes[globals]',
-    on: settings.searchableTypes.globals ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Sections',
-    id: 'searchableTypes-sections',
-    name: 'searchableTypes[sections]',
-    on: settings.searchableTypes.sections ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Category Groups',
-    id: 'searchableTypes-categoryGroups',
-    name: 'searchableTypes[categoryGroups]',
-    on: settings.searchableTypes.categoryGroups ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Asset Volumes',
-    id: 'searchableTypes-assetVolumes',
-    name: 'searchableTypes[assetVolumes]',
-    on: settings.searchableTypes.assetVolumes ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Fields',
-    id: 'searchableTypes-fields',
-    name: 'searchableTypes[fields]',
-    on: settings.searchableTypes.fields ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Field Groups',
-    id: 'searchableTypes-fieldGroups',
-    name: 'searchableTypes[fieldGroups]',
-    on: settings.searchableTypes.fieldGroups ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search User Groups',
-    id: 'searchableTypes-userGroups',
-    name: 'searchableTypes[userGroups]',
-    on: settings.searchableTypes.userGroups ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Plugins',
-    id: 'searchableTypes-plugins',
-    name: 'searchableTypes[plugins]',
-    on: settings.searchableTypes.plugins ?? true,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Search Routes',
-    id: 'searchableTypes-routes',
-    name: 'searchableTypes[routes]',
-    on: settings.searchableTypes.routes ?? false,
-}) }}
+<table class="data fullwidth fixed-layout" dir="ltr">
+    <tbody>
+        <tr>
+            <th class="light" style="width: 30%;">
+                <label for="hotkey">Keyboard Shortcut</label>
+                <div class="instructions">
+                    <small>The keyboard shortcut to open the launcher (e.g., cmd+k, ctrl+shift+p)</small>
+                </div>
+            </th>
+            <td>
+                {{ forms.textField({
+                    id: 'hotkey',
+                    name: 'hotkey',
+                    value: settings.hotkey,
+                    required: true,
+                    placeholder: 'cmd+k',
+                    errors: settings.getErrors('hotkey'),
+                }) }}
+            </td>
+        </tr>
+        <tr>
+            <th class="light">
+                <label for="debounceDelay">Search Delay</label>
+                <div class="instructions">
+                    <small>Milliseconds to wait after typing before searching</small>
+                </div>
+            </th>
+            <td>
+                {{ forms.textField({
+                    id: 'debounceDelay',
+                    name: 'debounceDelay',
+                    value: settings.debounceDelay,
+                    type: 'number',
+                    min: 100,
+                    max: 1000,
+                    placeholder: '300',
+                    errors: settings.getErrors('debounceDelay'),
+                }) }}
+            </td>
+        </tr>
+        <tr>
+            <th class="light">
+                <label for="maxResults">Maximum Results</label>
+                <div class="instructions">
+                    <small>Maximum number of results to show for each content type</small>
+                </div>
+            </th>
+            <td>
+                {{ forms.textField({
+                    id: 'maxResults',
+                    name: 'maxResults',
+                    value: settings.maxResults,
+                    type: 'number',
+                    min: 1,
+                    max: 50,
+                    placeholder: '5',
+                    errors: settings.getErrors('maxResults'),
+                }) }}
+            </td>
+        </tr>
+    </tbody>
+</table>
 
 <hr>
 
-<h2>Search Options</h2>
+<h1>Searchable Content Types</h1>
+<p>Choose which types of content should be included in search results.</p>
 
-{{ forms.lightswitchField({
-    label: 'Include Drafts',
-    instructions: 'Include draft entries in search results',
-    id: 'searchDrafts',
-    name: 'searchDrafts',
-    on: settings.searchDrafts,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Include Revisions',
-    instructions: 'Include entry revisions in search results',
-    id: 'searchRevisions',
-    name: 'searchRevisions',
-    on: settings.searchRevisions,
-}) }}
-
-{{ forms.lightswitchField({
-    label: 'Include Disabled Elements',
-    instructions: 'Include disabled elements in search results',
-    id: 'searchDisabled',
-    name: 'searchDisabled',
-    on: settings.searchDisabled,
-}) }}
+<table class="data fullwidth fixed-layout" dir="ltr">
+    <tbody>
+        <tr>
+            <th style="width: 25%;">Content Type</th>
+            <th style="width: 25%;">Include in Search</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <th class="light">Entries</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-entries',
+                    name: 'searchableTypes[entries]',
+                    on: settings.searchableTypes.entries ?? true,
+                }) }}
+            </td>
+            <td class="light">Search all entry content across sections</td>
+        </tr>
+        <tr>
+            <th class="light">Categories</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-categories',
+                    name: 'searchableTypes[categories]',
+                    on: settings.searchableTypes.categories ?? true,
+                }) }}
+            </td>
+            <td class="light">Search categories from all category groups</td>
+        </tr>
+        <tr>
+            <th class="light">Assets</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-assets',
+                    name: 'searchableTypes[assets]',
+                    on: settings.searchableTypes.assets ?? true,
+                }) }}
+            </td>
+            <td class="light">Search files and media assets</td>
+        </tr>
+        <tr>
+            <th class="light">Users</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-users',
+                    name: 'searchableTypes[users]',
+                    on: settings.searchableTypes.users ?? true,
+                }) }}
+            </td>
+            <td class="light">Search user accounts</td>
+        </tr>
+        <tr>
+            <th class="light">Global Sets</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-globals',
+                    name: 'searchableTypes[globals]',
+                    on: settings.searchableTypes.globals ?? true,
+                }) }}
+            </td>
+            <td class="light">Search global content sets</td>
+        </tr>
+        <tr>
+            <th class="light">Sections</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-sections',
+                    name: 'searchableTypes[sections]',
+                    on: settings.searchableTypes.sections ?? true,
+                }) }}
+            </td>
+            <td class="light">Navigate to section settings</td>
+        </tr>
+        <tr>
+            <th class="light">Category Groups</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-categoryGroups',
+                    name: 'searchableTypes[categoryGroups]',
+                    on: settings.searchableTypes.categoryGroups ?? true,
+                }) }}
+            </td>
+            <td class="light">Navigate to category group settings</td>
+        </tr>
+        <tr>
+            <th class="light">Asset Volumes</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-assetVolumes',
+                    name: 'searchableTypes[assetVolumes]',
+                    on: settings.searchableTypes.assetVolumes ?? true,
+                }) }}
+            </td>
+            <td class="light">Navigate to asset volume settings</td>
+        </tr>
+        <tr>
+            <th class="light">Fields</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-fields',
+                    name: 'searchableTypes[fields]',
+                    on: settings.searchableTypes.fields ?? true,
+                }) }}
+            </td>
+            <td class="light">Navigate to field definitions</td>
+        </tr>
+        <tr>
+            <th class="light">Field Groups</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-fieldGroups',
+                    name: 'searchableTypes[fieldGroups]',
+                    on: settings.searchableTypes.fieldGroups ?? true,
+                }) }}
+            </td>
+            <td class="light">Navigate to field group settings</td>
+        </tr>
+        <tr>
+            <th class="light">User Groups</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-userGroups',
+                    name: 'searchableTypes[userGroups]',
+                    on: settings.searchableTypes.userGroups ?? true,
+                }) }}
+            </td>
+            <td class="light">Navigate to user group settings</td>
+        </tr>
+        <tr>
+            <th class="light">Plugins</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-plugins',
+                    name: 'searchableTypes[plugins]',
+                    on: settings.searchableTypes.plugins ?? true,
+                }) }}
+            </td>
+            <td class="light">Navigate to plugin settings</td>
+        </tr>
+        <tr>
+            <th class="light">Routes</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-routes',
+                    name: 'searchableTypes[routes]',
+                    on: settings.searchableTypes.routes ?? false,
+                }) }}
+            </td>
+            <td class="light">Navigate to route settings</td>
+        </tr>
+    </tbody>
+</table>
 
 <hr>
 
-<h2>Content Filters</h2>
+<h1>Search Options</h1>
+<p>Configure how the search behaves and what content to include.</p>
+
+<table class="data fullwidth fixed-layout" dir="ltr">
+    <tbody>
+        <tr>
+            <th style="width: 25%;">Option</th>
+            <th style="width: 25%;">Enable</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <th class="light">Include Drafts</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchDrafts',
+                    name: 'searchDrafts',
+                    on: settings.searchDrafts,
+                }) }}
+            </td>
+            <td class="light">Include draft entries in search results</td>
+        </tr>
+        <tr>
+            <th class="light">Include Revisions</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchRevisions',
+                    name: 'searchRevisions',
+                    on: settings.searchRevisions,
+                }) }}
+            </td>
+            <td class="light">Include entry revisions in search results</td>
+        </tr>
+        <tr>
+            <th class="light">Include Disabled</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchDisabled',
+                    name: 'searchDisabled',
+                    on: settings.searchDisabled,
+                }) }}
+            </td>
+            <td class="light">Include disabled elements in search results</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h1>Content Filters</h1>
+<p>Optionally limit search to specific sections, categories, or volumes.</p>
 
 {% set allSections = craft.app.entries.getAllSections() %}
 {% if allSections|length %}
