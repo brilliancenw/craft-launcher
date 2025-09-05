@@ -1,0 +1,198 @@
+{% import "_includes/forms" as forms %}
+
+{{ forms.textField({
+    label: 'Hotkey Combination',
+    instructions: 'The keyboard shortcut to open the launcher (e.g., cmd+k, ctrl+shift+p)',
+    id: 'hotkey',
+    name: 'hotkey',
+    value: settings.hotkey,
+    required: true,
+    errors: settings.getErrors('hotkey'),
+}) }}
+
+{{ forms.textField({
+    label: 'Search Delay',
+    instructions: 'Milliseconds to wait after typing before searching',
+    id: 'debounceDelay',
+    name: 'debounceDelay',
+    value: settings.debounceDelay,
+    type: 'number',
+    min: 100,
+    max: 1000,
+    errors: settings.getErrors('debounceDelay'),
+}) }}
+
+{{ forms.textField({
+    label: 'Maximum Results Per Type',
+    instructions: 'Maximum number of results to show for each content type',
+    id: 'maxResults',
+    name: 'maxResults',
+    value: settings.maxResults,
+    type: 'number',
+    min: 1,
+    max: 50,
+    errors: settings.getErrors('maxResults'),
+}) }}
+
+<hr>
+
+<h2>Searchable Content Types</h2>
+
+{{ forms.lightswitchField({
+    label: 'Search Entries',
+    id: 'searchableTypes-entries',
+    name: 'searchableTypes[entries]',
+    on: settings.searchableTypes.entries ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Categories',
+    id: 'searchableTypes-categories',
+    name: 'searchableTypes[categories]',
+    on: settings.searchableTypes.categories ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Assets',
+    id: 'searchableTypes-assets',
+    name: 'searchableTypes[assets]',
+    on: settings.searchableTypes.assets ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Users',
+    id: 'searchableTypes-users',
+    name: 'searchableTypes[users]',
+    on: settings.searchableTypes.users ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Global Sets',
+    id: 'searchableTypes-globals',
+    name: 'searchableTypes[globals]',
+    on: settings.searchableTypes.globals ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Sections',
+    id: 'searchableTypes-sections',
+    name: 'searchableTypes[sections]',
+    on: settings.searchableTypes.sections ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Category Groups',
+    id: 'searchableTypes-categoryGroups',
+    name: 'searchableTypes[categoryGroups]',
+    on: settings.searchableTypes.categoryGroups ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Asset Volumes',
+    id: 'searchableTypes-assetVolumes',
+    name: 'searchableTypes[assetVolumes]',
+    on: settings.searchableTypes.assetVolumes ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Fields',
+    id: 'searchableTypes-fields',
+    name: 'searchableTypes[fields]',
+    on: settings.searchableTypes.fields ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Field Groups',
+    id: 'searchableTypes-fieldGroups',
+    name: 'searchableTypes[fieldGroups]',
+    on: settings.searchableTypes.fieldGroups ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search User Groups',
+    id: 'searchableTypes-userGroups',
+    name: 'searchableTypes[userGroups]',
+    on: settings.searchableTypes.userGroups ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Plugins',
+    id: 'searchableTypes-plugins',
+    name: 'searchableTypes[plugins]',
+    on: settings.searchableTypes.plugins ?? true,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Search Routes',
+    id: 'searchableTypes-routes',
+    name: 'searchableTypes[routes]',
+    on: settings.searchableTypes.routes ?? false,
+}) }}
+
+<hr>
+
+<h2>Search Options</h2>
+
+{{ forms.lightswitchField({
+    label: 'Include Drafts',
+    instructions: 'Include draft entries in search results',
+    id: 'searchDrafts',
+    name: 'searchDrafts',
+    on: settings.searchDrafts,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Include Revisions',
+    instructions: 'Include entry revisions in search results',
+    id: 'searchRevisions',
+    name: 'searchRevisions',
+    on: settings.searchRevisions,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Include Disabled Elements',
+    instructions: 'Include disabled elements in search results',
+    id: 'searchDisabled',
+    name: 'searchDisabled',
+    on: settings.searchDisabled,
+}) }}
+
+<hr>
+
+<h2>Content Filters</h2>
+
+{% set allSections = craft.app.entries.getAllSections() %}
+{% if allSections|length %}
+    {{ forms.checkboxSelectField({
+        label: 'Sections to Search',
+        instructions: 'Leave blank to search all sections',
+        id: 'searchableSections',
+        name: 'searchableSections',
+        options: allSections|map(s => {label: s.name, value: s.id}),
+        values: settings.searchableSections,
+    }) }}
+{% endif %}
+
+{% set allCategoryGroups = craft.app.categories.getAllGroups() %}
+{% if allCategoryGroups|length %}
+    {{ forms.checkboxSelectField({
+        label: 'Category Groups to Search',
+        instructions: 'Leave blank to search all category groups',
+        id: 'searchableCategoryGroups',
+        name: 'searchableCategoryGroups',
+        options: allCategoryGroups|map(g => {label: g.name, value: g.id}),
+        values: settings.searchableCategoryGroups,
+    }) }}
+{% endif %}
+
+{% set allAssetVolumes = craft.app.volumes.getAllVolumes() %}
+{% if allAssetVolumes|length %}
+    {{ forms.checkboxSelectField({
+        label: 'Asset Volumes to Search',
+        instructions: 'Leave blank to search all volumes',
+        id: 'searchableAssetVolumes',
+        name: 'searchableAssetVolumes',
+        options: allAssetVolumes|map(v => {label: v.name, value: v.id}),
+        values: settings.searchableAssetVolumes,
+    }) }}
+{% endif %}
