@@ -21,6 +21,21 @@ class Launcher extends Plugin
     public bool $hasCpSettings = true;
     public bool $hasCpSection = false;
 
+    public static function config(): array
+    {
+        return [
+            'components' => [
+                'launcher' => LauncherService::class,
+                'search' => SearchService::class,
+            ],
+        ];
+    }
+
+    public function getIconPath(): ?string
+    {
+        return $this->getBasePath() . DIRECTORY_SEPARATOR . 'icon' . DIRECTORY_SEPARATOR . 'icon.svg';
+    }
+
     public function init(): void
     {
         parent::init();
