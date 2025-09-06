@@ -304,8 +304,13 @@
             const result = this.currentResults[index];
             if (!result || !result.url) return;
 
+            console.log('Navigating to result:', result.title, result.url);
+
             // Track recent item and wait for it to complete before navigating
-            fetch(Craft.getActionUrl('launcher/search/navigate'), {
+            const actionUrl = Craft.getActionUrl('launcher/search/navigate');
+            console.log('Making request to:', actionUrl, 'with item:', result);
+            
+            fetch(actionUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -313,8 +318,12 @@
                 },
                 body: JSON.stringify({ item: result })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Navigation tracking response status:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('Navigation tracking response:', data);
                 // Navigation tracking complete, now navigate
                 window.location.href = result.url;
                 this.closeModal();
