@@ -39,17 +39,22 @@ class Settings extends Model
     public bool $searchCommerceCustomers = true;
     public bool $searchCommerceProducts = true;
     public bool $searchCommerceOrders = true;
+    
+    // Launch history settings
+    public bool $enableLaunchHistory = true;
+    public int $maxHistoryItems = 10;
 
     public function rules(): array
     {
         return [
             [['hotkey'], 'string'],
             [['hotkey'], 'required'],
-            [['debounceDelay', 'maxResults'], 'number', 'integerOnly' => true],
+            [['debounceDelay', 'maxResults', 'maxHistoryItems'], 'number', 'integerOnly' => true],
             [['debounceDelay'], 'default', 'value' => 300],
             [['maxResults'], 'default', 'value' => 10],
+            [['maxHistoryItems'], 'default', 'value' => 10],
             [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes'], 'safe'],
-            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders'], 'boolean'],
+            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory'], 'boolean'],
         ];
     }
 
@@ -71,6 +76,8 @@ class Settings extends Model
             'searchCommerceCustomers' => 'Search Commerce Customers',
             'searchCommerceProducts' => 'Search Commerce Products and Variants',
             'searchCommerceOrders' => 'Search Commerce Orders',
+            'enableLaunchHistory' => 'Track Launch History',
+            'maxHistoryItems' => 'Max Popular Items to Show',
         ];
     }
 }

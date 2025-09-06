@@ -5,6 +5,7 @@ use brilliance\launcher\assetbundles\launcher\LauncherAsset;
 use brilliance\launcher\models\Settings;
 use brilliance\launcher\services\LauncherService;
 use brilliance\launcher\services\SearchService;
+use brilliance\launcher\services\HistoryService;
 
 use Craft;
 use craft\base\Model;
@@ -20,7 +21,7 @@ use yii\base\Event;
 class Launcher extends Plugin
 {
     public static ?Launcher $plugin = null;
-    public string $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.1.0';
     public bool $hasCpSettings = true;
     public bool $hasCpSection = false;
 
@@ -30,6 +31,7 @@ class Launcher extends Plugin
             'components' => [
                 'launcher' => LauncherService::class,
                 'search' => SearchService::class,
+                'history' => HistoryService::class,
             ],
         ];
     }
@@ -47,6 +49,7 @@ class Launcher extends Plugin
         $this->setComponents([
             'launcher' => LauncherService::class,
             'search' => SearchService::class,
+            'history' => HistoryService::class,
         ]);
 
         // Handle project config changes

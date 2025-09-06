@@ -47,6 +47,22 @@ class SearchController extends Controller
         }
         
         if (empty($query)) {
+            $settings = Launcher::$plugin->getSettings();
+            
+            // Get popular items if history tracking is enabled
+            if ($settings->enableLaunchHistory ?? true) {
+                $popularItems = Launcher::$plugin->history->getPopularItems($settings->maxHistoryItems ?? 10);
+                
+                if (!empty($popularItems)) {
+                    return $this->asJson([
+                        'success' => true,
+                        'results' => $popularItems,
+                        'isPopular' => true,
+                    ]);
+                }
+            }
+            
+            // Fallback to recent items if no popular items or history disabled
             $results = Launcher::$plugin->launcher->getRecentItems();
             return $this->asJson([
                 'success' => true,
@@ -74,10 +90,40 @@ class SearchController extends Controller
         
         if ($item && isset($item['url'])) {
             Launcher::$plugin->launcher->addRecentItem($item);
+            
+            // Record this launch in the user's history
+            Launcher::$plugin->history->recordLaunch($item);
         }
 
         return $this->asJson([
             'success' => true,
+        ]);
+    }
+
+    public function actionClearHistory(): Response
+    {
+        $this->requireAcceptsJson();
+        $this->requirePostRequest();
+
+        $success = Launcher::$plugin->history->clearUserHistory();
+        $stats = $success ? Launcher::$plugin->history->getUserStats() : null;
+
+        return $this->asJson([
+            'success' => $success,
+            'message' => $success ? 'Launch history cleared successfully' : 'Failed to clear launch history',
+            'stats' => $stats,
+        ]);
+    }
+
+    public function actionGetHistoryStats(): Response
+    {
+        $this->requireAcceptsJson();
+
+        $stats = Launcher::$plugin->history->getUserStats();
+
+        return $this->asJson([
+            'success' => true,
+            'stats' => $stats,
         ]);
     }
 }
