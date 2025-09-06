@@ -316,7 +316,10 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': Craft.csrfTokenValue
                 },
-                body: JSON.stringify({ item: result })
+                body: JSON.stringify({ 
+                    item: result,
+                    [Craft.csrfTokenName]: Craft.csrfTokenValue
+                })
             })
             .then(response => {
                 console.log('Navigation tracking response status:', response.status);

@@ -89,10 +89,13 @@ class SearchController extends Controller
 
     public function actionNavigate(): Response
     {
-        $this->requireAcceptsJson();
-        $this->requirePostRequest();
+        try {
+            $this->requireAcceptsJson();
+            $this->requirePostRequest();
 
-        $item = Craft::$app->getRequest()->getBodyParam('item');
+            $item = Craft::$app->getRequest()->getBodyParam('item');
+            
+            Craft::info('Navigation request received. Item: ' . json_encode($item), 'launcher');
         
         if ($item && isset($item['url'])) {
             Launcher::$plugin->launcher->addRecentItem($item);
@@ -106,9 +109,16 @@ class SearchController extends Controller
             }
         }
 
-        return $this->asJson([
-            'success' => true,
-        ]);
+            return $this->asJson([
+                'success' => true,
+            ]);
+        } catch (\Exception $e) {
+            Craft::error('Navigation request failed: ' . $e->getMessage(), 'launcher');
+            return $this->asJson([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 400);
+        }
     }
 
     public function actionClearHistory(): Response
