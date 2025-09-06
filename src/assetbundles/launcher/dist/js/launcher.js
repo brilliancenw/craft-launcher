@@ -331,6 +331,7 @@
                 {type: 'users', label: 'Users', description: 'User accounts'},
                 {type: 'globals', label: 'Global Sets', description: 'Global content'},
                 {type: 'sections', label: 'Sections', description: 'Entry section settings'},
+                {type: 'entryTypes', label: 'Entry Types', description: 'Entry type definitions'},
                 {type: 'groups', label: 'Category Groups', description: 'Category group settings'},
                 {type: 'volumes', label: 'Asset Volumes', description: 'Asset volume settings'},
                 {type: 'fields', label: 'Fields', description: 'Field definitions'},
