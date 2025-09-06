@@ -299,8 +299,74 @@
             </td>
             <td class="light">Include disabled elements in search results</td>
         </tr>
+        <tr>
+            <th class="light">Search Entries by Author</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchEntriesByAuthor',
+                    name: 'searchEntriesByAuthor',
+                    on: settings.searchEntriesByAuthor,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">When searching for usernames, also show entries authored by those users</td>
+        </tr>
     </tbody>
 </table>
+
+{% set isCommerceInstalled = craft.app.plugins.isPluginInstalled('commerce') %}
+{% if isCommerceInstalled %}
+    <hr>
+    
+    <h1>Commerce Search Options</h1>
+    <p>Configure search for Craft Commerce elements (requires Commerce plugin).</p>
+    
+    <table class="data fullwidth fixed-layout" dir="ltr">
+        <tbody>
+            <tr>
+                <th style="width: 25%;">Option</th>
+                <th style="width: 25%;">Enable</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <th class="light">Search Customers</th>
+                <td>
+                    {{ forms.lightswitchField({
+                        id: 'searchCommerceCustomers',
+                        name: 'searchCommerceCustomers',
+                        on: settings.searchCommerceCustomers,
+                        disabled: isProjectConfigReadOnly,
+                    }) }}
+                </td>
+                <td class="light">Search Commerce customers by name and email</td>
+            </tr>
+            <tr>
+                <th class="light">Search Products</th>
+                <td>
+                    {{ forms.lightswitchField({
+                        id: 'searchCommerceProducts',
+                        name: 'searchCommerceProducts',
+                        on: settings.searchCommerceProducts,
+                        disabled: isProjectConfigReadOnly,
+                    }) }}
+                </td>
+                <td class="light">Search Commerce products and variants by name</td>
+            </tr>
+            <tr>
+                <th class="light">Search Orders</th>
+                <td>
+                    {{ forms.lightswitchField({
+                        id: 'searchCommerceOrders',
+                        name: 'searchCommerceOrders',
+                        on: settings.searchCommerceOrders,
+                        disabled: isProjectConfigReadOnly,
+                    }) }}
+                </td>
+                <td class="light">Search orders by number, customer name, and email</td>
+            </tr>
+        </tbody>
+    </table>
+{% endif %}
 
 <hr>
 

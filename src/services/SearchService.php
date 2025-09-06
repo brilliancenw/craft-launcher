@@ -839,31 +839,32 @@ class SearchService extends Component
                                 ->isCompleted(true)
                                 ->limit($settings->maxResults);
                             
-                        $userOrders = $userOrderQuery->all();
-                        foreach ($userOrders as $order) {
-                            if (!in_array($order->id, $foundOrderIds)) {
-                                $orderStatus = 'Unknown';
-                                try {
-                                    $status = $order->getOrderStatus();
-                                    $orderStatus = $status ? $status->name : 'Unknown';
-                                } catch (\Exception $e) {
-                                    // Ignore status errors
+                            $userOrders = $userOrderQuery->all();
+                            foreach ($userOrders as $order) {
+                                if (!in_array($order->id, $foundOrderIds)) {
+                                    $orderStatus = 'Unknown';
+                                    try {
+                                        $status = $order->getOrderStatus();
+                                        $orderStatus = $status ? $status->name : 'Unknown';
+                                    } catch (\Exception $e) {
+                                        // Ignore status errors
+                                    }
+                                    
+                                    $results[] = [
+                                        'title' => 'Order #' . $order->number,
+                                        'url' => UrlHelper::cpUrl('commerce/orders/' . $order->id),
+                                        'type' => 'Commerce Order',
+                                        'customer' => $user->getFriendlyName(),
+                                        'status' => $orderStatus,
+                                        'icon' => 'newspaper',
+                                    ];
                                 }
-                                
-                                $results[] = [
-                                    'title' => 'Order #' . $order->number,
-                                    'url' => UrlHelper::cpUrl('commerce/orders/' . $order->id),
-                                    'type' => 'Commerce Order',
-                                    'customer' => $user->getFriendlyName(),
-                                    'status' => $orderStatus,
-                                    'icon' => 'newspaper',
-                                ];
                             }
                         }
                     }
                 }
             }
-            }
+        }
 
             return $results;
         } catch (\Exception $e) {

@@ -32,6 +32,12 @@ class Settings extends Model
     public bool $searchDrafts = false;
     public bool $searchRevisions = false;
     public bool $searchDisabled = false;
+    public bool $searchEntriesByAuthor = true;
+    
+    // Commerce settings (only used if Commerce is installed)
+    public bool $searchCommerceCustomers = true;
+    public bool $searchCommerceProducts = true;
+    public bool $searchCommerceOrders = true;
 
     public function rules(): array
     {
@@ -42,7 +48,7 @@ class Settings extends Model
             [['debounceDelay'], 'default', 'value' => 300],
             [['maxResults'], 'default', 'value' => 10],
             [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes'], 'safe'],
-            [['searchDrafts', 'searchRevisions', 'searchDisabled'], 'boolean'],
+            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders'], 'boolean'],
         ];
     }
 
@@ -60,6 +66,10 @@ class Settings extends Model
             'searchDrafts' => 'Include Drafts in Search',
             'searchRevisions' => 'Include Revisions in Search',
             'searchDisabled' => 'Include Disabled Elements in Search',
+            'searchEntriesByAuthor' => 'Search Entries by Author Name',
+            'searchCommerceCustomers' => 'Search Commerce Customers',
+            'searchCommerceProducts' => 'Search Commerce Products and Variants',
+            'searchCommerceOrders' => 'Search Commerce Orders',
         ];
     }
 }

@@ -131,20 +131,14 @@
 }
 
 .launcher-result-icon svg {
-    width: 16px;
-    height: 16px;
+    width: 25px;
+    height: 25px;
     color: var(--light-text-color, #8b92a1);
+    fill: currentColor;
 }
 
 
-.launcher-result.selected .launcher-result-icon {
-    background: var(--gray-600, #606d7b);
-    border-color: var(--gray-600, #606d7b);
-}
-
-.launcher-result.selected .launcher-result-icon svg {
-    color: white;
-}
+/* Icons remain consistent regardless of row selection state */
 
 .launcher-result-content {
     flex: 1;
@@ -281,16 +275,7 @@ body.rtl .launcher-result-icon {
     color: var(--light-text-color, #8b92a1);
 }
 
-body.ltr .launcher-result.selected .launcher-result-icon,
-body.rtl .launcher-result.selected .launcher-result-icon {
-    background: var(--gray-600, #606d7b);
-    border-color: var(--gray-600, #606d7b);
-}
-
-body.ltr .launcher-result.selected .launcher-result-icon svg,
-body.rtl .launcher-result.selected .launcher-result-icon svg {
-    color: white;
-}
+/* Icons remain consistent - no special styling for selected state */
 
 body.ltr .launcher-result-title,
 body.rtl .launcher-result-title {
