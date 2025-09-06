@@ -1,4 +1,5 @@
 (function() {
+    console.log('[LAUNCHER JS] File loaded!');
     window.LauncherPlugin = {
         modal: null,
         searchInput: null,
@@ -13,11 +14,21 @@
         selectedIndex: 0,
         browseMode: false,
         currentContentType: null,
+        isInitialized: false,
 
         init: function(config) {
+            // Prevent multiple initializations
+            if (this.isInitialized) {
+                console.log('[Launcher] Already initialized, skipping...');
+                return;
+            }
+            
+            console.log('[Launcher] Initializing with config:', config);
             Object.assign(this.config, config);
             this.createModal();
             this.bindEvents();
+            this.isInitialized = true;
+            console.log('[Launcher] Initialization complete!');
         },
 
         createModal: function() {
@@ -42,12 +53,22 @@
 
         bindEvents: function() {
             const self = this;
+            
+            console.log('[Launcher] Binding keyboard events with hotkey:', this.config.hotkey);
 
-            // Hotkey detection
+            // Hotkey detection - use capture phase to get event first
             document.addEventListener('keydown', function(e) {
+                // Debug: Log all cmd/ctrl key combos to see what's happening
+                if (e.metaKey || e.ctrlKey) {
+                    console.log('[Launcher] Key pressed:', e.key, 'Meta:', e.metaKey, 'Ctrl:', e.ctrlKey, 'Shift:', e.shiftKey);
+                }
+                
                 if (self.isHotkeyPressed(e)) {
+                    console.log('[Launcher] Hotkey detected! Opening modal...');
                     e.preventDefault();
+                    e.stopImmediatePropagation(); // Stop other handlers
                     self.toggleModal();
+                    return false;
                 }
 
                 if (self.modal && self.modal.style.display !== 'none') {
@@ -76,7 +97,7 @@
                         }
                     }
                 }
-            });
+            }, true); // Add true for capture phase
 
             // Search input
             this.searchInput.addEventListener('input', function(e) {
@@ -113,6 +134,9 @@
         isHotkeyPressed: function(e) {
             const keys = this.config.hotkey.toLowerCase().split('+');
             let pressed = true;
+            
+            // Debug logging
+            console.log('[Launcher] Checking hotkey:', this.config.hotkey, 'Keys:', keys);
 
             keys.forEach(function(key) {
                 switch(key) {
@@ -217,6 +241,7 @@
                                 ${result.section ? `<span class="launcher-result-section">${result.section}</span>` : ''}
                                 ${result.group ? `<span class="launcher-result-section">${result.group}</span>` : ''}
                                 ${result.handle ? `<span class="launcher-result-handle">${result.handle}</span>` : ''}
+                                ${result.author ? `<span class="launcher-result-handle">by ${result.author}</span>` : ''}
                             </div>
                         </div>
                         ${shortcutHtml}

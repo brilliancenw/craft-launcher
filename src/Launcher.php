@@ -52,6 +52,9 @@ class Launcher extends Plugin
         $this->attachProjectConfigEventListeners();
 
         if (Craft::$app->getRequest()->getIsCpRequest()) {
+            // Immediate test - inject a simple console log on EVERY CP page
+            Craft::$app->getView()->registerJs("console.log('[LAUNCHER TEST] CP Page loaded at: ' + window.location.href);", View::POS_HEAD);
+            
             Event::on(
                 View::class,
                 View::EVENT_BEFORE_RENDER_TEMPLATE,
@@ -64,13 +67,45 @@ class Launcher extends Plugin
                         $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl('@brilliance/launcher/assetbundles/launcher/dist');
                         
                         $js = <<<JS
-                        if (window.LauncherPlugin) {
-                            window.LauncherPlugin.init({
-                                hotkey: '$hotkey',
-                                searchUrl: Craft.getActionUrl('launcher/search'),
-                                debounceDelay: {$settings->debounceDelay},
-                                assetUrl: '$assetUrl'
-                            });
+                        console.log('[Launcher PHP] Script injected on page:', window.location.pathname);
+                        // Ensure LauncherPlugin initialization happens after DOM and Craft are ready
+                        if (typeof Craft !== 'undefined') {
+                            console.log('[Launcher PHP] Craft object found');
+                            // Use Craft's ready handler if available
+                            if (Craft.cp && Craft.cp.ready) {
+                                console.log('[Launcher PHP] Using Craft.cp.ready');
+                                Craft.cp.ready(function() {
+                                    console.log('[Launcher PHP] Craft.cp.ready fired');
+                                    if (window.LauncherPlugin) {
+                                        window.LauncherPlugin.init({
+                                            hotkey: '$hotkey',
+                                            searchUrl: Craft.getActionUrl('launcher/search'),
+                                            debounceDelay: {$settings->debounceDelay},
+                                            assetUrl: '$assetUrl'
+                                        });
+                                    } else {
+                                        console.error('[Launcher PHP] LauncherPlugin not found!');
+                                    }
+                                });
+                            } else {
+                                console.log('[Launcher PHP] Craft.cp not available, using DOMContentLoaded');
+                                // Fallback for pages where Craft.cp might not exist
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    console.log('[Launcher PHP] DOMContentLoaded fired');
+                                    if (window.LauncherPlugin) {
+                                        window.LauncherPlugin.init({
+                                            hotkey: '$hotkey',
+                                            searchUrl: Craft.getActionUrl('launcher/search'),
+                                            debounceDelay: {$settings->debounceDelay},
+                                            assetUrl: '$assetUrl'
+                                        });
+                                    } else {
+                                        console.error('[Launcher PHP] LauncherPlugin not found!');
+                                    }
+                                });
+                            }
+                        } else {
+                            console.error('[Launcher PHP] Craft object not found!');
                         }
                         JS;
                         

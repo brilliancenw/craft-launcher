@@ -125,6 +125,7 @@ class SearchService extends Component
 
     private function searchEntries(string $query, $settings): array
     {
+        // Search entries by content (existing functionality)
         $entryQuery = Entry::find()
             ->search($query)
             ->limit($settings->maxResults);
@@ -151,8 +152,11 @@ class SearchService extends Component
 
         $entries = $entryQuery->all();
         $results = [];
+        $foundEntryIds = [];
 
+        // Add entries found by content search
         foreach ($entries as $entry) {
+            $foundEntryIds[] = $entry->id;
             $results[] = [
                 'title' => $entry->title,
                 'url' => $entry->getCpEditUrl(),
@@ -161,6 +165,64 @@ class SearchService extends Component
                 'status' => $entry->getStatus(),
                 'icon' => 'newspaper',
             ];
+        }
+
+        // Also search for entries by author name
+        // First find users that match the query
+        $matchingUsers = User::find()
+            ->search($query)
+            ->limit(5) // Limit user matches to avoid too many results
+            ->all();
+
+        if (!empty($matchingUsers)) {
+            $userIds = [];
+            foreach ($matchingUsers as $user) {
+                $userIds[] = $user->id;
+            }
+
+            // Search for entries authored by these users
+            $authorQuery = Entry::find()
+                ->authorId($userIds)
+                ->limit($settings->maxResults);
+
+            // Apply the same filters as content search
+            if (!$settings->searchDrafts) {
+                $authorQuery->drafts(false);
+            }
+
+            if (!$settings->searchRevisions) {
+                $authorQuery->revisions(false);
+            }
+
+            if (!$settings->searchDisabled) {
+                $authorQuery->status(Entry::STATUS_ENABLED);
+            }
+
+            if (!empty($settings->searchableSections)) {
+                $authorQuery->sectionId($settings->searchableSections);
+            }
+
+            if (!empty($settings->searchableEntryTypes)) {
+                $authorQuery->typeId($settings->searchableEntryTypes);
+            }
+
+            $authoredEntries = $authorQuery->all();
+
+            // Add entries by author (avoid duplicates)
+            foreach ($authoredEntries as $entry) {
+                if (!in_array($entry->id, $foundEntryIds)) {
+                    $author = $entry->getAuthor();
+                    $results[] = [
+                        'title' => $entry->title,
+                        'url' => $entry->getCpEditUrl(),
+                        'type' => 'Entry',
+                        'section' => $entry->getSection()->name,
+                        'status' => $entry->getStatus(),
+                        'icon' => 'newspaper',
+                        'author' => $author ? $author->getFriendlyName() : null,
+                    ];
+                }
+            }
         }
 
         return $results;
