@@ -53,7 +53,13 @@ class SearchController extends Controller
             if ($settings->enableLaunchHistory ?? true) {
                 $popularItems = Launcher::$plugin->history->getPopularItems($settings->maxHistoryItems ?? 10);
                 
+                Craft::info('Popular items requested: Found ' . count($popularItems) . ' items', 'launcher');
+                
                 if (!empty($popularItems)) {
+                    Craft::info('Returning popular items: ' . json_encode(array_map(function($item) { 
+                        return $item['title'] . ' (' . $item['launchCount'] . ' launches)'; 
+                    }, $popularItems)), 'launcher');
+                    
                     return $this->asJson([
                         'success' => true,
                         'results' => $popularItems,
@@ -92,7 +98,12 @@ class SearchController extends Controller
             Launcher::$plugin->launcher->addRecentItem($item);
             
             // Record this launch in the user's history
-            Launcher::$plugin->history->recordLaunch($item);
+            try {
+                $success = Launcher::$plugin->history->recordLaunch($item);
+                Craft::info('Launch history recorded: ' . ($success ? 'SUCCESS' : 'FAILED') . ' for item: ' . json_encode($item), 'launcher');
+            } catch (\Exception $e) {
+                Craft::error('Failed to record launch history: ' . $e->getMessage() . ' for item: ' . json_encode($item), 'launcher');
+            }
         }
 
         return $this->asJson([

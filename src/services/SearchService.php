@@ -401,7 +401,7 @@ class SearchService extends Component
                 if (stripos($entryType->name, $query) !== false || stripos($entryType->handle, $query) !== false) {
                     $results[] = [
                         'title' => $entryType->name,
-                        'url' => UrlHelper::cpUrl('settings/sections/' . $section->id . '/entrytypes/' . $entryType->id),
+                        'url' => UrlHelper::cpUrl('settings/entry-types/' . $entryType->id),
                         'type' => 'Entry Type',
                         'handle' => $entryType->handle,
                         'section' => $section->name,
