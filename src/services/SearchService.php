@@ -14,6 +14,14 @@ use craft\helpers\UrlHelper;
 
 class SearchService extends Component
 {
+    /**
+     * Check if Craft Commerce is installed
+     */
+    private function isCommerceInstalled(): bool
+    {
+        return Craft::$app->getPlugins()->isPluginInstalled('commerce');
+    }
+    
     public function browseContentType(string $contentType): array
     {
         $settings = Launcher::$plugin->getSettings();
@@ -77,6 +85,7 @@ class SearchService extends Component
 
     public function search(string $query): array
     {
+        
         if (empty($query)) {
             return [];
         }
@@ -118,6 +127,21 @@ class SearchService extends Component
 
         if ($settings->searchableTypes['plugins'] ?? false) {
             $results['plugins'] = $this->searchPlugins($query);
+        }
+
+        // Commerce searches (if Commerce is installed)
+        if ($this->isCommerceInstalled()) {
+            if ($settings->searchCommerceCustomers ?? false) {
+                $results['commerceCustomers'] = $this->searchCommerceCustomers($query, $settings);
+            }
+            
+            if ($settings->searchCommerceProducts ?? false) {
+                $results['commerceProducts'] = $this->searchCommerceProducts($query, $settings);
+            }
+            
+            if ($settings->searchCommerceOrders ?? false) {
+                $results['commerceOrders'] = $this->searchCommerceOrders($query, $settings);
+            }
         }
 
         return array_filter($results);
@@ -167,14 +191,15 @@ class SearchService extends Component
             ];
         }
 
-        // Also search for entries by author name
-        // First find users that match the query
-        $matchingUsers = User::find()
-            ->search($query)
-            ->limit(5) // Limit user matches to avoid too many results
-            ->all();
+        // Also search for entries by author name (if enabled)
+        if ($settings->searchEntriesByAuthor) {
+            // First find users that match the query
+            $matchingUsers = User::find()
+                ->search($query)
+                ->limit(5) // Limit user matches to avoid too many results
+                ->all();
 
-        if (!empty($matchingUsers)) {
+            if (!empty($matchingUsers)) {
             $userIds = [];
             foreach ($matchingUsers as $user) {
                 $userIds[] = $user->id;
@@ -222,6 +247,7 @@ class SearchService extends Component
                         'author' => $author ? $author->getFriendlyName() : null,
                     ];
                 }
+            }
             }
         }
 
@@ -549,5 +575,300 @@ class SearchService extends Component
         }
 
         return $results;
+    }
+
+    // Commerce search methods
+    
+    private function searchCommerceCustomers(string $query, $settings): array
+    {
+        if (!$this->isCommerceInstalled()) {
+            return [];
+        }
+        
+        try {
+            if (!class_exists('craft\commerce\elements\Customer')) {
+                return [];
+            }
+            
+            $customerClass = 'craft\commerce\elements\Customer';
+            $customerQuery = $customerClass::find()
+                ->search($query)
+                ->limit($settings->maxResults);
+
+            $customers = $customerQuery->all();
+            $results = [];
+
+            foreach ($customers as $customer) {
+                $user = $customer->getUser();
+                $title = $user ? $user->getFriendlyName() : ($customer->email ?: '(Name not available)');
+                Craft::info("Customer found - Title: '{$title}', Email: '{$customer->email}'", __METHOD__);
+                
+                $results[] = [
+                    'title' => $title,
+                    'url' => UrlHelper::cpUrl('commerce/customers/' . $customer->id),
+                    'type' => 'Commerce Customer',
+                    'email' => $customer->email ?: '(Email not available)',
+                    'icon' => 'users',
+                ];
+            }
+
+            return $results;
+        } catch (\Exception $e) {
+            Craft::error('Commerce customer search error: ' . $e->getMessage(), __METHOD__);
+            return [];
+        }
+    }
+
+    private function searchCommerceProducts(string $query, $settings): array
+    {
+        if (!$this->isCommerceInstalled()) {
+            return [];
+        }
+        
+        try {
+            if (!class_exists('craft\commerce\elements\Product') || !class_exists('craft\commerce\elements\Variant')) {
+                return [];
+            }
+            
+            $results = [];
+            
+            // Search products
+            $productClass = 'craft\commerce\elements\Product';
+            $productQuery = $productClass::find()
+                ->search($query)
+                ->limit($settings->maxResults);
+
+            $products = $productQuery->all();
+            foreach ($products as $product) {
+                $results[] = [
+                    'title' => $product->title,
+                    'url' => UrlHelper::cpUrl('commerce/products/' . $product->id),
+                    'type' => 'Commerce Product',
+                    'icon' => 'photo',
+                ];
+            }
+            
+            // Also search variants
+            $variantClass = 'craft\commerce\elements\Variant';
+            $variantQuery = $variantClass::find()
+                ->search($query)
+                ->limit($settings->maxResults);
+
+            $variants = $variantQuery->all();
+            foreach ($variants as $variant) {
+                $product = $variant->getProduct();
+                $results[] = [
+                    'title' => $variant->title . ' (' . $product->title . ')',
+                    'url' => UrlHelper::cpUrl('commerce/products/' . $product->id),
+                    'type' => 'Commerce Variant',
+                    'product' => $product->title,
+                    'icon' => 'photo',
+                ];
+            }
+
+            return $results;
+        } catch (\Exception $e) {
+            Craft::error('Commerce product search error: ' . $e->getMessage(), __METHOD__);
+            return [];
+        }
+    }
+
+    private function searchCommerceOrders(string $query, $settings): array
+    {
+        if (!$this->isCommerceInstalled()) {
+            return [];
+        }
+        
+        try {
+            // Import the Commerce classes directly
+            if (!class_exists('craft\commerce\elements\Order')) {
+                return [];
+            }
+            
+            $orders = [];
+            
+            // Use the Order class directly
+            $orderClass = 'craft\commerce\elements\Order';
+            
+            // First, try a full-text search on all searchable attributes
+            $orderQuery = $orderClass::find()
+                ->search($query)
+                ->isCompleted(true)
+                ->limit($settings->maxResults);
+
+            $orders = $orderQuery->all();
+            
+            // If no results, try searching by partial order number match
+            // This handles cases where user types part of the order number
+            if (empty($orders)) {
+                $orderQuery = $orderClass::find()
+                    ->where(['like', 'commerce_orders.number', '%' . $query . '%'])
+                    ->isCompleted(true)
+                    ->limit($settings->maxResults);
+                $orders = $orderQuery->all();
+            }
+            
+            // If still no results and query looks like it might be a short number, try that
+            if (empty($orders) && is_numeric($query)) {
+                $orderQuery = $orderClass::find()
+                    ->shortNumber($query)
+                    ->isCompleted(true)
+                    ->limit($settings->maxResults);
+                $orders = $orderQuery->all();
+            }
+            $results = [];
+            $foundOrderIds = [];
+
+            // Add orders found by search
+            foreach ($orders as $order) {
+                $foundOrderIds[] = $order->id;
+                $customer = $order->getCustomer();
+                $customerName = $customer && $customer->getUser() ? $customer->getUser()->getFriendlyName() : ($customer->email ?: '(Name not available)');
+                
+                $orderStatus = 'Unknown';
+                try {
+                    $status = $order->getOrderStatus();
+                    $orderStatus = $status ? $status->name : 'Unknown';
+                } catch (\Exception $e) {
+                    // Ignore status errors
+                }
+                
+                $results[] = [
+                    'title' => 'Order #' . $order->number,
+                    'url' => UrlHelper::cpUrl('commerce/orders/' . $order->id),
+                    'type' => 'Commerce Order',
+                    'customer' => $customerName,
+                    'status' => $orderStatus,
+                    'icon' => 'newspaper',
+                ];
+            }
+            
+            // Also search by customer name/email
+            // First try searching by email directly on orders
+            if (filter_var($query, FILTER_VALIDATE_EMAIL) || strpos($query, '@') !== false) {
+                $emailOrderQuery = $orderClass::find()
+                    ->email($query)
+                    ->isCompleted(true)
+                    ->limit($settings->maxResults);
+                    
+                $emailOrders = $emailOrderQuery->all();
+                foreach ($emailOrders as $order) {
+                    if (!in_array($order->id, $foundOrderIds)) {
+                        $foundOrderIds[] = $order->id;
+                        $customer = $order->getCustomer();
+                        $customerName = $customer && $customer->getUser() ? $customer->getUser()->getFriendlyName() : ($order->email ?: '(Name not available)');
+                        
+                        $orderStatus = 'Unknown';
+                        try {
+                            $status = $order->getOrderStatus();
+                            $orderStatus = $status ? $status->name : 'Unknown';
+                        } catch (\Exception $e) {
+                            // Ignore status errors
+                        }
+                        
+                        $results[] = [
+                            'title' => 'Order #' . $order->number,
+                            'url' => UrlHelper::cpUrl('commerce/orders/' . $order->id),
+                            'type' => 'Commerce Order',
+                            'customer' => $customerName,
+                            'status' => $orderStatus,
+                            'icon' => 'newspaper',
+                        ];
+                    }
+                }
+            }
+            
+            // Search by customer records
+            if (class_exists('craft\commerce\elements\Customer')) {
+                $customerClass = 'craft\commerce\elements\Customer';
+                $customerQuery = $customerClass::find()
+                    ->search($query)
+                    ->limit(5);
+                    
+                $customers = $customerQuery->all();
+                foreach ($customers as $customer) {
+                    $customerOrderQuery = $orderClass::find()
+                        ->customer($customer)
+                        ->isCompleted(true)
+                        ->limit($settings->maxResults);
+                    
+                $customerOrders = $customerOrderQuery->all();
+                foreach ($customerOrders as $order) {
+                    if (!in_array($order->id, $foundOrderIds)) {
+                        $foundOrderIds[] = $order->id;
+                        $user = $customer->getUser();
+                        $customerName = $user ? $user->getFriendlyName() : ($customer->email ?: '(Name not available)');
+                        
+                        $orderStatus = 'Unknown';
+                        try {
+                            $status = $order->getOrderStatus();
+                            $orderStatus = $status ? $status->name : 'Unknown';
+                        } catch (\Exception $e) {
+                            // Ignore status errors
+                        }
+                        
+                        $results[] = [
+                            'title' => 'Order #' . $order->number,
+                            'url' => UrlHelper::cpUrl('commerce/orders/' . $order->id),
+                            'type' => 'Commerce Order',
+                            'customer' => $customerName,
+                            'status' => $orderStatus,
+                            'icon' => 'newspaper',
+                        ];
+                    }
+                }
+            }
+            
+            // Also search for orders by matching users directly
+            if (class_exists('craft\elements\User')) {
+                $userQuery = User::find()
+                    ->search($query)
+                    ->limit(5);
+                    
+                $users = $userQuery->all();
+                foreach ($users as $user) {
+                    // Find customer record for this user
+                    if (class_exists('craft\commerce\elements\Customer')) {
+                        $customer = $customerClass::find()
+                            ->user($user)
+                            ->one();
+                            
+                        if ($customer) {
+                            $userOrderQuery = $orderClass::find()
+                                ->customer($customer)
+                                ->isCompleted(true)
+                                ->limit($settings->maxResults);
+                            
+                        $userOrders = $userOrderQuery->all();
+                        foreach ($userOrders as $order) {
+                            if (!in_array($order->id, $foundOrderIds)) {
+                                $orderStatus = 'Unknown';
+                                try {
+                                    $status = $order->getOrderStatus();
+                                    $orderStatus = $status ? $status->name : 'Unknown';
+                                } catch (\Exception $e) {
+                                    // Ignore status errors
+                                }
+                                
+                                $results[] = [
+                                    'title' => 'Order #' . $order->number,
+                                    'url' => UrlHelper::cpUrl('commerce/orders/' . $order->id),
+                                    'type' => 'Commerce Order',
+                                    'customer' => $user->getFriendlyName(),
+                                    'status' => $orderStatus,
+                                    'icon' => 'newspaper',
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+            }
+
+            return $results;
+        } catch (\Exception $e) {
+            Craft::error('Commerce order search error: ' . $e->getMessage(), __METHOD__);
+            return [];
+        }
     }
 }
