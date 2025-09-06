@@ -304,7 +304,7 @@
             const result = this.currentResults[index];
             if (!result || !result.url) return;
 
-            // Track recent item
+            // Track recent item and wait for it to complete before navigating
             fetch(Craft.getActionUrl('launcher/search/navigate'), {
                 method: 'POST',
                 headers: {
@@ -312,11 +312,19 @@
                     'X-CSRF-Token': Craft.csrfTokenValue
                 },
                 body: JSON.stringify({ item: result })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Navigation tracking complete, now navigate
+                window.location.href = result.url;
+                this.closeModal();
+            })
+            .catch(error => {
+                // Even if tracking fails, still navigate
+                console.warn('Failed to track navigation:', error);
+                window.location.href = result.url;
+                this.closeModal();
             });
-
-            // Navigate to URL
-            window.location.href = result.url;
-            this.closeModal();
         },
 
         showBrowseMode: function() {
