@@ -327,7 +327,7 @@ class SearchService extends Component
 
         foreach ($users as $user) {
             $results[] = [
-                'title' => $user->getFriendlyName(),
+                'title' => $user->getFriendlyName() ?: '(No name provided)',
                 'url' => $user->getCpEditUrl(),
                 'type' => 'User',
                 'email' => $user->email,
@@ -547,7 +547,7 @@ class SearchService extends Component
 
         foreach ($users as $user) {
             $results[] = [
-                'title' => $user->getFriendlyName(),
+                'title' => $user->getFriendlyName() ?: '(No name provided)',
                 'url' => $user->getCpEditUrl(),
                 'type' => 'User',
                 'email' => $user->email,
@@ -722,8 +722,25 @@ class SearchService extends Component
             // Add orders found by search
             foreach ($orders as $order) {
                 $foundOrderIds[] = $order->id;
-                $customer = $order->getCustomer();
-                $customerName = $customer && $customer->getUser() ? $customer->getUser()->getFriendlyName() : ($customer->email ?: '(Name not available)');
+                
+                // Get customer name safely
+                $customerName = '(No name provided)';
+                try {
+                    $customer = $order->getCustomer();
+                    if ($customer) {
+                        $user = $customer->getUser();
+                        if ($user) {
+                            $customerName = $user->getFriendlyName() ?: '(No name provided)';
+                        } elseif ($customer->email) {
+                            $customerName = $customer->email;
+                        }
+                    } elseif ($order->email) {
+                        $customerName = $order->email;
+                    }
+                } catch (\Exception $e) {
+                    // Fallback to order email or default
+                    $customerName = $order->email ?: '(No name provided)';
+                }
                 
                 $orderStatus = 'Unknown';
                 try {
@@ -755,8 +772,25 @@ class SearchService extends Component
                 foreach ($emailOrders as $order) {
                     if (!in_array($order->id, $foundOrderIds)) {
                         $foundOrderIds[] = $order->id;
-                        $customer = $order->getCustomer();
-                        $customerName = $customer && $customer->getUser() ? $customer->getUser()->getFriendlyName() : ($order->email ?: '(Name not available)');
+                        
+                        // Get customer name safely
+                        $customerName = '(No name provided)';
+                        try {
+                            $customer = $order->getCustomer();
+                            if ($customer) {
+                                $user = $customer->getUser();
+                                if ($user) {
+                                    $customerName = $user->getFriendlyName() ?: '(No name provided)';
+                                } elseif ($customer->email) {
+                                    $customerName = $customer->email;
+                                }
+                            } elseif ($order->email) {
+                                $customerName = $order->email;
+                            }
+                        } catch (\Exception $e) {
+                            // Fallback to order email or default
+                            $customerName = $order->email ?: '(No name provided)';
+                        }
                         
                         $orderStatus = 'Unknown';
                         try {
@@ -796,8 +830,19 @@ class SearchService extends Component
                 foreach ($customerOrders as $order) {
                     if (!in_array($order->id, $foundOrderIds)) {
                         $foundOrderIds[] = $order->id;
-                        $user = $customer->getUser();
-                        $customerName = $user ? $user->getFriendlyName() : ($customer->email ?: '(Name not available)');
+                        
+                        // Get customer name safely
+                        $customerName = '(No name provided)';
+                        try {
+                            $user = $customer->getUser();
+                            if ($user) {
+                                $customerName = $user->getFriendlyName() ?: '(No name provided)';
+                            } elseif ($customer->email) {
+                                $customerName = $customer->email;
+                            }
+                        } catch (\Exception $e) {
+                            $customerName = $customer->email ?: '(No name provided)';
+                        }
                         
                         $orderStatus = 'Unknown';
                         try {
@@ -854,7 +899,7 @@ class SearchService extends Component
                                         'title' => 'Order #' . $order->number,
                                         'url' => UrlHelper::cpUrl('commerce/orders/' . $order->id),
                                         'type' => 'Commerce Order',
-                                        'customer' => $user->getFriendlyName(),
+                                        'customer' => $user->getFriendlyName() ?: '(No name provided)',
                                         'status' => $orderStatus,
                                         'icon' => 'newspaper',
                                     ];
