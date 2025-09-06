@@ -58,6 +58,11 @@ class SearchService extends Component
                     $results['sections'] = $this->searchSections('');
                 }
                 break;
+            case 'entryTypes':
+                if ($settings->searchableTypes['entryTypes'] ?? false) {
+                    $results['entryTypes'] = $this->searchEntryTypes('');
+                }
+                break;
             case 'groups':
                 if ($settings->searchableTypes['categoryGroups'] ?? false) {
                     $results['groups'] = $this->searchCategoryGroups('');
@@ -115,6 +120,10 @@ class SearchService extends Component
 
         if ($settings->searchableTypes['sections'] ?? false) {
             $results['sections'] = $this->searchSections($query);
+        }
+
+        if ($settings->searchableTypes['entryTypes'] ?? false) {
+            $results['entryTypes'] = $this->searchEntryTypes($query);
         }
 
         if ($settings->searchableTypes['categoryGroups'] ?? false) {
@@ -375,6 +384,30 @@ class SearchService extends Component
                     'handle' => $section->handle,
                     'icon' => 'newspaper',
                 ];
+            }
+        }
+
+        return $results;
+    }
+
+    private function searchEntryTypes(string $query): array
+    {
+        $sections = Craft::$app->getEntries()->getAllSections();
+        $results = [];
+
+        foreach ($sections as $section) {
+            $entryTypes = $section->getEntryTypes();
+            foreach ($entryTypes as $entryType) {
+                if (stripos($entryType->name, $query) !== false || stripos($entryType->handle, $query) !== false) {
+                    $results[] = [
+                        'title' => $entryType->name,
+                        'url' => UrlHelper::cpUrl('settings/sections/' . $section->id . '/entrytypes/' . $entryType->id),
+                        'type' => 'Entry Type',
+                        'handle' => $entryType->handle,
+                        'section' => $section->name,
+                        'icon' => 'newspaper',
+                    ];
+                }
             }
         }
 

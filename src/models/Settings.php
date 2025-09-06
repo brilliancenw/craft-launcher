@@ -15,6 +15,7 @@ class Settings extends Model
         'users' => true,
         'globals' => true,
         'sections' => true,
+        'entryTypes' => true,
         'categoryGroups' => true,
         'assetVolumes' => true,
         'fields' => true,
