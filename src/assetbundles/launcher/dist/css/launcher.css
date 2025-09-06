@@ -311,3 +311,54 @@ body.ltr .launcher-results::-webkit-scrollbar-thumb:hover,
 body.rtl .launcher-results::-webkit-scrollbar-thumb:hover {
     background: var(--gray-400, #c1c7d0);
 }
+
+/* History item remove button */
+.launcher-remove-btn {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--light-text-color, #8b92a1);
+    opacity: 0.4;
+    transition: all 0.2s ease;
+    border-radius: 3px;
+    z-index: 1;
+}
+
+.launcher-result:hover .launcher-remove-btn {
+    opacity: 0.8;
+}
+
+.launcher-remove-btn:hover {
+    opacity: 1 !important;
+    color: var(--error-color, #cf1124);
+    background: rgba(207, 17, 36, 0.1);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.launcher-remove-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Adjust result layout to make room for remove button */
+.launcher-result {
+    position: relative;
+    padding-right: 40px;
+}
+
+/* Launch count styling */
+.launcher-result-count {
+    color: var(--medium-text-color, #606d7b);
+    font-size: 11px;
+    font-weight: 500;
+}

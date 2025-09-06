@@ -104,6 +104,7 @@ class HistoryService extends Component
                 'itemId', 
                 'itemTitle',
                 'itemUrl',
+                'itemHash',
                 'launchCount',
                 'lastLaunchedAt'
             ])
@@ -124,6 +125,7 @@ class HistoryService extends Component
                 'url' => $result['itemUrl'],
                 'type' => $result['itemType'],
                 'id' => $result['itemId'],
+                'itemHash' => $result['itemHash'],
                 'launchCount' => (int)$result['launchCount'],
                 'lastLaunched' => $result['lastLaunchedAt'],
                 'isPopular' => true, // Flag to identify these as popular items
@@ -182,6 +184,31 @@ class HistoryService extends Component
             'totalLaunches' => (int)($stats['totalLaunches'] ?? 0),
             'lastActivity' => $stats['lastActivity'] ?? null,
         ];
+    }
+
+    /**
+     * Remove a specific history item for the current user
+     */
+    public function removeHistoryItem(string $itemHash): bool
+    {
+        $user = Craft::$app->getUser()->getIdentity();
+        if (!$user) {
+            return false;
+        }
+
+        try {
+            $deleted = Craft::$app->db->createCommand()
+                ->delete('{{%launcher_user_history}}', [
+                    'userId' => $user->id,
+                    'itemHash' => $itemHash
+                ])
+                ->execute();
+
+            return $deleted > 0;
+        } catch (\Exception $e) {
+            Craft::error('Failed to remove history item: ' . $e->getMessage(), __METHOD__);
+            return false;
+        }
     }
 
     /**

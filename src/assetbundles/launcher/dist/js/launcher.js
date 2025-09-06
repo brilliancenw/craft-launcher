@@ -186,7 +186,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    self.displayResults(data.results, data.isRecent);
+                    self.displayResults(data.results, data.isRecent, data);
                 }
             })
             .catch(error => {
@@ -195,7 +195,7 @@
             });
         },
 
-        displayResults: function(results, isRecent) {
+        displayResults: function(results, isRecent, data) {
             this.currentResults = results;
             this.selectedIndex = 0;
 
@@ -207,12 +207,18 @@
             let html = '';
             if (isRecent) {
                 html += '<div class="launcher-section-title">Recent Items</div>';
+            } else if (data.isPopular) {
+                html += '<div class="launcher-section-title">Popular Items <small style="opacity: 0.6; font-weight: normal;">(hover over items to remove)</small></div>';
             }
 
             results.forEach((result, index) => {
                 const iconType = result.type || result.icon;
                 const iconSvg = this.getIconSvg(iconType);
                 const shortcutHtml = result.shortcut ? `<span class="launcher-shortcut">${result.shortcut}</span>` : '';
+                
+                // Add remove button for popular items
+                const removeButtonHtml = result.isPopular && result.itemHash ? 
+                    `<button class="launcher-remove-btn" data-item-hash="${result.itemHash}" title="Remove from history" aria-label="Remove from history">×</button>` : '';
                 
                 html += `
                     <div class="launcher-result ${index === 0 ? 'selected' : ''}" data-index="${index}">
@@ -231,9 +237,11 @@
                                 ${result.customer ? `<span class="launcher-result-handle">${result.customer}</span>` : ''}
                                 ${result.status ? `<span class="launcher-result-section">${result.status}</span>` : ''}
                                 ${result.product ? `<span class="launcher-result-section">${result.product}</span>` : ''}
+                                ${result.launchCount ? `<span class="launcher-result-count">${result.launchCount} launches</span>` : ''}
                             </div>
                         </div>
                         ${shortcutHtml}
+                        ${removeButtonHtml}
                     </div>
                 `;
             });
@@ -248,6 +256,13 @@
 
             results.forEach(function(result, index) {
                 result.addEventListener('click', function(e) {
+                    // Check if the click was on the remove button
+                    if (e.target.classList.contains('launcher-remove-btn')) {
+                        e.stopPropagation();
+                        self.removeHistoryItem(e.target.dataset.itemHash, index);
+                        return;
+                    }
+                    
                     // In browse mode, use different logic
                     if (self.browseMode && !self.currentContentType) {
                         self.selectContentType(index);
@@ -337,6 +352,50 @@
                 console.warn('Failed to track navigation:', error);
                 window.location.href = result.url;
                 this.closeModal();
+            });
+        },
+
+        removeHistoryItem: function(itemHash, index) {
+            console.log('Removing history item:', itemHash);
+            
+            const self = this;
+            const actionUrl = Craft.getActionUrl('launcher/search/remove-history-item');
+            
+            fetch(actionUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': Craft.csrfTokenValue
+                },
+                body: JSON.stringify({ 
+                    itemHash: itemHash,
+                    [Craft.csrfTokenName]: Craft.csrfTokenValue
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Remove history item response:', data);
+                if (data.success) {
+                    // Remove the item from current results array
+                    self.currentResults.splice(index, 1);
+                    
+                    // Update selection index if needed
+                    if (self.selectedIndex >= self.currentResults.length) {
+                        self.selectedIndex = Math.max(0, self.currentResults.length - 1);
+                    }
+                    
+                    // Re-render the results
+                    self.displayResults(self.currentResults, false, { isPopular: true });
+                    
+                    // Show a subtle success message
+                    console.log('Item removed from history');
+                } else {
+                    console.warn('Failed to remove item from history:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Failed to remove history item:', error);
             });
         },
 
@@ -432,7 +491,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    self.displayResults(data.results, false);
+                    self.displayResults(data.results, false, data);
                 } else {
                     self.resultsContainer.innerHTML = '<div class="launcher-error">Browse failed: ' + (data.error || 'Unknown error') + '</div>';
                 }

@@ -147,4 +147,34 @@ class SearchController extends Controller
             'stats' => $stats,
         ]);
     }
+
+    public function actionRemoveHistoryItem(): Response
+    {
+        $this->requireAcceptsJson();
+        $this->requirePostRequest();
+
+        $itemHash = Craft::$app->getRequest()->getBodyParam('itemHash');
+        
+        if (!$itemHash) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Item hash is required',
+            ], 400);
+        }
+
+        try {
+            $success = Launcher::$plugin->history->removeHistoryItem($itemHash);
+            
+            return $this->asJson([
+                'success' => $success,
+                'message' => $success ? 'Item removed from history' : 'Failed to remove item',
+            ]);
+        } catch (\Exception $e) {
+            Craft::error('Failed to remove history item: ' . $e->getMessage(), 'launcher');
+            return $this->asJson([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
