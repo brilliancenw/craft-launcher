@@ -2,6 +2,9 @@
 
 A universal search launcher for the Craft CMS admin panel that provides quick access to content, settings, and navigation throughout your Craft installation. Think of it as Spotlight for macOS or Command Palette for VS Code, but specifically designed for Craft CMS with intelligent usage tracking.
 
+![Launcher in Action](docs/images/launcher-in-action.png)
+*The launcher showing popular items with smart keyboard shortcuts and launch counts*
+
 ## Features
 
 ### Core Search & Navigation
@@ -175,6 +178,9 @@ If Craft Commerce is installed, the launcher provides enhanced e-commerce search
 ## Configuration
 
 Navigate to **Settings → Launcher** to customize your experience:
+
+![Settings Screen](docs/images/launcher-settings.png)
+*Comprehensive settings interface for customizing search behavior and content types*
 
 ### General Settings
 
