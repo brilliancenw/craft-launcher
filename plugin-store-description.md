@@ -37,7 +37,8 @@ Built by developers, for developers - we created this tool to streamline our own
 
 ## Lightning Fast Navigation
 
-- Jump to any result using number keys (1-9)
+- Jump to any result using Return key or configurable modifier keys (Cmd+1-9)
+- Smart keyboard shortcuts that don't interfere with search typing
 - Popular items based on actual usage appear when you open the launcher
 - Privacy controls - disable tracking or clear history anytime
 - Seamless integration with Craft's existing permissions system
@@ -59,6 +60,7 @@ Built by developers, for developers - we created this tool to streamline our own
 ## Highly Configurable
 
 - Customize keyboard shortcuts to fit your workflow
+- Configure result navigation shortcuts (Cmd, Ctrl, Alt, or Shift + numbers)
 - Control which content types appear in search results
 - Configure launch history settings and privacy controls
 - Fine-tune search behavior, result limits, and debounce timing

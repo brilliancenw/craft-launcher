@@ -675,7 +675,7 @@ class SearchService extends Component
             foreach ($products as $product) {
                 $results[] = [
                     'title' => $product->title,
-                    'url' => UrlHelper::cpUrl('commerce/products/' . $product->id),
+                    'url' => $product->getCpEditUrl(),
                     'type' => 'Commerce Product',
                     'icon' => 'photo',
                 ];
@@ -692,7 +692,7 @@ class SearchService extends Component
                 $product = $variant->getProduct();
                 $results[] = [
                     'title' => $variant->title . ' (' . $product->title . ')',
-                    'url' => UrlHelper::cpUrl('commerce/products/' . $product->id),
+                    'url' => $product->getCpEditUrl(),
                     'type' => 'Commerce Variant',
                     'product' => $product->title,
                     'icon' => 'photo',

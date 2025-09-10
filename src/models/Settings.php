@@ -43,17 +43,33 @@ class Settings extends Model
     // Launch history settings
     public bool $enableLaunchHistory = true;
     public int $maxHistoryItems = 10;
+    
+    // Result navigation shortcuts
+    public string $selectResultModifier = 'cmd';
+    public array $resultShortcuts = [
+        'first' => 'return',
+        1 => 'cmd+1',
+        2 => 'cmd+2', 
+        3 => 'cmd+3',
+        4 => 'cmd+4',
+        5 => 'cmd+5',
+        6 => 'cmd+6',
+        7 => 'cmd+7',
+        8 => 'cmd+8',
+        9 => 'cmd+9',
+    ];
 
     public function rules(): array
     {
         return [
-            [['hotkey'], 'string'],
+            [['hotkey', 'selectResultModifier'], 'string'],
             [['hotkey'], 'required'],
             [['debounceDelay', 'maxResults', 'maxHistoryItems'], 'number', 'integerOnly' => true],
             [['debounceDelay'], 'default', 'value' => 300],
             [['maxResults'], 'default', 'value' => 10],
             [['maxHistoryItems'], 'default', 'value' => 10],
-            [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes'], 'safe'],
+            [['selectResultModifier'], 'default', 'value' => 'cmd'],
+            [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes', 'resultShortcuts'], 'safe'],
             [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory'], 'boolean'],
         ];
     }
@@ -78,6 +94,8 @@ class Settings extends Model
             'searchCommerceOrders' => 'Search Commerce Orders',
             'enableLaunchHistory' => 'Track Launch History',
             'maxHistoryItems' => 'Max Popular Items to Show',
+            'selectResultModifier' => 'Result Selection Modifier Key',
+            'resultShortcuts' => 'Result Navigation Shortcuts',
         ];
     }
 }

@@ -179,11 +179,18 @@
     margin-right: 8px;
 }
 
-.launcher-shortcut {
+.launcher-result-actions {
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1;
+}
+
+.launcher-shortcut {
     width: 24px;
     height: 24px;
     display: flex;
@@ -287,6 +294,11 @@ body.rtl .launcher-result-meta {
     color: var(--light-text-color, #8b92a1);
 }
 
+body.ltr .launcher-result-actions,
+body.rtl .launcher-result-actions {
+    /* Ensure actions container is properly positioned in all themes */
+}
+
 body.ltr .launcher-shortcut,
 body.rtl .launcher-shortcut {
     background: var(--gray-100, #f3f7fc);
@@ -314,10 +326,6 @@ body.rtl .launcher-results::-webkit-scrollbar-thumb:hover {
 
 /* History item remove button */
 .launcher-remove-btn {
-    position: absolute;
-    top: 50%;
-    right: 12px;
-    transform: translateY(-50%);
     background: none;
     border: none;
     font-size: 20px;
@@ -332,7 +340,6 @@ body.rtl .launcher-results::-webkit-scrollbar-thumb:hover {
     opacity: 0.4;
     transition: all 0.2s ease;
     border-radius: 3px;
-    z-index: 1;
 }
 
 .launcher-result:hover .launcher-remove-btn {
@@ -343,11 +350,11 @@ body.rtl .launcher-results::-webkit-scrollbar-thumb:hover {
     opacity: 1 !important;
     color: var(--error-color, #cf1124);
     background: rgba(207, 17, 36, 0.1);
-    transform: translateY(-50%) scale(1.1);
+    transform: scale(1.1);
 }
 
 .launcher-remove-btn:active {
-    transform: translateY(-50%) scale(0.95);
+    transform: scale(0.95);
 }
 
 /* Adjust result layout to make room for remove button */

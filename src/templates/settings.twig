@@ -370,6 +370,85 @@
 
 <hr>
 
+<h1>Result Navigation Shortcuts</h1>
+<p>Configure keyboard shortcuts for navigating to search results.</p>
+
+<table class="data fullwidth fixed-layout" dir="ltr">
+    <tbody>
+        <tr>
+            <th class="light" style="width: 30%;">
+                <label for="selectResultModifier">Modifier Key</label>
+                <div class="instructions">
+                    <small>Modifier key used for result selection (cmd, ctrl, alt, shift)</small>
+                </div>
+            </th>
+            <td>
+                {{ forms.selectField({
+                    id: 'selectResultModifier',
+                    name: 'selectResultModifier',
+                    value: settings.selectResultModifier,
+                    options: [
+                        {label: 'Command (⌘)', value: 'cmd'},
+                        {label: 'Control (Ctrl)', value: 'ctrl'},
+                        {label: 'Alt/Option (⌥)', value: 'alt'},
+                        {label: 'Shift (⇧)', value: 'shift'},
+                    ],
+                    errors: settings.getErrors('selectResultModifier'),
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="field">
+    <div class="heading">
+        <label>Navigation Shortcuts</label>
+        <div class="instructions">
+            <p>Configure how to activate search results. The first result uses Return key, results 2-10 use the modifier key + number.</p>
+            <p><strong>Example:</strong> With "Command" modifier, press Cmd+1 for the first numbered result, Cmd+2 for second, etc.</p>
+        </div>
+    </div>
+    <div class="input">
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Result Position</th>
+                    <th>Keyboard Shortcut</th>
+                    <th>Icon Display</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>First Result</strong></td>
+                    <td><kbd>Return</kbd> / <kbd>Enter</kbd></td>
+                    <td>⏎</td>
+                </tr>
+                <tr>
+                    <td>Second Result (#1)</td>
+                    <td><kbd>{{ settings.selectResultModifier|capitalize }}+1</kbd></td>
+                    <td>{{ settings.selectResultModifier == 'cmd' ? '⌘' : (settings.selectResultModifier|upper) }}+1</td>
+                </tr>
+                <tr>
+                    <td>Third Result (#2)</td>
+                    <td><kbd>{{ settings.selectResultModifier|capitalize }}+2</kbd></td>
+                    <td>{{ settings.selectResultModifier == 'cmd' ? '⌘' : (settings.selectResultModifier|upper) }}+2</td>
+                </tr>
+                <tr>
+                    <td>Fourth Result (#3)</td>
+                    <td><kbd>{{ settings.selectResultModifier|capitalize }}+3</kbd></td>
+                    <td>{{ settings.selectResultModifier == 'cmd' ? '⌘' : (settings.selectResultModifier|upper) }}+3</td>
+                </tr>
+                <tr style="opacity: 0.6;">
+                    <td colspan="3"><em>... and so on through {{ settings.selectResultModifier|capitalize }}+9 (up to 10 total results)</em></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<hr>
+
 <h1>Content Filters</h1>
 <p>Optionally limit search to specific sections, categories, or volumes.</p>
 

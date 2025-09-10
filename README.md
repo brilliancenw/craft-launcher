@@ -156,11 +156,13 @@ If Craft Commerce is installed, the launcher provides enhanced e-commerce search
 | **Type anything** | Start searching |
 | **`*`** | Enter browse mode |
 | **`↑` `↓`** | Navigate through results |
-| **`Enter`** | Open selected result |
-| **`1-9`** | Jump to result by number |
+| **`Enter`** | Open first result (selected result) |
+| **`Cmd+1` to `Cmd+9`** | Jump to numbered results (configurable modifier) |
 | **`Esc`** | Close launcher |
 | **`Cmd+K` / `Ctrl+K`** | Close launcher (same as open) |
 | **`Hover + Click X`** | Remove item from history |
+
+**Note**: Result navigation uses modifier keys (default: `Cmd+1` through `Cmd+9`) to avoid conflicts when typing numbers in search queries. The modifier key can be customized in Settings → Launcher.
 
 ### Pro Tips
 
@@ -181,6 +183,18 @@ Navigate to **Settings → Launcher** to customize your experience:
 | **Keyboard Shortcut** | Hotkey to open/close launcher | `Cmd+K` / `Ctrl+K` |
 | **Search Debounce Delay** | Delay before search executes (milliseconds) | `300` |
 | **Maximum Results** | Number of results to show per content type | `10` |
+
+### Result Navigation Shortcuts
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Modifier Key** | Key used with numbers for result selection | `Command (⌘)` |
+
+Configure how to activate search results:
+- **First Result**: Always uses Return/Enter key
+- **Numbered Results**: Use modifier key + number (1-9)
+- **Available Modifiers**: Command (⌘), Control (Ctrl), Alt/Option (⌥), or Shift (⇧)
+- **Example**: With "Command" selected, press Cmd+1 for first numbered result, Cmd+2 for second, etc.
 
 ### Launch History Settings
 

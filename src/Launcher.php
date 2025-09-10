@@ -78,7 +78,8 @@ class Launcher extends Plugin
                                             hotkey: '$hotkey',
                                             searchUrl: Craft.getActionUrl('launcher/search'),
                                             debounceDelay: {$settings->debounceDelay},
-                                            assetUrl: '$assetUrl'
+                                            assetUrl: '$assetUrl',
+                                            selectResultModifier: '{$settings->selectResultModifier}'
                                         });
                                     }
                                 });
@@ -90,7 +91,8 @@ class Launcher extends Plugin
                                             hotkey: '$hotkey',
                                             searchUrl: Craft.getActionUrl('launcher/search'),
                                             debounceDelay: {$settings->debounceDelay},
-                                            assetUrl: '$assetUrl'
+                                            assetUrl: '$assetUrl',
+                                            selectResultModifier: '{$settings->selectResultModifier}'
                                         });
                                     }
                                 });

@@ -6,7 +6,8 @@
         config: {
             hotkey: 'cmd+k',
             searchUrl: '',
-            debounceDelay: 300
+            debounceDelay: 300,
+            selectResultModifier: 'cmd'
         },
         searchTimeout: null,
         currentResults: [],
@@ -71,8 +72,16 @@
                     } else if (e.key === 'Enter') {
                         e.preventDefault();
                         self.navigateToSelected();
-                    } else if (e.key >= '1' && e.key <= '9') {
-                        const index = parseInt(e.key) - 1;
+                    } else if (e.key >= '1' && e.key <= '9' && self.isModifierPressed(e, self.config.selectResultModifier)) {
+                        let index;
+                        if (self.browseMode && !self.currentContentType) {
+                            // In browse mode, key "1" should select index 1 (since index 0 is Return)
+                            index = parseInt(e.key);
+                        } else {
+                            // In regular search results, key "1" should select index 0 
+                            index = parseInt(e.key) - 1;
+                        }
+                        
                         if (index < self.currentResults.length) {
                             e.preventDefault();
                             
@@ -146,6 +155,38 @@
             return pressed;
         },
 
+        isModifierPressed: function(e, modifier) {
+            switch(modifier.toLowerCase()) {
+                case 'cmd':
+                case 'meta':
+                    return e.metaKey || e.ctrlKey;
+                case 'ctrl':
+                    return e.ctrlKey;
+                case 'alt':
+                    return e.altKey;
+                case 'shift':
+                    return e.shiftKey;
+                default:
+                    return false;
+            }
+        },
+
+        getModifierSymbol: function(modifier) {
+            switch(modifier.toLowerCase()) {
+                case 'cmd':
+                case 'meta':
+                    return '⌘';
+                case 'ctrl':
+                    return 'Ctrl+';
+                case 'alt':
+                    return '⌥';
+                case 'shift':
+                    return '⇧';
+                default:
+                    return modifier.toUpperCase() + '+';
+            }
+        },
+
         toggleModal: function() {
             if (this.modal && this.modal.style.display !== 'none') {
                 this.closeModal();
@@ -214,7 +255,17 @@
             results.forEach((result, index) => {
                 const iconType = result.type || result.icon;
                 const iconSvg = this.getIconSvg(iconType);
-                const shortcutHtml = result.shortcut ? `<span class="launcher-shortcut">${result.shortcut}</span>` : '';
+                // Generate shortcut display based on index and settings
+                let shortcutHtml = '';
+                if (index === 0) {
+                    // First result uses Return key
+                    shortcutHtml = '<span class="launcher-shortcut">⏎</span>';
+                } else if (index <= 8) {
+                    // Results 1-8 use modifier + number (index starts at 0, so index 1 = position 2 = shortcut "1")
+                    const shortcutNumber = index;
+                    const modifierSymbol = this.getModifierSymbol(this.config.selectResultModifier);
+                    shortcutHtml = `<span class="launcher-shortcut">${modifierSymbol}${shortcutNumber}</span>`;
+                }
                 
                 // Add remove button for popular items
                 const removeButtonHtml = result.isPopular && result.itemHash ? 
@@ -240,8 +291,10 @@
                                 ${result.launchCount ? `<span class="launcher-result-count">${result.launchCount} launches</span>` : ''}
                             </div>
                         </div>
-                        ${shortcutHtml}
-                        ${removeButtonHtml}
+                        <div class="launcher-result-actions">
+                            ${shortcutHtml}
+                            ${removeButtonHtml}
+                        </div>
                     </div>
                 `;
             });
@@ -449,7 +502,16 @@
             
             contentTypes.forEach((contentType, index) => {
                 const iconSvg = this.getIconSvg(contentType.type);
-                const shortcutHtml = index < 9 ? `<span class="launcher-shortcut">${index + 1}</span>` : '';
+                // Generate shortcut display for browse mode
+                let shortcutHtml = '';
+                if (index === 0) {
+                    shortcutHtml = '<span class="launcher-shortcut">⏎</span>';
+                } else if (index <= 8) {
+                    // For browse mode, shortcut number should be index (1-8), not index (since index 1 = key "1")
+                    const shortcutNumber = index;
+                    const modifierSymbol = this.getModifierSymbol(this.config.selectResultModifier);
+                    shortcutHtml = `<span class="launcher-shortcut">${modifierSymbol}${shortcutNumber}</span>`;
+                }
                 
                 html += `
                     <div class="launcher-result ${index === 0 ? 'selected' : ''}" data-index="${index}">
@@ -463,7 +525,9 @@
                                 <span class="launcher-result-section">${contentType.description}</span>
                             </div>
                         </div>
-                        ${shortcutHtml}
+                        <div class="launcher-result-actions">
+                            ${shortcutHtml}
+                        </div>
                     </div>
                 `;
             });
