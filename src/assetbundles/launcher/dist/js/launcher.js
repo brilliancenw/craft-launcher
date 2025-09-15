@@ -616,6 +616,7 @@
                     'Route': 'routes',
                     'Volume': 'volumes',
                     'Group': 'groups',
+                    'Settings': 'settings',
                     'Category Group': 'categories',
                     'Field Group': 'groups',
                     'User Group': 'groups',
