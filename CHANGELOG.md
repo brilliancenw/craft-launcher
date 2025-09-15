@@ -1,5 +1,34 @@
 # Changelog
 
+## [v1.1.0] - 2024-09-14
+
+### Added
+- **NEW**: Static settings destinations search - quickly find admin pages like Email Settings, Routes, Users, Plugins, etc.
+- **NEW**: Loading indicator with animated dots provides visual feedback during search operations
+- **NEW**: Professional gear icon for settings search results that matches Craft's admin panel design
+
+### Enhanced
+- **IMPROVED**: Popular Items UI with smoother user experience
+- **IMPROVED**: Launch counter now fades in/out smoothly (0.5s transition) on hover and keyboard focus
+- **IMPROVED**: All keyboard shortcuts now work correctly - cmd-1 through cmd-9 launch the correct items
+- **IMPROVED**: Missing cmd-9 shortcut now displays and functions properly
+
+### Fixed
+- **FIXED**: Keyboard shortcut alignment - cmd-2 now correctly launches the second item (was off by one)
+- **FIXED**: Popular Items fencepost error that prevented cmd-9 from showing
+- **FIXED**: Settings icon mapping so static settings show gear icon instead of default circle
+
+### Removed
+- **REMOVED**: Misleading "(Hover over items to remove)" text from Popular Items section
+- **REMOVED**: Confusing "Content" and "Media" entries from settings search results
+
+### Technical Improvements
+- **ENHANCED**: Better search performance with loading states for larger sites
+- **ENHANCED**: Icon consistency across all launcher result types
+- **ENHANCED**: Cleaner codebase with improved keyboard navigation logic
+
+> **What's New**: You can now search for administrative settings like "email", "users", "routes", or "plugins" to quickly navigate to control panel pages. The launcher also provides better visual feedback during searches and more intuitive keyboard navigation.
+
 ## [v1.0.2] - 2024-09-09
 
 ### Enhanced Keyboard Navigation
