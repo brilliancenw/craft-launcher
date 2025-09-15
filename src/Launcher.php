@@ -2,18 +2,28 @@
 namespace brilliance\launcher;
 
 use brilliance\launcher\assetbundles\launcher\LauncherAsset;
+use brilliance\launcher\assetbundles\launcher\LauncherFrontEndAsset;
 use brilliance\launcher\models\Settings;
 use brilliance\launcher\services\LauncherService;
 use brilliance\launcher\services\SearchService;
 use brilliance\launcher\services\HistoryService;
+use brilliance\launcher\services\UserPreferenceService;
 
 use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\controllers\UsersController;
 use craft\events\ConfigEvent;
+use craft\events\DefineEditUserScreensEvent;
 use craft\events\RebuildConfigEvent;
+use craft\events\RegisterCpNavItemsEvent;
 use craft\events\RegisterTemplateRootsEvent;
+use craft\events\RegisterUserPermissionsEvent;
+use craft\events\RegisterUrlRulesEvent;
 use craft\services\ProjectConfig;
+use craft\services\UserPermissions;
+use craft\web\twig\variables\Cp;
+use craft\web\UrlManager;
 use craft\web\View;
 use craft\web\twig\variables\CraftVariable;
 use yii\base\Event;
@@ -32,6 +42,7 @@ class Launcher extends Plugin
                 'launcher' => LauncherService::class,
                 'search' => SearchService::class,
                 'history' => HistoryService::class,
+                'userPreference' => UserPreferenceService::class,
             ],
         ];
     }
@@ -50,6 +61,7 @@ class Launcher extends Plugin
             'launcher' => LauncherService::class,
             'search' => SearchService::class,
             'history' => HistoryService::class,
+            'userPreference' => UserPreferenceService::class,
         ]);
 
         // Handle project config changes
@@ -106,11 +118,69 @@ class Launcher extends Plugin
             );
         }
 
+        // Handle front-end launcher injection
+        if (!Craft::$app->getRequest()->getIsCpRequest()) {
+            Event::on(
+                View::class,
+                View::EVENT_BEFORE_RENDER_TEMPLATE,
+                function () {
+                    $this->injectFrontEndLauncher();
+                }
+            );
+        }
+
         Event::on(
             View::class,
             View::EVENT_REGISTER_CP_TEMPLATE_ROOTS,
             function (RegisterTemplateRootsEvent $e) {
                 $e->roots[$this->id] = $this->getBasePath() . DIRECTORY_SEPARATOR . 'templates';
+            }
+        );
+
+        // Register our screen in the user edit screens
+        Event::on(
+            UsersController::class,
+            UsersController::EVENT_DEFINE_EDIT_SCREENS,
+            function (DefineEditUserScreensEvent $event) {
+                $user = Craft::$app->getUser()->getIdentity();
+                if ($user && Craft::$app->getUser()->checkPermission('accessLauncher')) {
+                    $event->screens['launcher'] = [
+                        'label' => 'Launcher',
+                        'url' => 'myaccount/launcher',
+                    ];
+                }
+            }
+        );
+
+        // Register URL rules for user preferences
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_CP_URL_RULES,
+            function (RegisterUrlRulesEvent $event) {
+                $event->rules['myaccount/launcher'] = 'launcher/user-account/index';
+            }
+        );
+
+        // Add a link to launcher preferences on the main preferences page
+        Event::on(
+            View::class,
+            View::EVENT_BEFORE_RENDER_TEMPLATE,
+            function ($event) {
+                $request = Craft::$app->getRequest();
+                if ($request->getIsCpRequest() &&
+                    $request->getSegment(1) === 'myaccount' &&
+                    $request->getSegment(2) === 'preferences') {
+
+                    $html = '<div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px; padding: 12px; margin-bottom: 20px;">
+                        <strong>🚀 Launcher Plugin:</strong>
+                        <a href="/admin/myaccount/launcher" style="color: #1976d2; text-decoration: underline;">
+                            Configure your Launcher preferences
+                        </a>
+                        - Enable the front-end launcher and customize your settings.
+                    </div>';
+
+                    Craft::$app->getView()->registerHtml($html);
+                }
             }
         );
 
@@ -122,6 +192,141 @@ class Launcher extends Plugin
             ),
             __METHOD__
         );
+    }
+
+    /**
+     * Inject launcher assets on the front-end if user has enabled it
+     */
+    protected function injectFrontEndLauncher(): void
+    {
+        // Security check: Only inject if user is authenticated
+        if (!Craft::$app->getUser()->getIdentity()) {
+            return;
+        }
+
+        // Security check: Verify user has launcher permissions
+        if (!Craft::$app->getUser()->checkPermission('accessLauncher')) {
+            return;
+        }
+
+        // Only inject if user is logged in and has preference enabled
+        if (!$this->userPreference->isFrontEndEnabled()) {
+            return;
+        }
+
+        // Skip in Live Preview mode to avoid conflicts
+        if (Craft::$app->getRequest()->getIsLivePreview()) {
+            return;
+        }
+
+        // Security check: Skip if request contains suspicious patterns
+        $request = Craft::$app->getRequest();
+        $userAgent = $request->getUserAgent();
+        if (empty($userAgent) || $this->isSuspiciousRequest($request)) {
+            return;
+        }
+
+        // Register the launcher assets (front-end version without CP dependencies)
+        Craft::$app->getView()->registerAssetBundle(LauncherFrontEndAsset::class);
+
+        $settings = $this->getSettings();
+        $hotkey = $settings->hotkey;
+        $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl('@brilliance/launcher/assetbundles/launcher/dist');
+        $searchUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search']);
+        $navigateUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search/navigate']);
+        $removeHistoryUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search/remove-history-item']);
+
+        // Get CSRF token details
+        $request = Craft::$app->getRequest();
+        $csrfTokenName = $request->csrfParam;
+        $csrfTokenValue = $request->getCsrfToken();
+
+        // Get user preferences
+        $openInNewTab = $this->userPreference->isFrontEndNewTabEnabled();
+
+        // Get current entry context if available
+        $contextScript = $this->getFrontEndContextScript();
+
+        $js = <<<JS
+        // Front-end Launcher initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.LauncherPlugin) {
+                window.LauncherPlugin.init({
+                    hotkey: '$hotkey',
+                    searchUrl: '$searchUrl',
+                    navigateUrl: '$navigateUrl',
+                    removeHistoryUrl: '$removeHistoryUrl',
+                    csrfTokenName: '$csrfTokenName',
+                    csrfTokenValue: '$csrfTokenValue',
+                    debounceDelay: {$settings->debounceDelay},
+                    assetUrl: '$assetUrl',
+                    selectResultModifier: '{$settings->selectResultModifier}',
+                    isFrontEnd: true,
+                    openInNewTab: " . ($openInNewTab ? 'true' : 'false') . "
+                });
+
+                $contextScript
+            }
+        });
+        JS;
+
+        Craft::$app->getView()->registerJs($js, View::POS_END);
+    }
+
+    /**
+     * Get context-aware script for front-end launcher
+     */
+    protected function getFrontEndContextScript(): string
+    {
+        $context = [];
+
+        // Try to get current entry context
+        if (Craft::$app->has('elements')) {
+            $entry = Craft::$app->getView()->getTwig()->getGlobals()['entry'] ?? null;
+
+            if ($entry && isset($entry->id)) {
+                $context['currentEntry'] = [
+                    'id' => $entry->id,
+                    'title' => $entry->title,
+                    'sectionHandle' => $entry->section->handle ?? null,
+                    'typeHandle' => $entry->type->handle ?? null,
+                    'editUrl' => $entry->getCpEditUrl()
+                ];
+            }
+        }
+
+        if (empty($context)) {
+            return '';
+        }
+
+        $contextJson = json_encode($context);
+        return "window.LauncherPlugin.setFrontEndContext($contextJson);";
+    }
+
+    /**
+     * Check if the request looks suspicious (basic security check)
+     */
+    protected function isSuspiciousRequest($request): bool
+    {
+        $userAgent = $request->getUserAgent();
+        $suspiciousPatterns = [
+            'bot', 'crawler', 'spider', 'scraper', 'wget', 'curl',
+            'automated', 'test', 'monitor', 'scan'
+        ];
+
+        foreach ($suspiciousPatterns as $pattern) {
+            if (stripos($userAgent, $pattern) !== false) {
+                return true;
+            }
+        }
+
+        // Check for suspicious request patterns
+        $uri = $request->getUrl();
+        if (preg_match('/\.(xml|json|rss|feed)$/i', $uri)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

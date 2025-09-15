@@ -15,6 +15,8 @@
         browseMode: false,
         currentContentType: null,
         isInitialized: false,
+        isFrontEnd: false,
+        frontEndContext: null,
 
         init: function(config) {
             // Prevent multiple initializations
@@ -23,6 +25,7 @@
             }
 
             Object.assign(this.config, config);
+            this.isFrontEnd = config.isFrontEnd || false;
             this.createModal();
             this.bindEvents();
             this.isInitialized = true;
@@ -240,14 +243,38 @@
                 this.showLoadingIndicator();
             }
 
+            // Prepare request body
+            const requestBody = {
+                query: query
+            };
+
+            // Add CSRF token - use config values if available (front-end), otherwise fall back to Craft object (CP)
+            const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
+            const csrfTokenValue = this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : null);
+
+            if (csrfTokenName && csrfTokenValue) {
+                requestBody[csrfTokenName] = csrfTokenValue;
+            }
+
+            // Add context if we're on front-end and have context
+            if (this.config.isFrontEnd && this.frontEndContext) {
+                requestBody.context = this.frontEndContext;
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            // Add CSRF token to headers if available
+            if (csrfTokenValue) {
+                headers['X-CSRF-Token'] = csrfTokenValue;
+            }
+
             fetch(this.config.searchUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-Token': Craft.csrfTokenValue
-                },
-                body: JSON.stringify({ query: query })
+                headers: headers,
+                body: JSON.stringify(requestBody)
             })
             .then(response => response.json())
             .then(data => {
@@ -264,6 +291,19 @@
         },
 
         displayResults: function(results, isRecent, data) {
+            // Add "Edit this page" option for front-end context
+            if (this.isFrontEnd && this.frontEndContext && this.frontEndContext.currentEntry && !this.browseMode) {
+                const currentEntry = this.frontEndContext.currentEntry;
+                const contextResult = {
+                    title: '✏️ Edit this page: ' + currentEntry.title,
+                    url: currentEntry.editUrl,
+                    type: 'Entry',
+                    section: currentEntry.sectionHandle,
+                    icon: 'entries'
+                };
+                results = [contextResult, ...results];
+            }
+
             this.currentResults = results;
             this.selectedIndex = 0;
 
@@ -277,6 +317,8 @@
                 html += '<div class="launcher-section-title">Recent Items</div>';
             } else if (data.isPopular) {
                 html += '<div class="launcher-section-title">Popular Items</div>';
+            } else if (this.isFrontEnd && !this.browseMode) {
+                html += '<div class="launcher-section-title">Search Results</div>';
             }
 
             results.forEach((result, index) => {
@@ -401,21 +443,38 @@
 
             console.log('Navigating to result:', result.title, result.url);
 
-            // Track recent item and wait for it to complete before navigating
-            const actionUrl = Craft.getActionUrl('launcher/search/navigate');
+            // Get action URL and CSRF token
+            const actionUrl = this.config.navigateUrl || (typeof Craft !== 'undefined' ? Craft.getActionUrl('launcher/search/navigate') : null);
+            const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
+            const csrfTokenValue = this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : null);
+
+            if (!actionUrl) {
+                // If no navigate URL available, just navigate directly
+                this.navigateToUrl(result.url);
+                this.closeModal();
+                return;
+            }
+
             console.log('Making request to:', actionUrl, 'with item:', result);
+
+            const requestBody = { item: result };
+            if (csrfTokenName && csrfTokenValue) {
+                requestBody[csrfTokenName] = csrfTokenValue;
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            if (csrfTokenValue) {
+                headers['X-CSRF-Token'] = csrfTokenValue;
+            }
 
             fetch(actionUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-Token': Craft.csrfTokenValue
-                },
-                body: JSON.stringify({
-                    item: result,
-                    [Craft.csrfTokenName]: Craft.csrfTokenValue
-                })
+                headers: headers,
+                body: JSON.stringify(requestBody)
             })
             .then(response => {
                 console.log('Navigation tracking response status:', response.status);
@@ -424,13 +483,13 @@
             .then(data => {
                 console.log('Navigation tracking response:', data);
                 // Navigation tracking complete, now navigate
-                window.location.href = result.url;
+                this.navigateToUrl(result.url);
                 this.closeModal();
             })
             .catch(error => {
                 // Even if tracking fails, still navigate
                 console.warn('Failed to track navigation:', error);
-                window.location.href = result.url;
+                this.navigateToUrl(result.url);
                 this.closeModal();
             });
         },
@@ -439,19 +498,33 @@
             console.log('Removing history item:', itemHash);
 
             const self = this;
-            const actionUrl = Craft.getActionUrl('launcher/search/remove-history-item');
+            const actionUrl = this.config.removeHistoryUrl || (typeof Craft !== 'undefined' ? Craft.getActionUrl('launcher/search/remove-history-item') : null);
+            const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
+            const csrfTokenValue = this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : null);
+
+            if (!actionUrl) {
+                console.warn('No remove history URL available');
+                return;
+            }
+
+            const requestBody = { itemHash: itemHash };
+            if (csrfTokenName && csrfTokenValue) {
+                requestBody[csrfTokenName] = csrfTokenValue;
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            if (csrfTokenValue) {
+                headers['X-CSRF-Token'] = csrfTokenValue;
+            }
 
             fetch(actionUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-Token': Craft.csrfTokenValue
-                },
-                body: JSON.stringify({
-                    itemHash: itemHash,
-                    [Craft.csrfTokenName]: Craft.csrfTokenValue
-                })
+                headers: headers,
+                body: JSON.stringify(requestBody)
             })
             .then(response => response.json())
             .then(data => {
@@ -569,18 +642,33 @@
             // Show loading indicator for browse search
             this.showLoadingIndicator();
 
+            // Get CSRF token
+            const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
+            const csrfTokenValue = this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : null);
+
+            const requestBody = {
+                query: '', // Empty query to get all
+                browseType: contentType
+            };
+
+            if (csrfTokenName && csrfTokenValue) {
+                requestBody[csrfTokenName] = csrfTokenValue;
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            if (csrfTokenValue) {
+                headers['X-CSRF-Token'] = csrfTokenValue;
+            }
+
             // Send request to get all items of this content type
             fetch(this.config.searchUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-Token': Craft.csrfTokenValue
-                },
-                body: JSON.stringify({
-                    query: '', // Empty query to get all
-                    browseType: contentType
-                })
+                headers: headers,
+                body: JSON.stringify(requestBody)
             })
             .then(response => response.json())
             .then(data => {
@@ -596,6 +684,10 @@
                 self.hideLoadingIndicator();
                 self.resultsContainer.innerHTML = '<div class="launcher-error">Browse failed. Please try again.</div>';
             });
+        },
+
+        setFrontEndContext: function(context) {
+            this.frontEndContext = context;
         },
 
         getIconSvg: function(iconType) {
@@ -673,6 +765,18 @@
 
             const normalizedType = normalizeType(iconType);
             return iconMap[normalizedType] || iconMap['default'];
+        },
+
+        /**
+         * Navigate to a URL, respecting the new tab preference for front-end usage
+         */
+        navigateToUrl: function(url) {
+            // Check if we should open in new tab (only for front-end usage)
+            if (this.config.isFrontEnd && this.config.openInNewTab) {
+                window.open(url, '_blank');
+            } else {
+                window.location.href = url;
+            }
         }
     };
 })();
