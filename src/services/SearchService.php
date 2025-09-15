@@ -656,11 +656,6 @@ class SearchService extends Component
                 'searchTerms' => ['plugins', 'plugin', 'extensions', 'addons'],
             ],
             [
-                'title' => 'Content',
-                'url' => UrlHelper::cpUrl('settings'),
-                'searchTerms' => ['content', 'content settings', 'structure'],
-            ],
-            [
                 'title' => 'Sections',
                 'url' => UrlHelper::cpUrl('settings/sections'),
                 'searchTerms' => ['sections', 'section', 'content structure'],
@@ -689,11 +684,6 @@ class SearchService extends Component
                 'title' => 'Tags',
                 'url' => UrlHelper::cpUrl('settings/tags'),
                 'searchTerms' => ['tags', 'tag', 'tagging', 'labels'],
-            ],
-            [
-                'title' => 'Media',
-                'url' => UrlHelper::cpUrl('assets'),
-                'searchTerms' => ['media', 'assets', 'files', 'uploads', 'images'],
             ],
             [
                 'title' => 'Assets',
