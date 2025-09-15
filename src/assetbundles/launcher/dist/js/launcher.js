@@ -78,8 +78,8 @@
                             // In browse mode, key "1" should select index 1 (since index 0 is Return)
                             index = parseInt(e.key);
                         } else {
-                            // In regular search results, key "1" should select index 0 
-                            index = parseInt(e.key) - 1;
+                            // In regular search results, key "1" should select index 1
+                            index = parseInt(e.key);
                         }
                         
                         if (index < self.currentResults.length) {
@@ -249,7 +249,7 @@
             if (isRecent) {
                 html += '<div class="launcher-section-title">Recent Items</div>';
             } else if (data.isPopular) {
-                html += '<div class="launcher-section-title">Popular Items <small style="opacity: 0.6; font-weight: normal;">(hover over items to remove)</small></div>';
+                html += '<div class="launcher-section-title">Popular Items</div>';
             }
 
             results.forEach((result, index) => {
@@ -260,8 +260,8 @@
                 if (index === 0) {
                     // First result uses Return key
                     shortcutHtml = '<span class="launcher-shortcut">⏎</span>';
-                } else if (index <= 8) {
-                    // Results 1-8 use modifier + number (index starts at 0, so index 1 = position 2 = shortcut "1")
+                } else if (index <= 9) {
+                    // Results 1-9 use modifier + number (index starts at 0, so index 1 = position 2 = shortcut "1")
                     const shortcutNumber = index;
                     const modifierSymbol = this.getModifierSymbol(this.config.selectResultModifier);
                     shortcutHtml = `<span class="launcher-shortcut">${modifierSymbol}${shortcutNumber}</span>`;
@@ -288,7 +288,7 @@
                                 ${result.customer ? `<span class="launcher-result-handle">${result.customer}</span>` : ''}
                                 ${result.status ? `<span class="launcher-result-section">${result.status}</span>` : ''}
                                 ${result.product ? `<span class="launcher-result-section">${result.product}</span>` : ''}
-                                ${result.launchCount ? `<span class="launcher-result-count">${result.launchCount} launches</span>` : ''}
+                                ${result.launchCount ? `<span class="launcher-result-count launcher-result-count-hidden">${result.launchCount} launches</span>` : ''}
                             </div>
                         </div>
                         <div class="launcher-result-actions">
@@ -506,8 +506,8 @@
                 let shortcutHtml = '';
                 if (index === 0) {
                     shortcutHtml = '<span class="launcher-shortcut">⏎</span>';
-                } else if (index <= 8) {
-                    // For browse mode, shortcut number should be index (1-8), not index (since index 1 = key "1")
+                } else if (index <= 9) {
+                    // For browse mode, shortcut number should be index (1-9), not index (since index 1 = key "1")
                     const shortcutNumber = index;
                     const modifierSymbol = this.getModifierSymbol(this.config.selectResultModifier);
                     shortcutHtml = `<span class="launcher-shortcut">${modifierSymbol}${shortcutNumber}</span>`;

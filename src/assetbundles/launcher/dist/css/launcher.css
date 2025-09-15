@@ -369,3 +369,15 @@ body.rtl .launcher-results::-webkit-scrollbar-thumb:hover {
     font-size: 11px;
     font-weight: 500;
 }
+
+/* Hide launch count by default */
+.launcher-result-count-hidden {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+/* Show launch count on hover or when result is selected */
+.launcher-result:hover .launcher-result-count-hidden,
+.launcher-result.selected .launcher-result-count-hidden {
+    opacity: 1;
+}
