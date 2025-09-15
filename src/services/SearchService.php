@@ -88,15 +88,23 @@ class SearchService extends Component
         return $results;
     }
 
-    public function search(string $query): array
+    public function search(string $query, array $context = []): array
     {
-        
+
         if (empty($query)) {
             return [];
         }
 
         $settings = Launcher::$plugin->getSettings();
         $results = [];
+
+        // Add front-end context actions first (if applicable)
+        if (!empty($context)) {
+            $contextResults = $this->getContextAwareResults($query, $context);
+            if (!empty($contextResults)) {
+                $results['context'] = $contextResults;
+            }
+        }
 
         if ($settings->searchableTypes['entries'] ?? false) {
             $results['entries'] = $this->searchEntries($query, $settings);
@@ -146,17 +154,72 @@ class SearchService extends Component
             if ($settings->searchCommerceCustomers ?? false) {
                 $results['commerceCustomers'] = $this->searchCommerceCustomers($query, $settings);
             }
-            
+
             if ($settings->searchCommerceProducts ?? false) {
                 $results['commerceProducts'] = $this->searchCommerceProducts($query, $settings);
             }
-            
+
             if ($settings->searchCommerceOrders ?? false) {
                 $results['commerceOrders'] = $this->searchCommerceOrders($query, $settings);
             }
         }
 
         return array_filter($results);
+    }
+
+    /**
+     * Get context-aware results for front-end launcher
+     */
+    private function getContextAwareResults(string $query, array $context): array
+    {
+        $results = [];
+        $queryLower = strtolower($query);
+
+        // Check if we have current entry context
+        if (isset($context['currentEntry'])) {
+            $entry = $context['currentEntry'];
+
+            // Add "Edit this page" action for relevant search terms
+            $editTerms = ['edit', 'edit this', 'edit page', 'edit this page', 'modify', 'change', 'update'];
+            foreach ($editTerms as $term) {
+                if (stripos($term, $queryLower) === 0 || stripos($queryLower, $term) === 0) {
+                    $results[] = [
+                        'title' => 'Edit this page',
+                        'url' => $entry['editUrl'],
+                        'type' => 'Context Action',
+                        'entry' => $entry['title'],
+                        'section' => $entry['sectionHandle'],
+                        'icon' => 'newspaper',
+                        'priority' => 100, // High priority to show first
+                    ];
+                    break;
+                }
+            }
+
+            // Add "View entry details" action for relevant search terms
+            $detailTerms = ['entry', 'details', 'info', 'view', 'current'];
+            foreach ($detailTerms as $term) {
+                if (stripos($term, $queryLower) === 0 || stripos($queryLower, $term) === 0) {
+                    $results[] = [
+                        'title' => 'View entry details',
+                        'url' => $entry['editUrl'],
+                        'type' => 'Context Action',
+                        'entry' => $entry['title'],
+                        'section' => $entry['sectionHandle'],
+                        'icon' => 'newspaper',
+                        'priority' => 90,
+                    ];
+                    break;
+                }
+            }
+        }
+
+        // Sort by priority (highest first)
+        usort($results, function($a, $b) {
+            return ($b['priority'] ?? 0) - ($a['priority'] ?? 0);
+        });
+
+        return $results;
     }
 
     private function searchEntries(string $query, $settings): array

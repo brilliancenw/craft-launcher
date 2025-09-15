@@ -4,6 +4,7 @@ namespace brilliance\launcher\controllers;
 use brilliance\launcher\Launcher;
 
 use Craft;
+use craft\elements\Entry;
 use craft\web\Controller;
 use yii\web\Response;
 
@@ -28,6 +29,14 @@ class SearchController extends Controller
     {
         $this->requireAcceptsJson();
         $this->requirePostRequest();
+
+        // Additional security check for front-end requests
+        if (!Craft::$app->getRequest()->getIsCpRequest()) {
+            // Rate limiting for front-end requests
+            if (!$this->checkRateLimit()) {
+                throw new \yii\web\TooManyRequestsHttpException('Too many search requests. Please slow down.');
+            }
+        }
 
         $query = Craft::$app->getRequest()->getBodyParam('query', '');
         $browseType = Craft::$app->getRequest()->getBodyParam('browseType', '');
@@ -77,7 +86,13 @@ class SearchController extends Controller
             ]);
         }
 
-        $searchResults = Launcher::$plugin->search->search($query);
+        // Get context for front-end searches
+        $context = Craft::$app->getRequest()->getBodyParam('context', []);
+
+        // Validate context for security
+        $context = $this->validateContext($context);
+
+        $searchResults = Launcher::$plugin->search->search($query, $context);
         $formattedResults = Launcher::$plugin->launcher->formatResults($searchResults);
 
         return $this->asJson([
@@ -176,5 +191,94 @@ class SearchController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Check rate limit for front-end searches
+     */
+    private function checkRateLimit(): bool
+    {
+        $user = Craft::$app->getUser()->getIdentity();
+        if (!$user) {
+            return false;
+        }
+
+        $cacheKey = 'launcher_rate_limit_' . $user->id;
+        $cache = Craft::$app->getCache();
+
+        $requests = $cache->get($cacheKey) ?: [];
+        $now = time();
+
+        // Remove requests older than 1 minute
+        $requests = array_filter($requests, function($timestamp) use ($now) {
+            return ($now - $timestamp) < 60;
+        });
+
+        // Check if user has exceeded limit (30 requests per minute)
+        if (count($requests) >= 30) {
+            return false;
+        }
+
+        // Add current request
+        $requests[] = $now;
+        $cache->set($cacheKey, $requests, 300); // Cache for 5 minutes
+
+        return true;
+    }
+
+    /**
+     * Validate context data for security
+     */
+    private function validateContext(array $context): array
+    {
+        $validatedContext = [];
+
+        // Only allow specific context keys
+        $allowedKeys = ['currentEntry'];
+
+        foreach ($allowedKeys as $key) {
+            if (isset($context[$key])) {
+                if ($key === 'currentEntry') {
+                    $validatedContext[$key] = $this->validateEntryContext($context[$key]);
+                }
+            }
+        }
+
+        return $validatedContext;
+    }
+
+    /**
+     * Validate entry context data
+     */
+    private function validateEntryContext($entryData): ?array
+    {
+        if (!is_array($entryData)) {
+            return null;
+        }
+
+        // Required fields
+        if (!isset($entryData['id']) || !is_numeric($entryData['id'])) {
+            return null;
+        }
+
+        // Verify the entry actually exists and user has permission to edit it
+        $entry = Entry::find()->id($entryData['id'])->one();
+        if (!$entry) {
+            return null;
+        }
+
+        // Check if user can edit this entry
+        if (!Craft::$app->getUser()->checkPermission('editEntries:' . $entry->getSection()->uid)) {
+            return null;
+        }
+
+        // Return sanitized context
+        return [
+            'id' => (int) $entryData['id'],
+            'title' => $entry->title,
+            'sectionHandle' => $entry->getSection()->handle,
+            'typeHandle' => $entry->getType()->handle,
+            'editUrl' => $entry->getCpEditUrl()
+        ];
     }
 }

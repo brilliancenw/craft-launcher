@@ -167,6 +167,53 @@ If Craft Commerce is installed, the launcher provides enhanced e-commerce search
 
 **Note**: Result navigation uses modifier keys (default: `Cmd+1` through `Cmd+9`) to avoid conflicts when typing numbers in search queries. The modifier key can be customized in Settings → Launcher.
 
+## Front-end Launcher
+
+The launcher can also be enabled on the front-end of your website, providing quick access to admin functions while browsing your live site.
+
+### Enabling Front-end Access
+
+1. **Navigate to your account preferences**: Go to **My Account → Launcher** in the admin panel
+2. **Enable the front-end launcher**: Toggle on "Enable Front-end Launcher"
+3. **Configure link behavior** (optional): Toggle on "Open Front-end Links in New Tab" to keep your current page open when navigating
+
+![Front-end Launcher Settings](docs/images/launcher-personal-preferences.png)
+*User account preferences showing front-end launcher options*
+
+### Using the Front-end Launcher
+
+Once enabled, the launcher works the same way on your front-end as it does in the admin panel:
+
+- **Same keyboard shortcut**: Press `Cmd+K` (Mac) or `Ctrl+K` (Windows/Linux) while browsing your website
+- **Context-aware search**: When viewing an entry page, search for "edit" to quickly jump to editing that specific page
+- **Full admin access**: Search all content types, settings, and admin areas you have permission to access
+- **Recent items**: Access your frequently used admin pages from anywhere on your site
+
+### Front-end Features
+
+- **Context-aware Search**: When viewing an entry page, search for 'edit' to quickly edit the current page
+- **Full Search Access**: Search all content types you have permission to access
+- **Admin Navigation**: Quick access to settings pages and control panel areas
+- **Recent Items**: Access your recently used items from any page
+
+### Security & Privacy
+
+The front-end launcher includes several security measures:
+
+- **Authentication required**: Only visible when you are logged in with launcher permissions
+- **Rate limited**: Prevents abuse with a limit of 30 searches per minute
+- **Bot detection**: Automatically disabled for bots and suspicious requests
+- **Permission validation**: Context validation ensures you can only edit entries you have permission for
+- **Selective loading**: Only loads on legitimate user requests, not for crawlers or automated tools
+
+### Link Behavior Options
+
+**Open Front-end Links in New Tab**: When enabled, clicking on entries and pages from the launcher will open them in a new tab, keeping the current page open. This is particularly useful when:
+
+- Browsing your live site and wanting to edit content without losing your place
+- Comparing live content with admin interface
+- Quick content reviews while maintaining your browsing context
+
 ### Pro Tips
 
 - **Popular vs Recent**: The launcher shows popular items (based on usage) rather than just recent items for better productivity
@@ -174,6 +221,7 @@ If Craft Commerce is installed, the launcher provides enhanced e-commerce search
 - **Privacy Control**: You can disable history tracking or clear all data anytime in settings
 - **Commerce Orders**: Search for orders using partial reference numbers for quick access
 - **Entry Types**: Quickly navigate to entry type configurations for content modeling work
+- **Front-end editing**: Use the context-aware search to quickly edit the page you're currently viewing
 
 ## Configuration
 

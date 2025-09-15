@@ -1,0 +1,51 @@
+{% import "_includes/forms" as forms %}
+
+<h2>{{ "Front-end Launcher"|t('launcher') }}</h2>
+<p>{{ "Enable the launcher on the front-end of your website, similar to how the debug toolbar works."|t('launcher') }}</p>
+
+{{ forms.lightswitchField({
+    label: 'Enable Front-end Launcher'|t('launcher'),
+    instructions: 'When enabled, you can use the launcher on the public-facing pages of the website. The launcher will appear when you press your configured hotkey (' ~ craft.app.plugins.getPlugin('launcher').settings.hotkey ~ ').'|t('launcher'),
+    id: 'enabled',
+    name: 'enabled',
+    on: isEnabled,
+    toggle: 'launcher-frontend-details'
+}) }}
+
+    <div id="launcher-frontend-details"{% if not isEnabled %} class="hidden"{% endif %}>
+        {{ forms.lightswitchField({
+            label: 'Open Front-end Links in New Tab'|t('launcher'),
+            instructions: 'When enabled, clicking on entries and pages from the launcher will open them in a new tab, keeping the current page open.'|t('launcher'),
+            id: 'newTabEnabled',
+            name: 'newTabEnabled',
+            on: isNewTabEnabled
+        }) }}
+
+        <div class="field">
+            <div class="heading">
+                <label>{{ "Features Available on Front-end"|t('launcher') }}</label>
+            </div>
+            <div class="input">
+                <ul>
+                    <li><strong>{{ "Context-aware Search"|t('launcher') }}:</strong> {{ "When viewing an entry page, search for 'edit' to quickly edit the current page"|t('launcher') }}</li>
+                    <li><strong>{{ "Full Search Access"|t('launcher') }}:</strong> {{ "Search all content types you have permission to access"|t('launcher') }}</li>
+                    <li><strong>{{ "Admin Navigation"|t('launcher') }}:</strong> {{ "Quick access to settings pages and control panel areas"|t('launcher') }}</li>
+                    <li><strong>{{ "Recent Items"|t('launcher') }}:</strong> {{ "Access your recently used items from any page"|t('launcher') }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="heading">
+                <label>{{ "Security & Privacy"|t('launcher') }}</label>
+            </div>
+            <div class="input">
+                <ul>
+                    <li>{{ "Only visible when you are logged in with launcher permissions"|t('launcher') }}</li>
+                    <li>{{ "Rate limited to prevent abuse (30 searches per minute)"|t('launcher') }}</li>
+                    <li>{{ "Automatically disabled for bots and suspicious requests"|t('launcher') }}</li>
+                    <li>{{ "Context validation ensures you can only edit entries you have permission for"|t('launcher') }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
