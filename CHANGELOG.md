@@ -1,5 +1,49 @@
 # Changelog
 
+## [v1.0.4] - 2024-09-14
+
+### Added
+- **NEW**: Front-end launcher functionality - use the launcher on your live website! ([#1](https://github.com/brilliancenw/craft-launcher/issues/1))
+- **NEW**: Personal user preferences in My Account → Launcher section
+- **NEW**: "Open Front-end Links in New Tab" option for seamless content editing workflow
+- **NEW**: Context-aware search - search for "edit" while viewing an entry to quickly edit that specific page
+- **NEW**: Dedicated user account preference interface with toggle switches
+- **NEW**: LauncherFrontEndAsset for conflict-free front-end styling (no CP CSS interference)
+
+### Enhanced
+- **IMPROVED**: Clean separation of admin and front-end asset dependencies
+- **IMPROVED**: URL generation for front-end compatibility (no double "actions" prefix)
+- **ENHANCED**: Professional user preferences layout matching Craft's design patterns
+- **ENHANCED**: Graceful fallback handling for all navigation scenarios
+- **ENHANCED**: JavaScript navigation with configurable tab behavior
+- **ENHANCED**: Project config synchronization for plugin settings
+
+### Security & Performance
+- **ADDED**: Comprehensive security validation for front-end usage
+- **ADDED**: Rate limiting (30 searches per minute) to prevent abuse
+- **ADDED**: Automatic bot detection and suspicious request filtering
+- **ADDED**: CSRF token handling for front-end compatibility
+- **ADDED**: Permission validation ensures users only access content they're authorized for
+
+### Technical Improvements
+- **ADDED**: UserPreferenceService for individual user setting management
+- **ADDED**: UserAccountController with EditUserTrait integration
+- **IMPROVED**: Modular architecture with separate front-end and admin concerns
+- **ADDED**: New template: `_user-account-content.twig` for user preferences
+
+### Documentation Updates
+- **ADDED**: Comprehensive front-end launcher documentation section in README
+- **ADDED**: Setup instructions with visual preference interface guide
+- **ADDED**: Security and privacy information for administrators
+- **ADDED**: Usage examples and pro tips for content editors
+
+### Developer Experience
+- **ADDED**: New template: `_user-account-content.twig` for user preferences
+- **ENHANCED**: Project config synchronization for plugin settings
+- **IMPROVED**: Modular architecture with separate front-end and admin concerns
+
+> **What's New**: The launcher now works on your front-end! Enable it in your account preferences to access admin functions while browsing your live site. Thanks to @wmdhosting for the excellent feature suggestion!
+
 ## [v1.0.3] - 2024-09-14
 
 ### Added
