@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.1.0] - 2024-09-14
+## [v1.0.3] - 2024-09-14
 
 ### Added
 - **NEW**: Static settings destinations search - quickly find admin pages like Email Settings, Routes, Users, Plugins, etc.
