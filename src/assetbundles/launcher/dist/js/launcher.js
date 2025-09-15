@@ -37,6 +37,13 @@
                             <input type="text" id="launcher-search" class="launcher-search" placeholder="Search for anything..." autocomplete="off">
                             <button type="button" class="launcher-close" aria-label="Close" title="${this.config.hotkey.toUpperCase()} or ESC to close">×</button>
                         </div>
+                        <div id="launcher-loading-bar" class="launcher-loading-bar" style="display: none;">
+                            <div class="launcher-loading-dots">
+                                <div class="launcher-loading-dot"></div>
+                                <div class="launcher-loading-dot"></div>
+                                <div class="launcher-loading-dot"></div>
+                            </div>
+                        </div>
                         <div id="launcher-results" class="launcher-results"></div>
                     </div>
                 </div>
@@ -45,6 +52,7 @@
             document.body.insertAdjacentHTML('beforeend', modalHtml);
             this.modal = document.getElementById('launcher-modal');
             this.searchInput = document.getElementById('launcher-search');
+            this.loadingBar = document.getElementById('launcher-loading-bar');
             this.resultsContainer = document.getElementById('launcher-results');
         },
 
@@ -199,6 +207,7 @@
             this.modal.style.display = 'block';
             this.searchInput.value = '';
             this.searchInput.focus();
+            this.hideLoadingIndicator();
             this.resultsContainer.innerHTML = '<div class="launcher-loading">Type to search...</div>';
             this.performSearch('');
         },
@@ -206,14 +215,30 @@
         closeModal: function() {
             this.modal.style.display = 'none';
             this.searchInput.value = '';
+            this.hideLoadingIndicator();
             this.resultsContainer.innerHTML = '';
             this.currentResults = [];
             this.selectedIndex = 0;
             this.exitBrowseMode();
         },
 
+        showLoadingIndicator: function() {
+            this.loadingBar.style.display = 'flex';
+            this.resultsContainer.style.display = 'none';
+        },
+
+        hideLoadingIndicator: function() {
+            this.loadingBar.style.display = 'none';
+            this.resultsContainer.style.display = 'block';
+        },
+
         performSearch: function(query) {
             const self = this;
+
+            // Show loading indicator if query is not empty
+            if (query.trim() !== '') {
+                this.showLoadingIndicator();
+            }
 
             fetch(this.config.searchUrl, {
                 method: 'POST',
@@ -226,12 +251,14 @@
             })
             .then(response => response.json())
             .then(data => {
+                self.hideLoadingIndicator();
                 if (data.success) {
                     self.displayResults(data.results, data.isRecent, data);
                 }
             })
             .catch(error => {
                 console.error('Search error:', error);
+                self.hideLoadingIndicator();
                 self.resultsContainer.innerHTML = '<div class="launcher-error">Search failed. Please try again.</div>';
             });
         },
@@ -538,7 +565,10 @@
 
         performBrowseSearch: function(contentType) {
             const self = this;
-            
+
+            // Show loading indicator for browse search
+            this.showLoadingIndicator();
+
             // Send request to get all items of this content type
             fetch(this.config.searchUrl, {
                 method: 'POST',
@@ -554,6 +584,7 @@
             })
             .then(response => response.json())
             .then(data => {
+                self.hideLoadingIndicator();
                 if (data.success) {
                     self.displayResults(data.results, false, data);
                 } else {
@@ -562,6 +593,7 @@
             })
             .catch(error => {
                 console.error('Browse search error:', error);
+                self.hideLoadingIndicator();
                 self.resultsContainer.innerHTML = '<div class="launcher-error">Browse failed. Please try again.</div>';
             });
         },

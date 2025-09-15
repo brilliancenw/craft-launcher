@@ -381,3 +381,45 @@ body.rtl .launcher-results::-webkit-scrollbar-thumb:hover {
 .launcher-result.selected .launcher-result-count-hidden {
     opacity: 1;
 }
+
+/* Loading indicator bar */
+.launcher-loading-bar {
+    height: 20px;
+    background: var(--gray-50, #f8fafc);
+    border-top: 1px solid var(--hairline-color, #e3e5e8);
+    border-bottom: 1px solid var(--hairline-color, #e3e5e8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.launcher-loading-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.launcher-loading-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gray-400, #c1c7d0);
+    animation: launcher-loading-pulse 1.2s ease-in-out infinite;
+}
+
+.launcher-loading-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.launcher-loading-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes launcher-loading-pulse {
+    0%, 80%, 100% {
+        opacity: 0.3;
+    }
+    40% {
+        opacity: 1;
+    }
+}
