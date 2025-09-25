@@ -17,7 +17,7 @@ class LauncherTableUtility extends Utility
 {
     public static function displayName(): string
     {
-        return 'Launcher Table Manager';
+        return 'Launcher';
     }
 
     public static function id(): string

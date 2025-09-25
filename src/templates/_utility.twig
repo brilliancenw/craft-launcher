@@ -136,7 +136,7 @@ function createLauncherTable() {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': '{{ csrfToken }}'
+            'X-CSRF-Token': '{{ craft.app.request.csrfToken }}'
         }
     })
     .then(response => response.json())
