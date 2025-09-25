@@ -128,10 +128,13 @@ class HistoryService extends Component
                     ->insert('{{%launcher_user_history}}', [
                         'userId' => $userId,
                         'itemType' => $item['type'] ?? 'unknown',
+                        'itemId' => $item['id'] ?? null,
                         'itemTitle' => $item['title'] ?? '',
                         'itemUrl' => $item['url'] ?? '',
                         'itemHash' => $itemHash,
                         'launchCount' => 1,
+                        'firstLaunchedAt' => $now,
+                        'lastLaunchedAt' => $now,
                         'dateCreated' => $now,
                         'dateUpdated' => $now,
                     ])
@@ -163,11 +166,12 @@ class HistoryService extends Component
         $results = (new Query())
             ->select([
                 'itemType',
+                'itemId',
                 'itemTitle',
                 'itemUrl',
                 'itemHash',
                 'launchCount',
-                'dateUpdated'
+                'lastLaunchedAt'
             ])
             ->from('{{%launcher_user_history}}')
             ->where(['userId' => $user->id])
@@ -185,9 +189,10 @@ class HistoryService extends Component
                 'title' => $result['itemTitle'],
                 'url' => $result['itemUrl'],
                 'type' => $result['itemType'],
+                'id' => $result['itemId'],
                 'itemHash' => $result['itemHash'],
                 'launchCount' => (int)$result['launchCount'],
-                'lastLaunched' => $result['dateUpdated'],
+                'lastLaunched' => $result['lastLaunchedAt'],
                 'isPopular' => true, // Flag to identify these as popular items
             ];
         }
