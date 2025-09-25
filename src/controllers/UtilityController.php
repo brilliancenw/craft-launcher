@@ -29,17 +29,22 @@ class UtilityController extends Controller
 
             // Check if table already exists
             if ($historyService->tableExists()) {
+                Craft::info('Table creation requested but table already exists', __METHOD__);
                 return $this->asJson([
                     'success' => false,
                     'error' => 'User history table already exists.'
                 ]);
             }
 
+            Craft::info('Starting table creation via utility', __METHOD__);
+
             // Create the table using the migration logic
             $migration = new \brilliance\launcher\migrations\Install();
             $migration->db = Craft::$app->getDb();
 
             if ($migration->safeUp()) {
+                // Clear the table existence cache
+                $historyService->clearTableCache();
 
                 Craft::info('Launcher user history table created successfully via utility', __METHOD__);
 

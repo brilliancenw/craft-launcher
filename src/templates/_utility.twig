@@ -140,8 +140,14 @@ function createLauncherTable() {
             'X-CSRF-Token': '{{ craft.app.request.csrfToken }}'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
             // Reload the utility to show the updated status
             Craft.cp.displayNotice('User history table created successfully!');
@@ -153,8 +159,8 @@ function createLauncherTable() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        Craft.cp.displayError('Network error. Please try the console command.');
+        console.error('Fetch error:', error);
+        Craft.cp.displayError('Network error occurred: ' + error.message + '. Please try the console command.');
         btn.disabled = false;
         btn.textContent = originalText;
     });
