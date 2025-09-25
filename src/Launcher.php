@@ -417,6 +417,89 @@ class Launcher extends Plugin
     /**
      * @inheritdoc
      */
+    public function install(): void
+    {
+        parent::install();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function afterInstall(): void
+    {
+        parent::afterInstall();
+
+        // Ensure the user history table is created
+        $this->createUserHistoryTable();
+    }
+
+    /**
+     * Create the user history table if it doesn't exist (public method for manual table creation)
+     */
+    public function createUserHistoryTable(): void
+    {
+        $db = Craft::$app->getDb();
+
+        // Check if table already exists
+        $tableSchema = $db->schema->getTableSchema('{{%launcher_user_history}}');
+        if ($tableSchema !== null) {
+            return; // Table already exists
+        }
+
+        try {
+            // Create the table manually
+            $db->createCommand()->createTable('{{%launcher_user_history}}', [
+                'id' => 'pk',
+                'userId' => 'integer NOT NULL COMMENT "References craft users.id"',
+                'itemType' => 'string(50) NOT NULL COMMENT "Type of item (entry, category, section, etc.)"',
+                'itemId' => 'string(100) NULL COMMENT "Original item ID (if applicable)"',
+                'itemTitle' => 'string(255) NOT NULL COMMENT "Display title of the item"',
+                'itemUrl' => 'text NOT NULL COMMENT "URL that was launched"',
+                'itemHash' => 'string(64) NOT NULL COMMENT "Hash of itemType+itemId+itemUrl for uniqueness"',
+                'launchCount' => 'integer NOT NULL DEFAULT 1 COMMENT "Number of times launched"',
+                'lastLaunchedAt' => 'datetime NOT NULL COMMENT "Last launch timestamp"',
+                'firstLaunchedAt' => 'datetime NOT NULL COMMENT "First launch timestamp"',
+                'dateCreated' => 'datetime NOT NULL',
+                'dateUpdated' => 'datetime NOT NULL',
+            ])->execute();
+
+            // Create indexes
+            $db->createCommand()->createIndex(
+                'idx_user_launches',
+                '{{%launcher_user_history}}',
+                ['userId', 'launchCount', 'lastLaunchedAt'],
+                false
+            )->execute();
+
+            // Create unique constraint
+            $db->createCommand()->createIndex(
+                'uk_user_item',
+                '{{%launcher_user_history}}',
+                ['userId', 'itemHash'],
+                true
+            )->execute();
+
+            // Add foreign key constraint
+            $db->createCommand()->addForeignKey(
+                'fk_launcher_history_user',
+                '{{%launcher_user_history}}',
+                'userId',
+                '{{%users}}',
+                'id',
+                'CASCADE',
+                'CASCADE'
+            )->execute();
+
+            Craft::info('Launcher user history table created successfully', __METHOD__);
+
+        } catch (\Exception $e) {
+            Craft::error('Failed to create launcher user history table: ' . $e->getMessage(), __METHOD__);
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function setSettings(array $settings): void
     {
         parent::setSettings($settings);
