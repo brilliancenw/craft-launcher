@@ -11,7 +11,7 @@ use yii\console\ExitCode;
 /**
  * Launcher console commands
  */
-class LauncherController extends Controller
+class DefaultController extends Controller
 {
     /**
      * Check the status of the user history table
