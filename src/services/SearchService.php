@@ -25,67 +25,66 @@ class SearchService extends Component
     public function browseContentType(string $contentType): array
     {
         $settings = Launcher::$plugin->getSettings();
-        $results = [];
 
         switch ($contentType) {
             case 'entries':
                 if ($settings->searchableTypes['entries'] ?? false) {
-                    $results['entries'] = $this->getAllEntries($settings);
+                    return ['entries' => $this->getAllEntries($settings)];
                 }
                 break;
             case 'categories':
                 if ($settings->searchableTypes['categories'] ?? false) {
-                    $results['categories'] = $this->getAllCategories($settings);
+                    return ['categories' => $this->getAllCategories($settings)];
                 }
                 break;
             case 'assets':
                 if ($settings->searchableTypes['assets'] ?? false) {
-                    $results['assets'] = $this->getAllAssets($settings);
+                    return ['assets' => $this->getAllAssets($settings)];
                 }
                 break;
             case 'users':
                 if ($settings->searchableTypes['users'] ?? false) {
-                    $results['users'] = $this->getAllUsers($settings);
+                    return ['users' => $this->getAllUsers($settings)];
                 }
                 break;
             case 'globals':
                 if ($settings->searchableTypes['globals'] ?? false) {
-                    $results['globals'] = $this->getAllGlobals($settings);
+                    return ['globals' => $this->getAllGlobals($settings)];
                 }
                 break;
             case 'sections':
                 if ($settings->searchableTypes['sections'] ?? false) {
-                    $results['sections'] = $this->searchSections('');
+                    return ['sections' => $this->searchSections('')];
                 }
                 break;
             case 'entryTypes':
                 if ($settings->searchableTypes['entryTypes'] ?? false) {
-                    $results['entryTypes'] = $this->searchEntryTypes('');
+                    return ['entryTypes' => $this->searchEntryTypes('')];
                 }
                 break;
             case 'groups':
                 if ($settings->searchableTypes['categoryGroups'] ?? false) {
-                    $results['groups'] = $this->searchCategoryGroups('');
+                    return ['groups' => $this->searchCategoryGroups('')];
                 }
                 break;
             case 'volumes':
                 if ($settings->searchableTypes['assetVolumes'] ?? false) {
-                    $results['volumes'] = $this->searchAssetVolumes('');
+                    return ['volumes' => $this->searchAssetVolumes('')];
                 }
                 break;
             case 'fields':
                 if ($settings->searchableTypes['fields'] ?? false) {
-                    $results['fields'] = $this->searchFields('');
+                    return ['fields' => $this->searchFields('')];
                 }
                 break;
             case 'plugins':
                 if ($settings->searchableTypes['plugins'] ?? false) {
-                    $results['plugins'] = $this->searchPlugins('');
+                    return ['plugins' => $this->searchPlugins('')];
                 }
                 break;
         }
 
-        return $results;
+        return [];
     }
 
     public function search(string $query, array $context = []): array
@@ -535,6 +534,27 @@ class SearchService extends Component
                     'handle' => $plugin->handle,
                     'version' => $plugin->version,
                     'icon' => 'plug',
+                ];
+            }
+        }
+
+        return $results;
+    }
+
+    private function searchAssetVolumes(string $query): array
+    {
+        // In Craft 5, use getVolumes() instead of getAssets()
+        $volumes = Craft::$app->getVolumes()->getAllVolumes();
+        $results = [];
+
+        foreach ($volumes as $volume) {
+            if (empty($query) || stripos($volume->name, $query) !== false || stripos($volume->handle, $query) !== false) {
+                $results[] = [
+                    'title' => $volume->name,
+                    'url' => UrlHelper::cpUrl('settings/assets/volumes/' . $volume->id),
+                    'type' => 'Asset Volume',
+                    'handle' => $volume->handle,
+                    'icon' => 'photo',
                 ];
             }
         }

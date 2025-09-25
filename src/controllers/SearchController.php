@@ -43,16 +43,25 @@ class SearchController extends Controller
         
         // Handle browse mode requests
         if (!empty($browseType)) {
-            $results = Launcher::$plugin->search->browseContentType($browseType);
-            $formattedResults = Launcher::$plugin->launcher->formatResults($results);
-            
-            return $this->asJson([
-                'success' => true,
-                'results' => $formattedResults,
-                'isRecent' => false,
-                'isBrowse' => true,
-                'browseType' => $browseType,
-            ]);
+            try {
+                $results = Launcher::$plugin->search->browseContentType($browseType);
+                $formattedResults = Launcher::$plugin->launcher->formatResults($results);
+
+                return $this->asJson([
+                    'success' => true,
+                    'results' => $formattedResults,
+                    'isRecent' => false,
+                    'isBrowse' => true,
+                    'browseType' => $browseType,
+                ]);
+            } catch (\Exception $e) {
+                Craft::error('Browse error for type ' . $browseType . ': ' . $e->getMessage(), 'launcher');
+                return $this->asJson([
+                    'success' => false,
+                    'error' => 'Browse failed: ' . $e->getMessage(),
+                    'browseType' => $browseType,
+                ], 500);
+            }
         }
         
         if (empty($query)) {
