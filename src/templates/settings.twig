@@ -490,3 +490,70 @@
         disabled: isProjectConfigReadOnly,
     }) }}
 {% endif %}
+
+<hr>
+
+<h1>System Diagnostics</h1>
+<p>Information about the launcher's database setup and functionality.</p>
+
+{% set tableStatus = craft.launcher.history.getTableStatus() %}
+
+<div class="field">
+    <div class="heading">
+        <label>Database Status</label>
+        <div class="instructions">
+            <p>The launcher uses a database table to track your launch history and provide intelligent suggestions.</p>
+        </div>
+    </div>
+    <div class="input">
+        <table class="data">
+            <tbody>
+                <tr>
+                    <th class="light" style="width: 30%;">User History Table</th>
+                    <td>
+                        {% if tableStatus.exists %}
+                            <span class="status green" data-icon="check"></span> {{ tableStatus.message }}
+                        {% else %}
+                            <span class="status red" data-icon="alert"></span> {{ tableStatus.message }}
+
+                            <div style="margin-top: 10px; padding: 15px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px;">
+                                <h4 style="margin-top: 0; color: #dc2626;">Action Required</h4>
+                                <p><strong>The user history table is missing.</strong> This means launch history and popular items won't work properly.</p>
+
+                                <p><strong>To fix this issue:</strong></p>
+                                <ol>
+                                    <li>Try reinstalling the plugin via console:
+                                        <code style="display: block; margin: 5px 0; padding: 5px; background: #f9f9f9;">
+                                            php craft plugin/uninstall launcher<br>
+                                            php craft plugin/install launcher
+                                        </code>
+                                    </li>
+                                    <li>If that doesn't work, contact your developer or system administrator</li>
+                                    <li>The plugin will continue to work for searching, but history features will be disabled</li>
+                                </ol>
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th class="light">Plugin Version</th>
+                    <td>{{ craft.app.plugins.getPlugin('launcher').version }}</td>
+                </tr>
+                <tr>
+                    <th class="light">Craft Version</th>
+                    <td>{{ craft.app.version }}</td>
+                </tr>
+                <tr>
+                    <th class="light">History Tracking</th>
+                    <td>
+                        {% if settings.enableLaunchHistory %}
+                            <span class="status green" data-icon="check"></span> Enabled
+                        {% else %}
+                            <span class="status" data-icon="minus"></span> Disabled in settings
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
