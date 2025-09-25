@@ -141,19 +141,29 @@ function createLauncherTable() {
         }
     })
     .then(response => {
+        console.log('Response status:', response.status, response.statusText);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return response.json();
+        return response.text(); // Get as text first to debug
     })
-    .then(data => {
-        console.log('Response data:', data);
-        if (data.success) {
-            // Reload the utility to show the updated status
-            Craft.cp.displayNotice('User history table created successfully!');
-            location.reload();
-        } else {
-            Craft.cp.displayError(data.error || 'Failed to create table. Please try the console command.');
+    .then(text => {
+        console.log('Response text:', text);
+        try {
+            const data = JSON.parse(text);
+            console.log('Parsed response data:', data);
+            if (data && data.success) {
+                // Reload the utility to show the updated status
+                Craft.cp.displayNotice('User history table created successfully!');
+                setTimeout(() => location.reload(), 1000); // Small delay to show notice
+            } else {
+                Craft.cp.displayError(data?.error || 'Failed to create table. Please try the console command.');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        } catch (e) {
+            console.error('JSON parse error:', e, 'Raw text:', text);
+            Craft.cp.displayError('Invalid response from server. Check the console for details.');
             btn.disabled = false;
             btn.textContent = originalText;
         }
