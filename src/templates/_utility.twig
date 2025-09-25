@@ -1,0 +1,161 @@
+{% import "_includes/forms" as forms %}
+
+<div id="launcher-table-utility">
+    <h2>Launcher Database Status</h2>
+
+    <div class="field">
+        <div class="heading">
+            <label>User History Table</label>
+            <div class="instructions">
+                <p>The launcher uses this database table to track user launch history and provide intelligent search suggestions.</p>
+            </div>
+        </div>
+        <div class="input">
+            {% if tableStatus.exists %}
+                <div class="flex items-center">
+                    <span class="status green" data-icon="check"></span>
+                    <span>{{ tableStatus.message }}</span>
+                </div>
+
+                {% if stats %}
+                    <div style="margin-top: 15px;">
+                        <h4>Table Statistics</h4>
+                        <table class="data">
+                            <tbody>
+                                <tr>
+                                    <th class="light">Total History Records</th>
+                                    <td>{{ stats.totalRecords|number_format }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="light">Active Users</th>
+                                    <td>{{ stats.totalUsers|number_format }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="flex items-center" style="margin-bottom: 15px;">
+                    <span class="status red" data-icon="alert"></span>
+                    <span>{{ tableStatus.message }}</span>
+                </div>
+
+                <div style="padding: 15px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; margin-bottom: 15px;">
+                    <h4 style="margin-top: 0; color: #dc2626;">Action Required</h4>
+                    <p><strong>The user history table is missing.</strong> This means launch history and popular items won't work properly.</p>
+
+                    <p>The table can be created automatically using the button below, or you can:</p>
+                    <ul>
+                        <li>Reinstall the plugin: <code>php craft plugin/uninstall launcher && php craft plugin/install launcher</code></li>
+                        <li>Run the console command: <code>php craft launcher/default/create-table</code></li>
+                    </ul>
+                </div>
+
+                <button type="button"
+                        class="btn submit"
+                        id="create-table-btn"
+                        onclick="createLauncherTable()">
+                    Create User History Table
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="field">
+        <div class="heading">
+            <label>System Information</label>
+        </div>
+        <div class="input">
+            <table class="data">
+                <tbody>
+                    <tr>
+                        <th class="light" style="width: 30%;">Plugin Version</th>
+                        <td>{{ pluginVersion }}</td>
+                    </tr>
+                    <tr>
+                        <th class="light">Craft Version</th>
+                        <td>{{ craftVersion }}</td>
+                    </tr>
+                    <tr>
+                        <th class="light">History Tracking</th>
+                        <td>
+                            {% if settings.enableLaunchHistory %}
+                                <span class="status green" data-icon="check"></span> Enabled
+                            {% else %}
+                                <span class="status" data-icon="minus"></span> Disabled in settings
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if not tableStatus.exists %}
+                    <tr>
+                        <th class="light">Impact</th>
+                        <td style="color: #dc2626;">
+                            Search functionality works normally, but user history and popular items are disabled.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if not tableStatus.exists %}
+    <div class="field" style="margin-top: 30px;">
+        <div class="heading">
+            <label>Advanced Options</label>
+        </div>
+        <div class="input">
+            <p>If the automatic table creation fails, you can try these console commands:</p>
+            <div style="background: #f9f9f9; padding: 10px; border-radius: 4px; font-family: monospace;">
+                # Check status<br>
+                php craft launcher/default/status<br><br>
+                # Create table manually<br>
+                php craft launcher/default/create-table<br><br>
+                # View statistics (after table is created)<br>
+                php craft launcher/default/stats
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function createLauncherTable() {
+    const btn = document.getElementById('create-table-btn');
+    const originalText = btn.textContent;
+
+    btn.disabled = true;
+    btn.textContent = 'Creating Table...';
+
+    // Make AJAX request to create the table
+    fetch('{{ actionUrl('launcher/utility/create-table') }}', {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': '{{ csrfToken }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the utility to show the updated status
+            Craft.cp.displayNotice('User history table created successfully!');
+            location.reload();
+        } else {
+            Craft.cp.displayError(data.error || 'Failed to create table. Please try the console command.');
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Craft.cp.displayError('Network error. Please try the console command.');
+        btn.disabled = false;
+        btn.textContent = originalText;
+    });
+}
+</script>
