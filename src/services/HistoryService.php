@@ -16,13 +16,65 @@ use craft\helpers\Db;
  */
 class HistoryService extends Component
 {
+    private ?bool $_tableExists = null;
+
+    /**
+     * Check if the launcher_user_history table exists
+     */
+    public function tableExists(): bool
+    {
+        if ($this->_tableExists === null) {
+            try {
+                $tableSchema = Craft::$app->getDb()->schema->getTableSchema('{{%launcher_user_history}}');
+                $this->_tableExists = ($tableSchema !== null);
+
+                if (!$this->_tableExists) {
+                    Craft::warning('Launcher user history table does not exist', __METHOD__);
+                }
+            } catch (\Exception $e) {
+                Craft::error('Error checking for launcher user history table: ' . $e->getMessage(), __METHOD__);
+                $this->_tableExists = false;
+            }
+        }
+
+        return $this->_tableExists;
+    }
+
+    /**
+     * Get table status with diagnostic information
+     */
+    public function getTableStatus(): array
+    {
+        $exists = $this->tableExists();
+
+        $status = [
+            'exists' => $exists,
+            'message' => $exists ? 'Table exists and is ready' : 'Table is missing',
+        ];
+
+        if (!$exists) {
+            $status['actions'] = [
+                'Reinstall the plugin: php craft plugin/uninstall launcher && php craft plugin/install launcher',
+                'Or run the manual table creation method',
+                'Contact support if the issue persists'
+            ];
+        }
+
+        return $status;
+    }
+
     /**
      * Record a launch for the current user
      */
     public function recordLaunch(array $item): bool
     {
+        // Check if table exists first
+        if (!$this->tableExists()) {
+            return false;
+        }
+
         $settings = Launcher::$plugin->getSettings();
-        
+
         // Check if history tracking is enabled
         if (!($settings->enableLaunchHistory ?? true)) {
             return false;
@@ -93,6 +145,11 @@ class HistoryService extends Component
      */
     public function getPopularItems(int $limit = 10): array
     {
+        // Check if table exists first
+        if (!$this->tableExists()) {
+            return [];
+        }
+
         $user = Craft::$app->getUser()->getIdentity();
         if (!$user) {
             return [];
@@ -140,6 +197,11 @@ class HistoryService extends Component
      */
     public function clearUserHistory(): bool
     {
+        // Check if table exists first
+        if (!$this->tableExists()) {
+            return false;
+        }
+
         $user = Craft::$app->getUser()->getIdentity();
         if (!$user) {
             return false;
@@ -164,6 +226,11 @@ class HistoryService extends Component
      */
     public function getUserStats(): array
     {
+        // Check if table exists first
+        if (!$this->tableExists()) {
+            return [];
+        }
+
         $user = Craft::$app->getUser()->getIdentity();
         if (!$user) {
             return [];
@@ -191,6 +258,11 @@ class HistoryService extends Component
      */
     public function removeHistoryItem(string $itemHash): bool
     {
+        // Check if table exists first
+        if (!$this->tableExists()) {
+            return false;
+        }
+
         $user = Craft::$app->getUser()->getIdentity();
         if (!$user) {
             return false;

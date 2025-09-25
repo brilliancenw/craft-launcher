@@ -20,6 +20,7 @@ use craft\events\RegisterCpNavItemsEvent;
 use craft\events\RegisterTemplateRootsEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\events\RegisterUrlRulesEvent;
+use craft\console\Application as ConsoleApplication;
 use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
 use craft\web\twig\variables\Cp;
@@ -66,6 +67,11 @@ class Launcher extends Plugin
 
         // Handle project config changes
         $this->attachProjectConfigEventListeners();
+
+        // Register console commands
+        if (Craft::$app instanceof ConsoleApplication) {
+            $this->controllerNamespace = 'brilliance\\launcher\\console\\controllers';
+        }
 
         if (Craft::$app->getRequest()->getIsCpRequest()) {
             Event::on(
@@ -406,6 +412,15 @@ class Launcher extends Plugin
 
     protected function settingsHtml(): ?string
     {
+        // Check table status and show notification if needed
+        $tableStatus = $this->history->getTableStatus();
+        if (!$tableStatus['exists']) {
+            Craft::$app->getSession()->setFlash('launcher-table-missing',
+                'The Launcher user history table is missing. Launch history and popular items features will not work. ' .
+                'Try reinstalling the plugin or contact your developer.'
+            );
+        }
+
         return Craft::$app->getView()->renderTemplate(
             'launcher/settings',
             [
