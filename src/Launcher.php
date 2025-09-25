@@ -8,6 +8,7 @@ use brilliance\launcher\services\LauncherService;
 use brilliance\launcher\services\SearchService;
 use brilliance\launcher\services\HistoryService;
 use brilliance\launcher\services\UserPreferenceService;
+use brilliance\launcher\utilities\LauncherTableUtility;
 
 use Craft;
 use craft\base\Model;
@@ -20,7 +21,9 @@ use craft\events\RegisterCpNavItemsEvent;
 use craft\events\RegisterTemplateRootsEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\events\RegisterUrlRulesEvent;
+use craft\events\RegisterComponentTypesEvent;
 use craft\console\Application as ConsoleApplication;
+use craft\services\Utilities;
 use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
 use craft\web\twig\variables\Cp;
@@ -140,6 +143,15 @@ class Launcher extends Plugin
             View::EVENT_REGISTER_CP_TEMPLATE_ROOTS,
             function (RegisterTemplateRootsEvent $e) {
                 $e->roots[$this->id] = $this->getBasePath() . DIRECTORY_SEPARATOR . 'templates';
+            }
+        );
+
+        // Register utilities
+        Event::on(
+            Utilities::class,
+            Utilities::EVENT_REGISTER_UTILITIES,
+            function (RegisterComponentTypesEvent $event) {
+                $event->types[] = LauncherTableUtility::class;
             }
         );
 
