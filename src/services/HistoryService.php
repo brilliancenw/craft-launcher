@@ -19,6 +19,14 @@ class HistoryService extends Component
     private ?bool $_tableExists = null;
 
     /**
+     * Clear the table existence cache
+     */
+    public function clearTableCache(): void
+    {
+        $this->_tableExists = null;
+    }
+
+    /**
      * Check if the launcher_user_history table exists
      */
     public function tableExists(): bool
