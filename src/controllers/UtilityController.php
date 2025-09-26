@@ -39,10 +39,9 @@ class UtilityController extends Controller
             Craft::info('Starting table creation via utility', __METHOD__);
 
             // Create the table using the updated method with correct column sizes
-            Launcher::$plugin->createUserHistoryTable();
+            $success = Launcher::$plugin->createUserHistoryTable();
 
-            // Verify the table was created
-            if ($historyService->tableExists()) {
+            if ($success) {
                 // Clear the table existence cache
                 $historyService->clearTableCache();
 
@@ -55,7 +54,7 @@ class UtilityController extends Controller
             } else {
                 return $this->asJson([
                     'success' => false,
-                    'error' => 'Failed to create table using migration.'
+                    'error' => 'Failed to create table. Check the logs for more details.'
                 ]);
             }
 
