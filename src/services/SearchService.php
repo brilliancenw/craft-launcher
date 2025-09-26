@@ -259,13 +259,16 @@ class SearchService extends Component
 
         // Add entries found by content search
         foreach ($entries as $entry) {
+            $section = $entry->getSection();
+            $sectionName = $section ? $section->name : 'Unknown Section';
+
             $foundEntryIds[] = $entry->id;
             $results[] = [
                 'id' => $entry->id,
                 'title' => $entry->title,
                 'url' => $entry->getCpEditUrl(),
                 'type' => 'Entry',
-                'section' => $entry->getSection()->name,
+                'section' => $sectionName,
                 'status' => $entry->getStatus(),
                 'icon' => 'newspaper',
             ];
@@ -317,12 +320,15 @@ class SearchService extends Component
             foreach ($authoredEntries as $entry) {
                 if (!in_array($entry->id, $foundEntryIds)) {
                     $author = $entry->getAuthor();
+                    $section = $entry->getSection();
+                    $sectionName = $section ? $section->name : 'Unknown Section';
+
                     $results[] = [
                         'id' => $entry->id,
                         'title' => $entry->title,
                         'url' => $entry->getCpEditUrl(),
                         'type' => 'Entry',
-                        'section' => $entry->getSection()->name,
+                        'section' => $sectionName,
                         'status' => $entry->getStatus(),
                         'icon' => 'newspaper',
                         'author' => $author ? $author->getFriendlyName() : null,
@@ -603,12 +609,15 @@ class SearchService extends Component
         $results = [];
 
         foreach ($entries as $entry) {
+            $section = $entry->getSection();
+            $sectionName = $section ? $section->name : 'Unknown Section';
+
             $results[] = [
                 'id' => $entry->id,
                 'title' => $entry->title,
                 'url' => $entry->getCpEditUrl(),
                 'type' => 'Entry',
-                'section' => $entry->getSection()->name,
+                'section' => $sectionName,
                 'status' => $entry->getStatus(),
                 'icon' => 'newspaper',
             ];

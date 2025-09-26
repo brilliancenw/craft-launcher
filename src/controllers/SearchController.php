@@ -278,7 +278,8 @@ class SearchController extends Controller
         }
 
         // Check if user can edit this entry
-        if (!Craft::$app->getUser()->checkPermission('editEntries:' . $entry->getSection()->uid)) {
+        $section = $entry->getSection();
+        if (!$section || !Craft::$app->getUser()->checkPermission('editEntries:' . $section->uid)) {
             return null;
         }
 
@@ -286,8 +287,8 @@ class SearchController extends Controller
         return [
             'id' => (int) $entryData['id'],
             'title' => $entry->title,
-            'sectionHandle' => $entry->getSection()->handle,
-            'typeHandle' => $entry->getType()->handle,
+            'sectionHandle' => $section->handle,
+            'typeHandle' => $entry->getType() ? $entry->getType()->handle : 'unknown',
             'editUrl' => $entry->getCpEditUrl()
         ];
     }

@@ -1,5 +1,20 @@
 # Changelog
 
+## [v1.0.6.2] - 2024-09-26
+
+### Fixed
+- **CRITICAL**: Fixed null reference error when entry sections are missing or deleted
+- **IMPROVED**: Added defensive null checks for `getSection()` calls in SearchService and SearchController
+- **ENHANCED**: Entry search now gracefully handles entries with missing section relationships
+- **ADDED**: Fallback "Unknown Section" display for entries without valid sections
+
+### Technical Improvements
+- **IMPROVED**: Robust error handling prevents search crashes from orphaned entries
+- **ENHANCED**: Better data validation in entry context validation
+- **ADDED**: Null safety checks for entry type relationships as well
+
+> **Search Fix**: This patch resolves search failures caused by entries that have lost their section relationships (e.g., when sections are deleted but entries remain). Search now works reliably in all scenarios.
+
 ## [v1.0.6.1] - 2024-09-26
 
 ### Fixed
