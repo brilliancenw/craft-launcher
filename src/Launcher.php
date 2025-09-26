@@ -612,14 +612,14 @@ class Launcher extends Plugin
     /**
      * Create the user history table if it doesn't exist (public method for manual table creation)
      */
-    public function createUserHistoryTable(): void
+    public function createUserHistoryTable(): bool
     {
         $db = Craft::$app->getDb();
 
         // Check if table already exists
         $tableSchema = $db->schema->getTableSchema('{{%launcher_user_history}}');
         if ($tableSchema !== null) {
-            return; // Table already exists
+            return true; // Table already exists
         }
 
         try {
@@ -667,9 +667,11 @@ class Launcher extends Plugin
             )->execute();
 
             Craft::info('Launcher user history table created successfully', __METHOD__);
+            return true;
 
         } catch (\Exception $e) {
             Craft::error('Failed to create launcher user history table: ' . $e->getMessage(), __METHOD__);
+            return false;
         }
     }
 
