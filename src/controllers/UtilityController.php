@@ -38,18 +38,11 @@ class UtilityController extends Controller
 
             Craft::info('Starting table creation via utility', __METHOD__);
 
-            // Create the table using the migration logic
-            // Capture output to prevent it from being sent to the browser
-            ob_start();
-            $migration = new \brilliance\launcher\migrations\Install();
-            $migration->db = Craft::$app->getDb();
+            // Create the table using the updated method with correct column sizes
+            Launcher::$plugin->createUserHistoryTable();
 
-            $result = $migration->safeUp();
-            $migrationOutput = ob_get_clean(); // Capture and clear the output
-
-            Craft::info('Migration output: ' . $migrationOutput, __METHOD__);
-
-            if ($result) {
+            // Verify the table was created
+            if ($historyService->tableExists()) {
                 // Clear the table existence cache
                 $historyService->clearTableCache();
 

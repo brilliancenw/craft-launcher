@@ -132,8 +132,8 @@ class Launcher extends Plugin
             Event::on(
                 View::class,
                 View::EVENT_BEFORE_RENDER_TEMPLATE,
-                function () {
-                    $this->injectFrontEndLauncher();
+                function ($event) {
+                    $this->injectFrontEndLauncher($event);
                 }
             );
         }
@@ -215,7 +215,7 @@ class Launcher extends Plugin
     /**
      * Inject launcher assets on the front-end if user has enabled it
      */
-    protected function injectFrontEndLauncher(): void
+    protected function injectFrontEndLauncher($event = null): void
     {
         // Security check: Only inject if user is authenticated
         if (!Craft::$app->getUser()->getIdentity()) {
@@ -263,7 +263,8 @@ class Launcher extends Plugin
         $openInNewTab = $this->userPreference->isFrontEndNewTabEnabled();
 
         // Get current entry context if available
-        $contextScript = $this->getFrontEndContextScript();
+        $context = $this->getFrontEndContext($event);
+        $contextJson = json_encode($context);
 
         $js = <<<JS
         // Front-end Launcher initialization
@@ -280,10 +281,9 @@ class Launcher extends Plugin
                     assetUrl: '$assetUrl',
                     selectResultModifier: '{$settings->selectResultModifier}',
                     isFrontEnd: true,
-                    openInNewTab: " . ($openInNewTab ? 'true' : 'false') . "
+                    openInNewTab: " . ($openInNewTab ? 'true' : 'false') . ",
+                    frontEndContext: $contextJson
                 });
-
-                $contextScript
             }
         });
         JS;
@@ -292,33 +292,182 @@ class Launcher extends Plugin
     }
 
     /**
-     * Get context-aware script for front-end launcher
+     * Get context data for front-end launcher
      */
-    protected function getFrontEndContextScript(): string
+    protected function getFrontEndContext($event = null): array
     {
         $context = [];
 
-        // Try to get current entry context
-        if (Craft::$app->has('elements')) {
-            $entry = Craft::$app->getView()->getTwig()->getGlobals()['entry'] ?? null;
+        // Try to get current element context from template variables first (more reliable)
+        $templateVars = $event->variables ?? [];
 
+        // Check for Entry/Single in template variables
+        $entry = $templateVars['entry'] ?? null;
+        if ($entry && isset($entry->id)) {
+            $context['currentElement'] = [
+                'id' => $entry->id,
+                'title' => $entry->title,
+                'type' => 'Entry',
+                'section' => $entry->section->handle ?? null,
+                'editUrl' => $entry->getCpEditUrl()
+            ];
+        }
+
+        // Check for Category in template variables
+        if (!isset($context['currentElement'])) {
+            $category = $templateVars['category'] ?? null;
+            if ($category && isset($category->id)) {
+                $context['currentElement'] = [
+                    'id' => $category->id,
+                    'title' => $category->title,
+                    'type' => 'Category',
+                    'group' => $category->group->handle ?? null,
+                    'editUrl' => $category->getCpEditUrl()
+                ];
+            }
+        }
+
+        // Check for Asset in template variables
+        if (!isset($context['currentElement'])) {
+            $asset = $templateVars['asset'] ?? null;
+            if ($asset && isset($asset->id)) {
+                $context['currentElement'] = [
+                    'id' => $asset->id,
+                    'title' => $asset->title ?: $asset->filename,
+                    'type' => 'Asset',
+                    'volume' => $asset->volume->handle ?? null,
+                    'editUrl' => $asset->getCpEditUrl()
+                ];
+            }
+        }
+
+        // Check for User in template variables
+        if (!isset($context['currentElement'])) {
+            $user = $templateVars['user'] ?? null;
+            if ($user && isset($user->id) && $user->id != Craft::$app->getUser()->getId()) {
+                $context['currentElement'] = [
+                    'id' => $user->id,
+                    'title' => $user->fullName ?: $user->username,
+                    'type' => 'User',
+                    'editUrl' => $user->getCpEditUrl()
+                ];
+            }
+        }
+
+        // Check for Commerce Product in template variables (if Commerce is installed)
+        if (!isset($context['currentElement']) && class_exists('craft\commerce\elements\Product')) {
+            $product = $templateVars['product'] ?? null;
+            if ($product && isset($product->id)) {
+                $context['currentElement'] = [
+                    'id' => $product->id,
+                    'title' => $product->title,
+                    'type' => 'Product',
+                    'editUrl' => $product->getCpEditUrl()
+                ];
+            }
+        }
+
+        // Check for Global Set in template variables
+        if (!isset($context['currentElement'])) {
+            $globalSet = $templateVars['globalSet'] ?? null;
+            if ($globalSet && isset($globalSet->id)) {
+                $context['currentElement'] = [
+                    'id' => $globalSet->id,
+                    'title' => $globalSet->name,
+                    'type' => 'Global',
+                    'editUrl' => $globalSet->getCpEditUrl()
+                ];
+            }
+        }
+
+        // Fallback: Try to get current element context from Twig globals (less reliable timing)
+        if (!isset($context['currentElement']) && Craft::$app->has('elements')) {
+            $twigGlobals = Craft::$app->getView()->getTwig()->getGlobals();
+
+            // Check for Entry/Single
+            $entry = $twigGlobals['entry'] ?? null;
             if ($entry && isset($entry->id)) {
-                $context['currentEntry'] = [
+                $context['currentElement'] = [
                     'id' => $entry->id,
                     'title' => $entry->title,
+                    'type' => 'Entry',
                     'sectionHandle' => $entry->section->handle ?? null,
                     'typeHandle' => $entry->type->handle ?? null,
                     'editUrl' => $entry->getCpEditUrl()
                 ];
             }
+
+            // Check for Category
+            if (!isset($context['currentElement'])) {
+                $category = $twigGlobals['category'] ?? null;
+                if ($category && isset($category->id)) {
+                    $context['currentElement'] = [
+                        'id' => $category->id,
+                        'title' => $category->title,
+                        'type' => 'Category',
+                        'groupHandle' => $category->group->handle ?? null,
+                        'editUrl' => $category->getCpEditUrl()
+                    ];
+                }
+            }
+
+            // Check for Asset
+            if (!isset($context['currentElement'])) {
+                $asset = $twigGlobals['asset'] ?? null;
+                if ($asset && isset($asset->id)) {
+                    $context['currentElement'] = [
+                        'id' => $asset->id,
+                        'title' => $asset->title ?: $asset->filename,
+                        'type' => 'Asset',
+                        'volumeHandle' => $asset->volume->handle ?? null,
+                        'editUrl' => $asset->getCpEditUrl()
+                    ];
+                }
+            }
+
+            // Check for User
+            if (!isset($context['currentElement'])) {
+                $user = $twigGlobals['user'] ?? null;
+                if ($user && isset($user->id) && $user->id != Craft::$app->getUser()->getId()) {
+                    $context['currentElement'] = [
+                        'id' => $user->id,
+                        'title' => $user->fullName ?: $user->username,
+                        'type' => 'User',
+                        'editUrl' => $user->getCpEditUrl()
+                    ];
+                }
+            }
+
+            // Check for Commerce Product (if Commerce is installed)
+            if (!isset($context['currentElement']) && class_exists('craft\commerce\elements\Product')) {
+                $product = $twigGlobals['product'] ?? null;
+                if ($product && isset($product->id)) {
+                    $context['currentElement'] = [
+                        'id' => $product->id,
+                        'title' => $product->title,
+                        'type' => 'Product',
+                        'typeHandle' => $product->type->handle ?? null,
+                        'editUrl' => $product->getCpEditUrl()
+                    ];
+                }
+            }
+
+            // Check for Global Set
+            if (!isset($context['currentElement'])) {
+                $globalSet = $twigGlobals['globalSet'] ?? null;
+                if ($globalSet && isset($globalSet->id)) {
+                    $context['currentElement'] = [
+                        'id' => $globalSet->id,
+                        'title' => $globalSet->name,
+                        'type' => 'GlobalSet',
+                        'handle' => $globalSet->handle,
+                        'editUrl' => $globalSet->getCpEditUrl()
+                    ];
+                }
+            }
         }
 
-        if (empty($context)) {
-            return '';
-        }
-
-        $contextJson = json_encode($context);
-        return "window.LauncherPlugin.setFrontEndContext($contextJson);";
+        return $context;
     }
 
     /**
@@ -542,6 +691,41 @@ class Launcher extends Plugin
                 $this->getSettings()->toArray(),
                 'Update Launcher plugin settings'
             );
+        }
+    }
+
+    /**
+     * Clean up user preferences on plugin uninstall
+     */
+    public function beforeUninstall(): void
+    {
+        parent::beforeUninstall();
+
+        // Clear launcher preferences from all users
+        $db = Craft::$app->getDb();
+
+        try {
+            // Remove launcher-related preferences from all users
+            $db->createCommand()
+                ->update(
+                    '{{%users}}',
+                    [
+                        'preferences' => new \yii\db\Expression("JSON_REMOVE(preferences, '$.launcher_frontend_enabled', '$.launcher_frontend_new_tab')")
+                    ],
+                    [
+                        'and',
+                        ['not', ['preferences' => null]],
+                        ['or',
+                            'JSON_EXTRACT(preferences, "$.launcher_frontend_enabled") IS NOT NULL',
+                            'JSON_EXTRACT(preferences, "$.launcher_frontend_new_tab") IS NOT NULL'
+                        ]
+                    ]
+                )
+                ->execute();
+
+            Craft::info('Cleared launcher user preferences on uninstall', __METHOD__);
+        } catch (\Exception $e) {
+            Craft::warning('Failed to clear launcher user preferences on uninstall: ' . $e->getMessage(), __METHOD__);
         }
     }
 }
