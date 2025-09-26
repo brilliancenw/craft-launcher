@@ -82,6 +82,9 @@ class SearchService extends Component
                     return ['plugins' => $this->searchPlugins('')];
                 }
                 break;
+            case 'settings':
+                return ['settings' => $this->getAllStaticSettings()];
+                break;
         }
 
         return [];
@@ -183,6 +186,7 @@ class SearchService extends Component
             foreach ($editTerms as $term) {
                 if (stripos($term, $queryLower) === 0 || stripos($queryLower, $term) === 0) {
                     $results[] = [
+                        'id' => $entry['id'],
                         'title' => 'Edit this page',
                         'url' => $entry['editUrl'],
                         'type' => 'Context Action',
@@ -200,6 +204,7 @@ class SearchService extends Component
             foreach ($detailTerms as $term) {
                 if (stripos($term, $queryLower) === 0 || stripos($queryLower, $term) === 0) {
                     $results[] = [
+                        'id' => $entry['id'],
                         'title' => 'View entry details',
                         'url' => $entry['editUrl'],
                         'type' => 'Context Action',
@@ -449,6 +454,7 @@ class SearchService extends Component
         foreach ($sections as $section) {
             if (stripos($section->name, $query) !== false || stripos($section->handle, $query) !== false) {
                 $results[] = [
+                    'id' => $section->id,
                     'title' => $section->name,
                     'url' => UrlHelper::cpUrl('settings/sections/' . $section->id),
                     'type' => 'Section',
@@ -471,6 +477,7 @@ class SearchService extends Component
             foreach ($entryTypes as $entryType) {
                 if (stripos($entryType->name, $query) !== false || stripos($entryType->handle, $query) !== false) {
                     $results[] = [
+                        'id' => $entryType->id,
                         'title' => $entryType->name,
                         'url' => UrlHelper::cpUrl('settings/entry-types/' . $entryType->id),
                         'type' => 'Entry Type',
@@ -493,6 +500,7 @@ class SearchService extends Component
         foreach ($groups as $group) {
             if (stripos($group->name, $query) !== false || stripos($group->handle, $query) !== false) {
                 $results[] = [
+                    'id' => $group->id,
                     'title' => $group->name,
                     'url' => UrlHelper::cpUrl('settings/categories/' . $group->id),
                     'type' => 'Category Group',
@@ -513,6 +521,7 @@ class SearchService extends Component
         foreach ($fields as $field) {
             if (stripos($field->name, $query) !== false || stripos($field->handle, $query) !== false) {
                 $results[] = [
+                    'id' => $field->id,
                     'title' => $field->name,
                     'url' => UrlHelper::cpUrl('settings/fields/edit/' . $field->id),
                     'type' => 'Field',
@@ -534,6 +543,7 @@ class SearchService extends Component
         foreach ($plugins as $plugin) {
             if (stripos($plugin->name, $query) !== false || stripos($plugin->handle, $query) !== false) {
                 $results[] = [
+                    'id' => $plugin->handle, // Plugins use handle as identifier
                     'title' => $plugin->name,
                     'url' => UrlHelper::cpUrl('settings/plugins/' . $plugin->handle),
                     'type' => 'Plugin',
@@ -556,6 +566,7 @@ class SearchService extends Component
         foreach ($volumes as $volume) {
             if (empty($query) || stripos($volume->name, $query) !== false || stripos($volume->handle, $query) !== false) {
                 $results[] = [
+                    'id' => $volume->id,
                     'title' => $volume->name,
                     'url' => UrlHelper::cpUrl('settings/assets/volumes/' . $volume->id),
                     'type' => 'Asset Volume',
@@ -715,78 +726,93 @@ class SearchService extends Component
         // Define static settings destinations with their search terms
         $staticDestinations = [
             [
+                'handle' => 'general',
                 'title' => 'General',
                 'url' => UrlHelper::cpUrl('settings/general'),
                 'searchTerms' => ['general', 'settings', 'site', 'system'],
             ],
             [
+                'handle' => 'sites',
                 'title' => 'Sites',
                 'url' => UrlHelper::cpUrl('settings/sites'),
                 'searchTerms' => ['sites', 'site', 'multisite', 'locale'],
             ],
             [
+                'handle' => 'routes',
                 'title' => 'Routes',
                 'url' => UrlHelper::cpUrl('settings/routes'),
                 'searchTerms' => ['routes', 'routing', 'url', 'dynamic'],
             ],
             [
+                'handle' => 'users',
                 'title' => 'Users',
                 'url' => UrlHelper::cpUrl('settings/users'),
                 'searchTerms' => ['users', 'user', 'accounts', 'permissions'],
             ],
             [
+                'handle' => 'addresses',
                 'title' => 'Addresses',
                 'url' => UrlHelper::cpUrl('addresses'),
                 'searchTerms' => ['addresses', 'address', 'location', 'billing', 'shipping'],
             ],
             [
+                'handle' => 'email',
                 'title' => 'Email',
                 'url' => UrlHelper::cpUrl('settings/email'),
                 'searchTerms' => ['email', 'mail', 'smtp', 'notifications'],
             ],
             [
+                'handle' => 'plugins',
                 'title' => 'Plugins',
                 'url' => UrlHelper::cpUrl('settings/plugins'),
                 'searchTerms' => ['plugins', 'plugin', 'extensions', 'addons'],
             ],
             [
+                'handle' => 'sections',
                 'title' => 'Sections',
                 'url' => UrlHelper::cpUrl('settings/sections'),
                 'searchTerms' => ['sections', 'section', 'content structure'],
             ],
             [
+                'handle' => 'entry-types',
                 'title' => 'Entry Types',
                 'url' => UrlHelper::cpUrl('settings/entry-types'),
                 'searchTerms' => ['entry types', 'entry', 'types', 'content types'],
             ],
             [
+                'handle' => 'fields',
                 'title' => 'Fields',
                 'url' => UrlHelper::cpUrl('settings/fields'),
                 'searchTerms' => ['fields', 'field', 'custom fields'],
             ],
             [
+                'handle' => 'globals',
                 'title' => 'Globals',
                 'url' => UrlHelper::cpUrl('settings/globals'),
                 'searchTerms' => ['globals', 'global', 'global sets', 'site wide'],
             ],
             [
+                'handle' => 'categories',
                 'title' => 'Categories',
                 'url' => UrlHelper::cpUrl('settings/categories'),
                 'searchTerms' => ['categories', 'category', 'taxonomy', 'groups'],
             ],
             [
+                'handle' => 'tags',
                 'title' => 'Tags',
                 'url' => UrlHelper::cpUrl('settings/tags'),
                 'searchTerms' => ['tags', 'tag', 'tagging', 'labels'],
             ],
             [
+                'handle' => 'assets',
                 'title' => 'Assets',
                 'url' => UrlHelper::cpUrl('settings/assets'),
                 'searchTerms' => ['assets', 'asset', 'asset settings', 'volumes'],
             ],
             [
+                'handle' => 'filesystems',
                 'title' => 'Filesystems',
-                'url' => UrlHelper::cpUrl('settings/fs'),
+                'url' => UrlHelper::cpUrl('settings/filesystems'),
                 'searchTerms' => ['filesystems', 'filesystem', 'storage', 'file storage'],
             ],
         ];
@@ -805,12 +831,130 @@ class SearchService extends Component
 
             if ($found) {
                 $results[] = [
+                    'id' => $destination['handle'],
                     'title' => $destination['title'],
                     'url' => $destination['url'],
                     'type' => 'Settings',
+                    'handle' => $destination['handle'],
                     'icon' => 'settings',
                 ];
             }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get all static settings pages for browse mode
+     */
+    private function getAllStaticSettings(): array
+    {
+        $results = [];
+
+        // Define static settings destinations with their search terms
+        $staticDestinations = [
+            [
+                'handle' => 'general',
+                'title' => 'General',
+                'url' => UrlHelper::cpUrl('settings/general'),
+                'searchTerms' => ['general', 'settings', 'site', 'system'],
+            ],
+            [
+                'handle' => 'sites',
+                'title' => 'Sites',
+                'url' => UrlHelper::cpUrl('settings/sites'),
+                'searchTerms' => ['sites', 'site', 'multisite', 'locale'],
+            ],
+            [
+                'handle' => 'routes',
+                'title' => 'Routes',
+                'url' => UrlHelper::cpUrl('settings/routes'),
+                'searchTerms' => ['routes', 'routing', 'url', 'dynamic'],
+            ],
+            [
+                'handle' => 'users',
+                'title' => 'Users',
+                'url' => UrlHelper::cpUrl('settings/users'),
+                'searchTerms' => ['users', 'user', 'accounts', 'permissions'],
+            ],
+            [
+                'handle' => 'addresses',
+                'title' => 'Addresses',
+                'url' => UrlHelper::cpUrl('addresses'),
+                'searchTerms' => ['addresses', 'address', 'location', 'billing', 'shipping'],
+            ],
+            [
+                'handle' => 'email',
+                'title' => 'Email',
+                'url' => UrlHelper::cpUrl('settings/email'),
+                'searchTerms' => ['email', 'mail', 'smtp', 'notifications'],
+            ],
+            [
+                'handle' => 'plugins',
+                'title' => 'Plugins',
+                'url' => UrlHelper::cpUrl('settings/plugins'),
+                'searchTerms' => ['plugins', 'plugin', 'extensions', 'addons'],
+            ],
+            [
+                'handle' => 'sections',
+                'title' => 'Sections',
+                'url' => UrlHelper::cpUrl('settings/sections'),
+                'searchTerms' => ['sections', 'section', 'content structure'],
+            ],
+            [
+                'handle' => 'entry-types',
+                'title' => 'Entry Types',
+                'url' => UrlHelper::cpUrl('settings/entry-types'),
+                'searchTerms' => ['entry types', 'entry', 'types', 'content types'],
+            ],
+            [
+                'handle' => 'fields',
+                'title' => 'Fields',
+                'url' => UrlHelper::cpUrl('settings/fields'),
+                'searchTerms' => ['fields', 'field', 'custom fields'],
+            ],
+            [
+                'handle' => 'globals',
+                'title' => 'Globals',
+                'url' => UrlHelper::cpUrl('settings/globals'),
+                'searchTerms' => ['globals', 'global', 'global sets', 'site wide'],
+            ],
+            [
+                'handle' => 'categories',
+                'title' => 'Categories',
+                'url' => UrlHelper::cpUrl('settings/categories'),
+                'searchTerms' => ['categories', 'category', 'taxonomy', 'groups'],
+            ],
+            [
+                'handle' => 'tags',
+                'title' => 'Tags',
+                'url' => UrlHelper::cpUrl('settings/tags'),
+                'searchTerms' => ['tags', 'tag', 'tagging', 'labels'],
+            ],
+            [
+                'handle' => 'assets',
+                'title' => 'Assets',
+                'url' => UrlHelper::cpUrl('settings/assets'),
+                'searchTerms' => ['assets', 'asset', 'asset settings', 'volumes'],
+            ],
+            [
+                'handle' => 'filesystems',
+                'title' => 'Filesystems',
+                'url' => UrlHelper::cpUrl('settings/filesystems'),
+                'searchTerms' => ['filesystems', 'filesystem', 'storage', 'file storage'],
+            ],
+        ];
+
+        // Return all static destinations for browse mode
+        foreach ($staticDestinations as $destination) {
+            $results[] = [
+                'id' => $destination['handle'],
+                'title' => $destination['title'],
+                'url' => $destination['url'],
+                'type' => 'Settings',
+                'handle' => $destination['handle'],
+                'icon' => 'settings',
+            ];
         }
 
         return $results;

@@ -99,7 +99,7 @@ Type `*` to enter browse mode and explore your content systematically:
 
 **Available browse categories:**
 - **Entries** - All entry content
-- **Categories** - Category items  
+- **Categories** - Category items
 - **Assets** - Media and files
 - **Users** - User accounts
 - **Global Sets** - Global content
@@ -109,6 +109,7 @@ Type `*` to enter browse mode and explore your content systematically:
 - **Asset Volumes** - Asset volume settings
 - **Fields** - Field definitions
 - **Plugins** - Plugin settings
+- **Settings** - System settings and configuration pages
 
 ### Launch History System
 
@@ -192,6 +193,8 @@ Once enabled, the launcher works the same way on your front-end as it does in th
 ### Front-end Features
 
 - **Context-aware Search**: When viewing an entry page, search for 'edit' to quickly edit the current page
+- **Smart Page Filtering**: Current page edit links are filtered out of popular items (no need to see "edit this page" when you're already on it)
+- **History Tracking**: Context actions like "Edit this page" are now tracked in your personal history for better productivity
 - **Full Search Access**: Search all content types you have permission to access
 - **Admin Navigation**: Quick access to settings pages and control panel areas
 - **Recent Items**: Access your recently used items from any page
@@ -277,6 +280,7 @@ Control which types of content appear in search results:
 - **Asset Volumes** - Asset storage configurations
 - **Fields** - Custom field definitions
 - **Plugins** - Installed plugin settings
+- **Settings** - System settings and configuration pages
 
 ### Commerce Settings
 
@@ -306,6 +310,36 @@ The launcher respects all existing Craft permissions:
 - The "Access Launcher" permission controls who can use the plugin
 - All element-level permissions are automatically enforced
 - Launch history is stored per-user and private
+
+## Recent Improvements
+
+### Version 1.1.0 Features
+
+#### **Enhanced History Tracking**
+- **Proper Item IDs**: All search results now include proper item IDs for accurate history tracking
+- **Settings Handles**: Static settings pages now use meaningful handles (e.g., "categories", "fields") instead of NULL values
+- **SHA-256 Support**: Updated database schema to support full SHA-256 hashes (64 characters) for better uniqueness
+- **Database Migrations**: Automatic migration to fix existing installations with incorrect column sizes
+
+#### **Improved Front-end Experience**
+- **Context Action History**: "Edit this page" and similar context actions are now tracked in personal history
+- **Smart Filtering**: Current page edit links are filtered out of history results when viewing that page
+- **Better UX**: No redundant "edit this page" suggestions when you're already on the page
+
+#### **Browse Mode Enhancements**
+- **Settings Browse**: Type `*` and select "Settings" to browse all system configuration pages
+- **Complete Coverage**: Browse mode now includes all 15+ settings areas (General, Email, Categories, etc.)
+- **Consistent Navigation**: All settings pages properly tracked with meaningful identifiers
+
+#### **Utility Improvements**
+- **Table Management**: New "Launcher" utility in Utilities menu for database table diagnostics
+- **Success Reporting**: Fixed utility feedback to properly report table creation success/failure
+- **Schema Validation**: Automatic validation of table structure and column sizes
+
+#### **Developer Experience**
+- **Better Debugging**: Improved error handling and logging for troubleshooting
+- **Migration Safety**: Safe database migrations that handle missing tables gracefully
+- **API Consistency**: All search results now have consistent data structures
 
 ## Advanced Features
 
@@ -367,10 +401,11 @@ The plugin creates one additional table for launch history tracking:
 ### `launcher_user_history`
 Stores per-user launch history data:
 - **userId**: References the user who performed the launch
-- **itemType**: Type of item (Entry, Section, User, etc.)
+- **itemType**: Type of item (Entry, Section, User, Settings, etc.)
+- **itemId**: Unique identifier for the specific item (entry ID, section ID, settings handle, etc.)
 - **itemTitle**: Display name of the item
 - **itemUrl**: Admin URL that was accessed
-- **itemHash**: Unique identifier for deduplication
+- **itemHash**: SHA-256 hash for uniqueness and deduplication (64 characters)
 - **launchCount**: Number of times the user has launched this item
 - **lastLaunchedAt**: Timestamp of most recent launch
 - **firstLaunchedAt**: Timestamp when first launched
@@ -395,7 +430,8 @@ Stores per-user launch history data:
 - **Launch history disabled**: Check that launch history is enabled in settings
 - **No usage data**: Use the launcher a few times to build up history data
 - **Clear caches**: Run `php craft clear-caches/all` and test again
-- **Database issues**: Verify the launcher_user_history table exists
+- **Database issues**: Verify the launcher_user_history table exists and has correct column sizes
+- **Table Recreation**: Use the "Launcher" utility in Utilities → Launcher to check table status and recreate if needed
 
 #### Commerce Search Not Working
 - **Commerce not installed**: Verify Craft Commerce is properly installed and enabled
