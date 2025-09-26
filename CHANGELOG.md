@@ -1,5 +1,21 @@
 # Changelog
 
+## [v1.0.5] - 2024-09-26
+
+### Added
+- **NEW**: Admin utility for database maintenance - manually add missing history table if needed
+
+### Fixed
+- **FIXED**: Missing database columns for personal history tracking - resolves migration errors on fresh installs
+- **FIXED**: Settings search reliability and performance improvements
+- **FIXED**: Consistent gear icon display across all admin settings results
+
+### Enhanced
+- **IMPROVED**: Database schema validation ensures proper table structure on all environments
+- **IMPROVED**: More reliable personal history data persistence
+
+> **Database Update**: This release includes automatic migration for missing database columns. If issues persist, use the new Admin utility to manually rebuild the history table.
+
 ## [v1.0.4] - 2024-09-14
 
 ### Added
