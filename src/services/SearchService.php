@@ -256,6 +256,7 @@ class SearchService extends Component
         foreach ($entries as $entry) {
             $foundEntryIds[] = $entry->id;
             $results[] = [
+                'id' => $entry->id,
                 'title' => $entry->title,
                 'url' => $entry->getCpEditUrl(),
                 'type' => 'Entry',
@@ -312,6 +313,7 @@ class SearchService extends Component
                 if (!in_array($entry->id, $foundEntryIds)) {
                     $author = $entry->getAuthor();
                     $results[] = [
+                        'id' => $entry->id,
                         'title' => $entry->title,
                         'url' => $entry->getCpEditUrl(),
                         'type' => 'Entry',
@@ -347,6 +349,7 @@ class SearchService extends Component
 
         foreach ($categories as $category) {
             $results[] = [
+                'id' => $category->id,
                 'title' => $category->title,
                 'url' => $category->getCpEditUrl(),
                 'type' => 'Category',
@@ -374,6 +377,7 @@ class SearchService extends Component
 
         foreach ($assets as $asset) {
             $results[] = [
+                'id' => $asset->id,
                 'title' => $asset->title ?: $asset->filename,
                 'url' => $asset->getCpEditUrl(),
                 'type' => 'Asset',
@@ -401,6 +405,7 @@ class SearchService extends Component
 
         foreach ($users as $user) {
             $results[] = [
+                'id' => $user->id,
                 'title' => $user->getFriendlyName() ?: '(No name provided)',
                 'url' => $user->getCpEditUrl(),
                 'type' => 'User',
@@ -422,6 +427,7 @@ class SearchService extends Component
         foreach ($globals as $global) {
             if (stripos($global->name, $query) !== false || stripos($global->handle, $query) !== false) {
                 $results[] = [
+                    'id' => $global->id,
                     'title' => $global->name,
                     'url' => $global->getCpEditUrl(),
                     'type' => 'Global Set',
@@ -587,6 +593,7 @@ class SearchService extends Component
 
         foreach ($entries as $entry) {
             $results[] = [
+                'id' => $entry->id,
                 'title' => $entry->title,
                 'url' => $entry->getCpEditUrl(),
                 'type' => 'Entry',
@@ -616,6 +623,7 @@ class SearchService extends Component
 
         foreach ($categories as $category) {
             $results[] = [
+                'id' => $category->id,
                 'title' => $category->title,
                 'url' => $category->getCpEditUrl(),
                 'type' => 'Category',
@@ -641,6 +649,7 @@ class SearchService extends Component
 
         foreach ($assets as $asset) {
             $results[] = [
+                'id' => $asset->id,
                 'title' => $asset->title ?: $asset->filename,
                 'url' => $asset->getCpEditUrl(),
                 'type' => 'Asset',
@@ -666,6 +675,7 @@ class SearchService extends Component
 
         foreach ($users as $user) {
             $results[] = [
+                'id' => $user->id,
                 'title' => $user->getFriendlyName() ?: '(No name provided)',
                 'url' => $user->getCpEditUrl(),
                 'type' => 'User',
@@ -685,6 +695,7 @@ class SearchService extends Component
 
         foreach ($globals as $global) {
             $results[] = [
+                'id' => $global->id,
                 'title' => $global->name,
                 'url' => $global->getCpEditUrl(),
                 'type' => 'Global Set',
@@ -832,6 +843,7 @@ class SearchService extends Component
                 Craft::info("Customer found - Title: '{$title}', Email: '{$customer->email}'", __METHOD__);
                 
                 $results[] = [
+                    'id' => $customer->id,
                     'title' => $title,
                     'url' => UrlHelper::cpUrl('commerce/customers/' . $customer->id),
                     'type' => 'Commerce Customer',
@@ -869,6 +881,7 @@ class SearchService extends Component
             $products = $productQuery->all();
             foreach ($products as $product) {
                 $results[] = [
+                    'id' => $product->id,
                     'title' => $product->title,
                     'url' => $product->getCpEditUrl(),
                     'type' => 'Commerce Product',
@@ -886,6 +899,7 @@ class SearchService extends Component
             foreach ($variants as $variant) {
                 $product = $variant->getProduct();
                 $results[] = [
+                    'id' => $variant->id,
                     'title' => $variant->title . ' (' . $product->title . ')',
                     'url' => $product->getCpEditUrl(),
                     'type' => 'Commerce Variant',
@@ -979,6 +993,7 @@ class SearchService extends Component
                 }
                 
                 $results[] = [
+                    'id' => $order->id,
                     'title' => 'Order #' . $order->number,
                     'url' => UrlHelper::cpUrl('commerce/orders/' . $order->id),
                     'type' => 'Commerce Order',

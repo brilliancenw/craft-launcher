@@ -118,12 +118,12 @@ class SearchController extends Controller
             $this->requirePostRequest();
 
             $item = Craft::$app->getRequest()->getBodyParam('item');
-            
+
             Craft::info('Navigation request received. Item: ' . json_encode($item), 'launcher');
         
         if ($item && isset($item['url'])) {
             Launcher::$plugin->launcher->addRecentItem($item);
-            
+
             // Record this launch in the user's history
             try {
                 $success = Launcher::$plugin->history->recordLaunch($item);
@@ -131,6 +131,7 @@ class SearchController extends Controller
             } catch (\Exception $e) {
                 Craft::error('Failed to record launch history: ' . $e->getMessage() . ' for item: ' . json_encode($item), 'launcher');
             }
+        } else {
         }
 
             return $this->asJson([
@@ -290,4 +291,5 @@ class SearchController extends Controller
             'editUrl' => $entry->getCpEditUrl()
         ];
     }
+
 }

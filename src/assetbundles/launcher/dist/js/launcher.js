@@ -26,6 +26,7 @@
 
             Object.assign(this.config, config);
             this.isFrontEnd = config.isFrontEnd || false;
+            this.frontEndContext = config.frontEndContext || null;
             this.createModal();
             this.bindEvents();
             this.isInitialized = true;
@@ -292,14 +293,20 @@
 
         displayResults: function(results, isRecent, data) {
             // Add "Edit this page" option for front-end context
-            if (this.isFrontEnd && this.frontEndContext && this.frontEndContext.currentEntry && !this.browseMode) {
-                const currentEntry = this.frontEndContext.currentEntry;
+            if (this.isFrontEnd && this.frontEndContext && this.frontEndContext.currentElement && !this.browseMode) {
+                const currentElement = this.frontEndContext.currentElement;
+                const currentEditUrl = currentElement.editUrl;
+
+                // Filter out any existing history items that match the current page's edit URL
+                results = results.filter(result => result.url !== currentEditUrl);
+
                 const contextResult = {
-                    title: '✏️ Edit this page: ' + currentEntry.title,
-                    url: currentEntry.editUrl,
-                    type: 'Entry',
-                    section: currentEntry.sectionHandle,
-                    icon: 'entries'
+                    title: currentElement.title, // Store clean title
+                    url: currentElement.editUrl,
+                    type: currentElement.type,
+                    section: currentElement.section || currentElement.group,
+                    icon: currentElement.type.toLowerCase(),
+                    isContextItem: true // Flag to prevent history tracking
                 };
                 results = [contextResult, ...results];
             }
@@ -346,7 +353,7 @@
                             ${iconSvg}
                         </div>
                         <div class="launcher-result-content">
-                            <div class="launcher-result-title">${result.title}</div>
+                            <div class="launcher-result-title">${result.isContextItem ? '✏️ Edit this page: ' + result.title : result.title}</div>
                             <div class="launcher-result-meta">
                                 <span class="launcher-result-type">${result.type}</span>
                                 ${result.section ? `<span class="launcher-result-section">${result.section}</span>` : ''}
@@ -447,6 +454,14 @@
             const actionUrl = this.config.navigateUrl || (typeof Craft !== 'undefined' ? Craft.getActionUrl('launcher/search/navigate') : null);
             const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
             const csrfTokenValue = this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : null);
+
+            // Skip history tracking for context items (current page edit links)
+            if (result.isContextItem) {
+                // Navigate directly without tracking
+                this.navigateToUrl(result.url);
+                this.closeModal();
+                return;
+            }
 
             if (!actionUrl) {
                 // If no navigate URL available, just navigate directly

@@ -76,8 +76,10 @@ class HistoryService extends Component
      */
     public function recordLaunch(array $item): bool
     {
+
         // Check if table exists first
         if (!$this->tableExists()) {
+            Craft::warning('Launch history table does not exist', 'launcher');
             return false;
         }
 
@@ -85,11 +87,13 @@ class HistoryService extends Component
 
         // Check if history tracking is enabled
         if (!($settings->enableLaunchHistory ?? true)) {
+            Craft::warning('Launch history is disabled in settings', 'launcher');
             return false;
         }
 
         $user = Craft::$app->getUser()->getIdentity();
         if (!$user) {
+            Craft::warning('No user logged in for launch history', 'launcher');
             return false;
         }
 
@@ -98,6 +102,7 @@ class HistoryService extends Component
         $now = Db::prepareDateForDb(new \DateTime());
 
         try {
+
             // Check if this item already exists for this user
             $existingRecord = (new Query())
                 ->select(['id', 'launchCount'])
@@ -110,7 +115,7 @@ class HistoryService extends Component
 
             if ($existingRecord) {
                 // Update existing record - increment count and update timestamp
-                Craft::$app->db->createCommand()
+                $result = Craft::$app->db->createCommand()
                     ->update('{{%launcher_user_history}}', [
                         'launchCount' => $existingRecord['launchCount'] + 1,
                         'lastLaunchedAt' => $now,
@@ -124,7 +129,7 @@ class HistoryService extends Component
                     ->execute();
             } else {
                 // Create new record
-                Craft::$app->db->createCommand()
+                $result = Craft::$app->db->createCommand()
                     ->insert('{{%launcher_user_history}}', [
                         'userId' => $userId,
                         'itemType' => $item['type'] ?? 'unknown',
