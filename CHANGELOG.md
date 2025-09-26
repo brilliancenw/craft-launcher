@@ -1,5 +1,33 @@
 # Changelog
 
+## [v1.0.6.1] - 2024-09-26
+
+### Fixed
+- **CRITICAL**: Fixed migration failure when launcher_user_history table doesn't exist
+- **IMPROVED**: Migration `m250925_181500_add_missing_history_columns` now safely handles all installation scenarios
+- **ENHANCED**: Added defensive table and column existence checks to prevent migration errors
+- **ADDED**: Automatic table creation if missing during migration process
+
+### Technical Improvements
+- **IMPROVED**: Idempotent migrations that can be run multiple times safely
+- **ENHANCED**: Better error handling for partial plugin installations
+- **ADDED**: Helper methods `addColumnIfNotExists()` and `dropColumnIfExists()` for robust migrations
+- **IMPROVED**: Data preservation during migration updates using COALESCE expressions
+
+> **Migration Fix**: This patch resolves installation issues where previous versions failed to create the launcher_user_history table, causing subsequent migrations to fail. The migration system is now fully resilient to various installation failure scenarios.
+
+## [v1.0.6] - 2024-09-26
+
+### Version Fix
+- **FIXED**: Corrected version mismatch issue from v1.0.5 where composer.json version didn't match git tag
+- **IMPROVED**: Ensures proper Packagist integration and package availability via Composer
+
+### Features from v1.0.5 (now properly released)
+- **NEW**: Admin utility for database maintenance - manually add missing history table if needed
+- **FIXED**: Missing database columns for personal history tracking
+- **IMPROVED**: Settings search reliability and performance improvements
+- **ENHANCED**: Database schema validation and consistent gear icon display
+
 ## [v1.0.5] - 2024-09-26
 
 ### Added
