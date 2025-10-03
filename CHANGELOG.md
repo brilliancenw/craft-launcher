@@ -1,5 +1,26 @@
 # Changelog
 
+## [v1.0.7] - 2025-10-03
+
+### Fixed
+- **CRITICAL**: Fixed settings page crash caused by unregistered Twig variable
+- **IMPROVED**: Added LauncherVariable class to properly expose plugin services to Twig templates
+- **ENHANCED**: Settings page now properly displays database table status diagnostics
+
+### Added
+- **NEW**: Direct link to Launcher utility when history table is missing
+- **IMPROVED**: Better user experience with clear call-to-action button for table creation
+- **ENHANCED**: More helpful error messaging when database table needs to be created
+
+### Technical Improvements
+- **ADDED**: Twig variable registration via `CraftVariable::EVENT_INIT`
+- **FIXED**: `craft.launcher.history.getTableStatus()` now accessible in templates
+- **IMPROVED**: Settings template with improved UI for table management
+
+> **Settings Page Fix**: This release resolves a critical issue where accessing the plugin settings page resulted in a Twig runtime error. The plugin's services are now properly exposed to the Twig environment, and users get clear guidance when the history table needs to be created.
+
+Thanks to @rauwebieten for reporting this issue!
+
 ## [v1.0.6.2] - 2024-09-26
 
 ### Fixed
