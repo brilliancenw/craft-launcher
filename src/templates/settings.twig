@@ -521,16 +521,21 @@
                                 <p><strong>The user history table is missing.</strong> This means launch history and popular items won't work properly.</p>
 
                                 <p><strong>To fix this issue:</strong></p>
-                                <ol>
-                                    <li>Try reinstalling the plugin via console:
-                                        <code style="display: block; margin: 5px 0; padding: 5px; background: #f9f9f9;">
-                                            php craft plugin/uninstall launcher<br>
-                                            php craft plugin/install launcher
-                                        </code>
-                                    </li>
-                                    <li>If that doesn't work, contact your developer or system administrator</li>
-                                    <li>The plugin will continue to work for searching, but history features will be disabled</li>
-                                </ol>
+                                <div style="margin: 15px 0;">
+                                    <a href="{{ url('utilities/launcher-table-manager') }}" class="btn submit">
+                                        Go to Launcher Utility to Create Table
+                                    </a>
+                                </div>
+
+                                <p style="margin-top: 15px;"><strong>Alternative method:</strong> Reinstall the plugin via console:</p>
+                                <code style="display: block; margin: 5px 0; padding: 5px; background: #f9f9f9;">
+                                    php craft plugin/uninstall launcher<br>
+                                    php craft plugin/install launcher
+                                </code>
+
+                                <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                                    <strong>Note:</strong> The plugin will continue to work for searching, but history features will be disabled until the table is created.
+                                </p>
                             </div>
                         {% endif %}
                     </td>

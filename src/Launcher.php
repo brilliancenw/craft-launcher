@@ -9,6 +9,7 @@ use brilliance\launcher\services\SearchService;
 use brilliance\launcher\services\HistoryService;
 use brilliance\launcher\services\UserPreferenceService;
 use brilliance\launcher\utilities\LauncherTableUtility;
+use brilliance\launcher\variables\LauncherVariable;
 
 use Craft;
 use craft\base\Model;
@@ -143,6 +144,17 @@ class Launcher extends Plugin
             View::EVENT_REGISTER_CP_TEMPLATE_ROOTS,
             function (RegisterTemplateRootsEvent $e) {
                 $e->roots[$this->id] = $this->getBasePath() . DIRECTORY_SEPARATOR . 'templates';
+            }
+        );
+
+        // Register Twig variable
+        Event::on(
+            CraftVariable::class,
+            CraftVariable::EVENT_INIT,
+            function (Event $event) {
+                /** @var CraftVariable $variable */
+                $variable = $event->sender;
+                $variable->set('launcher', LauncherVariable::class);
             }
         );
 
