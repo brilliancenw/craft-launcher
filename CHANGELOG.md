@@ -1,5 +1,20 @@
 # Changelog
 
+## [v1.0.9] - 2025-10-04
+
+### Critical Production Fix
+- **FIXED**: Welcome screen now works in production environments with read-only settings
+- **IMPROVED**: Created new database table for UI state management separate from plugin configuration
+- **ENHANCED**: First-run experience now persists correctly in all deployment environments
+
+### Technical Improvements
+- **ADDED**: `InterfaceService` for managing UI state data outside of plugin settings
+- **ADDED**: New database migration for `launcher_interface_settings` table
+- **IMPROVED**: Better separation of configuration vs. state data
+- **UPDATED**: Schema version bumped to 1.2.0 for migration trigger
+
+> **Production Environment Fix**: This release resolves a critical issue where the welcome screen would appear every time in production environments that use read-only plugin settings. The welcome screen dismissal is now stored in a dedicated database table instead of plugin settings, ensuring proper functionality in all environments.
+
 ## [v1.0.8] - 2025-10-03
 
 ### Fixed
