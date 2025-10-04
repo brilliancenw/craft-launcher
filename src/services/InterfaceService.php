@@ -3,6 +3,7 @@ namespace brilliance\launcher\services;
 
 use Craft;
 use craft\base\Component;
+use craft\db\Query;
 use craft\helpers\Json;
 
 /**
@@ -159,12 +160,12 @@ class InterfaceService extends Component
             return null;
         }
 
-        $query = Craft::$app->getDb()->createCommand()
+        $result = (new Query())
             ->select(['interfaceData', 'dateUpdated'])
             ->from(self::TABLE_NAME)
-            ->where(['settingKey' => $key, 'userId' => $userId]);
+            ->where(['settingKey' => $key, 'userId' => $userId])
+            ->one();
 
-        $result = $query->queryOne();
         return $result ?: null;
     }
 }
