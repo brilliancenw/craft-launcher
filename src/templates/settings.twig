@@ -2,6 +2,343 @@
 
 {% set isProjectConfigReadOnly = craft.app.projectConfig.readOnly %}
 
+{# First Run Welcome Screen #}
+{% if not settings.firstRunCompleted %}
+<div id="settings-launcher-welcome-overlay" class="launcher-welcome-overlay">
+    <div class="launcher-welcome-content">
+        <div class="launcher-welcome-header">
+            <h1>Welcome to Launcher!</h1>
+            <div style="position: absolute; top: 10px; right: 10px; background: #ff0000; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                VERSION: {{ "now"|date("Y-m-d H:i:s") }}
+            </div>
+        </div>
+
+        <div class="launcher-welcome-message">
+            <p class="launcher-welcome-intro">The team at <strong>Brilliance</strong> is thrilled to bring you this powerful search experience!</p>
+
+            <div class="launcher-welcome-features">
+                <div class="launcher-welcome-feature">
+                    <span class="launcher-welcome-icon">🚀</span>
+                    <h3>Lightning-Fast Search</h3>
+                    <p>Access everything in Craft with a single keystroke</p>
+                </div>
+                <div class="launcher-welcome-feature">
+                    <span class="launcher-welcome-icon">⚡</span>
+                    <h3>Smart & Intuitive</h3>
+                    <p>Learns from your usage to show what you need most</p>
+                </div>
+                <div class="launcher-welcome-feature">
+                    <span class="launcher-welcome-icon">💫</span>
+                    <h3>Fully Customizable</h3>
+                    <p>Configure shortcuts, search types, and more</p>
+                </div>
+            </div>
+
+            <p class="launcher-welcome-footer">
+                We're constantly improving Launcher. Have ideas? Found a bug? We'd love to hear from you!
+                <br>
+                <a href="https://github.com/brilliancenw/craft-launcher" target="_blank" class="launcher-welcome-link">Share your feedback on GitHub</a>
+            </p>
+        </div>
+
+        <button type="button" id="settings-launcher-welcome-dismiss" class="btn submit large">Let's Get Started!</button>
+    </div>
+
+    <canvas id="settings-launcher-confetti-canvas"></canvas>
+</div>
+
+<style>
+.launcher-welcome-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(102, 126, 234, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: launcher-fadeIn 0.5s ease-in-out;
+}
+
+.launcher-welcome-content {
+    background: white;
+    border-radius: 16px;
+    padding: 60px;
+    max-width: 800px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    position: relative;
+    z-index: 10001;
+    animation: launcher-slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.launcher-welcome-header h1 {
+    font-size: 48px;
+    font-weight: 700;
+    color: #667eea;
+    margin: 0 0 30px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.launcher-welcome-intro {
+    font-size: 20px;
+    color: #4a5568;
+    margin-bottom: 40px;
+    line-height: 1.6;
+}
+
+.launcher-welcome-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin: 40px 0;
+}
+
+.launcher-welcome-feature {
+    text-align: center;
+}
+
+.launcher-welcome-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 15px;
+    animation: launcher-bounce 2s infinite;
+}
+
+.launcher-welcome-feature:nth-child(2) .launcher-welcome-icon {
+    animation-delay: 0.2s;
+}
+
+.launcher-welcome-feature:nth-child(3) .launcher-welcome-icon {
+    animation-delay: 0.4s;
+}
+
+.launcher-welcome-feature h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 10px 0;
+}
+
+.launcher-welcome-feature p {
+    font-size: 14px;
+    color: #718096;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.launcher-welcome-footer {
+    font-size: 16px;
+    color: #4a5568;
+    margin-top: 40px;
+    line-height: 1.6;
+}
+
+.launcher-welcome-link {
+    color: #667eea;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 2px solid #667eea;
+    transition: all 0.2s;
+}
+
+.launcher-welcome-link:hover {
+    color: #764ba2;
+    border-bottom-color: #764ba2;
+}
+
+#settings-launcher-welcome-dismiss {
+    margin-top: 40px;
+    padding: 16px 48px;
+    font-size: 18px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#settings-launcher-welcome-dismiss:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+}
+
+#settings-launcher-confetti-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10002;
+}
+
+@keyframes launcher-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes launcher-slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes launcher-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.launcher-welcome-overlay.launcher-dismissing {
+    animation: launcher-fadeOut 0.5s ease-in-out forwards;
+}
+
+.launcher-welcome-overlay.launcher-dismissing .launcher-welcome-content {
+    animation: launcher-slideDown 0.5s ease-in-out forwards;
+}
+
+@keyframes launcher-fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes launcher-slideDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, searching for welcome screen elements...');
+
+    // Craft prefixes IDs with 'settings-' on settings pages
+    const overlay = document.getElementById('settings-launcher-welcome-overlay');
+    const dismissBtn = document.getElementById('settings-launcher-welcome-dismiss');
+    const canvas = document.getElementById('settings-launcher-confetti-canvas');
+
+    console.log('Found elements:', {overlay, dismissBtn, canvas});
+
+    if (!overlay || !dismissBtn || !canvas) {
+        console.error('Launcher welcome screen elements not found:', {overlay, dismissBtn, canvas});
+        return;
+    }
+
+    // Confetti animation
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const confettiPieces = [];
+    const confettiCount = 150;
+    const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
+
+    class ConfettiPiece {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height - canvas.height;
+            this.size = Math.random() * 8 + 4;
+            this.speedY = Math.random() * 3 + 2;
+            this.speedX = Math.random() * 2 - 1;
+            this.color = colors[Math.floor(Math.random() * colors.length)];
+            this.rotation = Math.random() * 360;
+            this.rotationSpeed = Math.random() * 10 - 5;
+        }
+
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            this.rotation += this.rotationSpeed;
+
+            if (this.y > canvas.height) {
+                this.y = -10;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation * Math.PI / 180);
+            ctx.fillStyle = this.color;
+            ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+            ctx.restore();
+        }
+    }
+
+    // Create confetti pieces
+    for (let i = 0; i < confettiCount; i++) {
+        confettiPieces.push(new ConfettiPiece());
+    }
+
+    // Animation loop
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confettiPieces.forEach(piece => {
+            piece.update();
+            piece.draw();
+        });
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    // Set the flag immediately so it persists on next save
+    const hiddenField = document.getElementById('settings-launcher-first-run-field');
+    if (hiddenField) {
+        hiddenField.value = '1';
+        console.log('Set firstRunCompleted flag to 1');
+    } else {
+        console.error('Hidden field not found');
+    }
+
+    // Dismiss button handler
+    dismissBtn.addEventListener('click', (e) => {
+        console.log('Dismiss button clicked!');
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Adding dismissing class to overlay');
+        overlay.classList.add('launcher-dismissing');
+        setTimeout(() => {
+            console.log('Removing overlay from DOM');
+            overlay.remove();
+        }, 500);
+    });
+
+    console.log('Welcome screen initialized successfully');
+});
+</script>
+{% endif %}
+
+{# Hidden field to preserve firstRunCompleted setting #}
+<input type="hidden" id="settings-launcher-first-run-field" name="settings[firstRunCompleted]" value="{{ settings.firstRunCompleted ? '1' : '' }}">
+
+{# Note: Craft auto-prefixes IDs in settings pages with 'settings-' #}
+
 {% if isProjectConfigReadOnly %}
     <div class="readable">
         <blockquote class="note">
