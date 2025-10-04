@@ -226,41 +226,19 @@ canvas[id*="launcher-confetti-canvas"] {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Launcher welcome script starting...');
-
-    // Craft auto-prefixes IDs - try multiple selector strategies
-    let allLauncherDivs = document.querySelectorAll('div[id*="launcher-welcome-overlay"]');
-    if (allLauncherDivs.length === 0) {
-        allLauncherDivs = document.querySelectorAll('.launcher-welcome-overlay');
-    }
+    // Find welcome screen elements (Craft auto-prefixes IDs)
+    const allLauncherDivs = document.querySelectorAll('div[id*="launcher-welcome-overlay"]');
     const overlay = allLauncherDivs.length > 0 ? allLauncherDivs[0] : null;
-    console.log('📦 Found overlay divs:', allLauncherDivs.length, overlay ? overlay.id : 'NONE');
 
-    let allDismissBtns = document.querySelectorAll('button[id*="launcher-welcome-dismiss"]');
-    if (allDismissBtns.length === 0) {
-        allDismissBtns = document.querySelectorAll('#launcher-welcome-dismiss');
-    }
+    const allDismissBtns = document.querySelectorAll('button[id*="launcher-welcome-dismiss"]');
     const dismissBtn = allDismissBtns.length > 0 ? allDismissBtns[0] : null;
-    console.log('🔘 Found dismiss buttons:', allDismissBtns.length, dismissBtn ? dismissBtn.id : 'NONE');
 
-    let allCanvases = document.querySelectorAll('canvas[id*="launcher-confetti-canvas"]');
-    if (allCanvases.length === 0) {
-        allCanvases = document.querySelectorAll('#launcher-confetti-canvas');
-    }
+    const allCanvases = document.querySelectorAll('canvas[id*="launcher-confetti-canvas"]');
     const canvas = allCanvases.length > 0 ? allCanvases[0] : null;
-    console.log('🎨 Found canvases:', allCanvases.length, canvas ? canvas.id : 'NONE');
-
-    // Debug: Show all elements that might be related
-    console.log('🔍 All divs with launcher in ID:', document.querySelectorAll('div[id*="launcher"]'));
-    console.log('🔍 All buttons with launcher in ID:', document.querySelectorAll('button[id*="launcher"]'));
-    console.log('🔍 All canvases:', document.querySelectorAll('canvas'));
 
     if (!overlay || !dismissBtn || !canvas) {
-        console.error('❌ Missing required elements:', {overlay: !!overlay, dismissBtn: !!dismissBtn, canvas: !!canvas});
         return;
     }
-
-    console.log('✅ All elements found, setting up welcome screen...');
 
     // Confetti animation
     const ctx = canvas.getContext('2d');
@@ -347,81 +325,30 @@ document.addEventListener('DOMContentLoaded', function() {
         canvas.height = window.innerHeight;
     });
 
-    // Debug button state
-    console.log('🔍 Button element details:', dismissBtn);
-    console.log('🔍 Button computed styles:', window.getComputedStyle(dismissBtn));
-    console.log('🔍 Button parent:', dismissBtn.parentElement);
-    console.log('🔍 Button position:', dismissBtn.getBoundingClientRect());
-
-    // Test if button is clickable
-    console.log('🧪 Testing manual click...');
-    dismissBtn.onclick = function() {
-        console.log('🎯 onclick handler fired!');
-    };
-
-    // Add multiple event listeners to catch any interference
-    dismissBtn.addEventListener('mousedown', function(e) {
-        console.log('👇 mousedown event:', e);
-    });
-
-    dismissBtn.addEventListener('mouseup', function(e) {
-        console.log('👆 mouseup event:', e);
-    });
-
     // Dismiss button handler
-    console.log('🎯 Attaching click handler to dismiss button...');
     dismissBtn.addEventListener('click', async (e) => {
-        console.log('🖱️ Dismiss button clicked!');
         e.preventDefault();
         e.stopPropagation();
 
         // Save the setting via AJAX
-        const actionUrl = '{{ actionUrl('launcher/settings/complete-first-run') }}';
-        const csrfToken = '{{ craft.app.request.csrfToken }}';
-
-        console.log('📡 Making AJAX call to:', actionUrl);
-        console.log('🔐 CSRF Token:', csrfToken);
-
         try {
-            const response = await fetch(actionUrl, {
+            await fetch('{{ actionUrl('launcher/settings/complete-first-run') }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken,
+                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
                     'Accept': 'application/json'
                 }
             });
-
-            console.log('📈 Response status:', response.status);
-            console.log('📋 Response headers:', response.headers);
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Success response:', data);
-            } else {
-                console.error('❌ HTTP error:', response.status, response.statusText);
-                const text = await response.text();
-                console.error('Error response body:', text);
-            }
         } catch (error) {
-            console.error('💥 Failed to save first run setting:', error);
+            console.error('Failed to save first run setting:', error);
         }
 
-        console.log('🎭 Adding dismissing animation...');
         overlay.classList.add('launcher-dismissing');
         setTimeout(() => {
-            console.log('🗑️ Removing overlay...');
             overlay.remove();
         }, 500);
     });
-
-    console.log('✅ Click handler attached successfully!');
-
-    // Test programmatic click after a delay
-    setTimeout(() => {
-        console.log('🤖 Testing programmatic click in 2 seconds...');
-        dismissBtn.click();
-    }, 2000);
 });
 </script>
 {% endif %}

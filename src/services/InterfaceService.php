@@ -4,6 +4,7 @@ namespace brilliance\launcher\services;
 use Craft;
 use craft\base\Component;
 use craft\db\Query;
+use craft\helpers\Db;
 use craft\helpers\Json;
 
 /**
@@ -35,48 +36,39 @@ class InterfaceService extends Component
     public function setSetting(string $key, $value, ?int $userId = null): bool
     {
         try {
-            Craft::info("Attempting to set interface setting: key=$key, userId=$userId, value=" . var_export($value, true), 'launcher');
-
             $data = ['value' => $value];
             $jsonData = Json::encode($data);
-            Craft::info("JSON data to save: $jsonData", 'launcher');
 
             $record = $this->getSettingRecord($key, $userId);
-            Craft::info("Existing record found: " . ($record ? 'YES' : 'NO'), 'launcher');
 
             if ($record) {
                 // Update existing
-                Craft::info("Updating existing record", 'launcher');
-                $result = Craft::$app->getDb()->createCommand()
+                Craft::$app->getDb()->createCommand()
                     ->update(self::TABLE_NAME, [
                         'interfaceData' => $jsonData,
-                        'dateUpdated' => Craft::$app->getDb()->getDateTimeValue(),
+                        'dateUpdated' => Db::prepareDateForDb(new \DateTime()),
                     ], [
                         'settingKey' => $key,
                         'userId' => $userId,
                     ])
                     ->execute();
-                Craft::info("Update result: $result rows affected", 'launcher');
             } else {
                 // Create new
-                Craft::info("Creating new record", 'launcher');
-                $result = Craft::$app->getDb()->createCommand()
+                $now = Db::prepareDateForDb(new \DateTime());
+                Craft::$app->getDb()->createCommand()
                     ->insert(self::TABLE_NAME, [
                         'settingKey' => $key,
                         'userId' => $userId,
                         'interfaceData' => $jsonData,
-                        'dateCreated' => Craft::$app->getDb()->getDateTimeValue(),
-                        'dateUpdated' => Craft::$app->getDb()->getDateTimeValue(),
+                        'dateCreated' => $now,
+                        'dateUpdated' => $now,
                     ])
                     ->execute();
-                Craft::info("Insert result: $result rows affected", 'launcher');
             }
 
-            Craft::info("Interface setting saved successfully", 'launcher');
             return true;
         } catch (\Exception $e) {
             Craft::error('Failed to save interface setting: ' . $e->getMessage(), 'launcher');
-            Craft::error('Exception trace: ' . $e->getTraceAsString(), 'launcher');
             return false;
         }
     }
