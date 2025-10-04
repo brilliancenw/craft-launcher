@@ -278,6 +278,9 @@ class Launcher extends Plugin
         $context = $this->getFrontEndContext($event);
         $contextJson = json_encode($context);
 
+        // Convert boolean to string for JavaScript
+        $openInNewTabJs = $openInNewTab ? 'true' : 'false';
+
         $js = <<<JS
         // Front-end Launcher initialization
         document.addEventListener('DOMContentLoaded', function() {
@@ -293,7 +296,7 @@ class Launcher extends Plugin
                     assetUrl: '$assetUrl',
                     selectResultModifier: '{$settings->selectResultModifier}',
                     isFrontEnd: true,
-                    openInNewTab: " . ($openInNewTab ? 'true' : 'false') . ",
+                    openInNewTab: $openInNewTabJs,
                     frontEndContext: $contextJson
                 });
             }
