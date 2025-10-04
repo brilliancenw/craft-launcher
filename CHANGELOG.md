@@ -3,21 +3,14 @@
 ## [v1.0.8] - 2025-10-03
 
 ### Fixed
-- **CRITICAL**: Fixed "Open Front-end Links in New Tab" setting not being respected
-- **IMPROVED**: Front-end launcher now properly honors user's new tab preference setting
-- **ENHANCED**: Fixed PHP heredoc syntax issue that prevented boolean preferences from being passed to JavaScript
+- Fixed "Open Front-end Links in New Tab" setting not being respected on front-end
+- Corrected PHP heredoc syntax issue that prevented boolean preferences from being passed to JavaScript
 
-### Added
-- **NEW**: Enhanced user interface responsiveness and interaction handling
-- **IMPROVED**: Better front-end launcher experience with proper preference management
-- **ENHANCED**: Optimized admin panel interface components
+### Improved
+- Enhanced user interface responsiveness and interaction handling
+- Better front-end launcher experience with proper preference management
 
-### Technical Improvements
-- **FIXED**: Resolved JavaScript configuration issue where boolean values weren't properly interpolated in PHP heredoc strings
-- **IMPROVED**: More reliable preference handling between PHP backend and JavaScript frontend
-- **ENHANCED**: Streamlined user preference service implementation
-
-> **Front-end Navigation Fix**: This release resolves an issue where the "Open Front-end Links in New Tab" user preference was being ignored, causing all front-end launcher links to open in new tabs regardless of the setting. Users can now properly control this behavior through their account preferences.
+> **Minor Bug Fix**: This release resolves an issue where the "Open Front-end Links in New Tab" user preference was being ignored on the front-end. Users can now properly control link behavior through their account preferences.
 
 ## [v1.0.7] - 2025-10-03
 
