@@ -4,13 +4,10 @@
 
 {# First Run Welcome Screen #}
 {% if not settings.firstRunCompleted %}
-<div id="settings-launcher-welcome-overlay" class="launcher-welcome-overlay">
+<div id="launcher-welcome-overlay" class="launcher-welcome-overlay">
     <div class="launcher-welcome-content">
         <div class="launcher-welcome-header">
             <h1>Welcome to Launcher!</h1>
-            <div style="position: absolute; top: 10px; right: 10px; background: #ff0000; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold;">
-                VERSION: {{ "now"|date("Y-m-d H:i:s") }}
-            </div>
         </div>
 
         <div class="launcher-welcome-message">
@@ -41,10 +38,10 @@
             </p>
         </div>
 
-        <button type="button" id="settings-launcher-welcome-dismiss" class="btn submit large">Let's Get Started!</button>
+        <button type="button" id="launcher-welcome-dismiss" class="btn submit large">Let's Get Started!</button>
     </div>
 
-    <canvas id="settings-launcher-confetti-canvas"></canvas>
+    <canvas id="launcher-confetti-canvas"></canvas>
 </div>
 
 <style>
@@ -154,7 +151,7 @@
     border-bottom-color: #764ba2;
 }
 
-#settings-launcher-welcome-dismiss {
+button[id*="launcher-welcome-dismiss"] {
     margin-top: 40px;
     padding: 16px 48px;
     font-size: 18px;
@@ -166,12 +163,12 @@
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
-#settings-launcher-welcome-dismiss:hover {
+button[id*="launcher-welcome-dismiss"]:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
 }
 
-#settings-launcher-confetti-canvas {
+canvas[id*="launcher-confetti-canvas"] {
     position: fixed;
     top: 0;
     left: 0;
@@ -229,17 +226,17 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, searching for welcome screen elements...');
+    // Craft auto-prefixes IDs - find whatever it created
+    const allLauncherDivs = document.querySelectorAll('div[id*="launcher-welcome-overlay"]');
+    const overlay = allLauncherDivs.length > 0 ? allLauncherDivs[0] : null;
 
-    // Craft prefixes IDs with 'settings-' on settings pages
-    const overlay = document.getElementById('settings-launcher-welcome-overlay');
-    const dismissBtn = document.getElementById('settings-launcher-welcome-dismiss');
-    const canvas = document.getElementById('settings-launcher-confetti-canvas');
+    const allDismissBtns = document.querySelectorAll('button[id*="launcher-welcome-dismiss"]');
+    const dismissBtn = allDismissBtns.length > 0 ? allDismissBtns[0] : null;
 
-    console.log('Found elements:', {overlay, dismissBtn, canvas});
+    const allCanvases = document.querySelectorAll('canvas[id*="launcher-confetti-canvas"]');
+    const canvas = allCanvases.length > 0 ? allCanvases[0] : null;
 
     if (!overlay || !dismissBtn || !canvas) {
-        console.error('Launcher welcome screen elements not found:', {overlay, dismissBtn, canvas});
         return;
     }
 
@@ -251,6 +248,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const confettiPieces = [];
     const confettiCount = 150;
     const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
+    let animationActive = true;
+    let startTime = Date.now();
+    const duration = 5000; // 5 seconds
 
     class ConfettiPiece {
         constructor() {
@@ -262,21 +262,30 @@ document.addEventListener('DOMContentLoaded', function() {
             this.color = colors[Math.floor(Math.random() * colors.length)];
             this.rotation = Math.random() * 360;
             this.rotationSpeed = Math.random() * 10 - 5;
+            this.opacity = 1;
         }
 
-        update() {
+        update(elapsed) {
             this.y += this.speedY;
             this.x += this.speedX;
             this.rotation += this.rotationSpeed;
 
+            // Fade out in the last second
+            if (elapsed > duration - 1000) {
+                this.opacity = (duration - elapsed) / 1000;
+            }
+
+            // Don't recycle - let them fall off screen
             if (this.y > canvas.height) {
-                this.y = -10;
-                this.x = Math.random() * canvas.width;
+                this.opacity = 0;
             }
         }
 
         draw() {
+            if (this.opacity <= 0) return;
+
             ctx.save();
+            ctx.globalAlpha = this.opacity;
             ctx.translate(this.x, this.y);
             ctx.rotate(this.rotation * Math.PI / 180);
             ctx.fillStyle = this.color;
@@ -292,11 +301,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Animation loop
     function animate() {
+        const elapsed = Date.now() - startTime;
+
+        if (elapsed >= duration) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            animationActive = false;
+            return; // Stop animation
+        }
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         confettiPieces.forEach(piece => {
-            piece.update();
+            piece.update(elapsed);
             piece.draw();
         });
+
         requestAnimationFrame(animate);
     }
     animate();
@@ -307,37 +325,33 @@ document.addEventListener('DOMContentLoaded', function() {
         canvas.height = window.innerHeight;
     });
 
-    // Set the flag immediately so it persists on next save
-    const hiddenField = document.getElementById('settings-launcher-first-run-field');
-    if (hiddenField) {
-        hiddenField.value = '1';
-        console.log('Set firstRunCompleted flag to 1');
-    } else {
-        console.error('Hidden field not found');
-    }
-
     // Dismiss button handler
-    dismissBtn.addEventListener('click', (e) => {
-        console.log('Dismiss button clicked!');
+    dismissBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('Adding dismissing class to overlay');
+
+        // Save the setting via AJAX
+        try {
+            await fetch('{{ actionUrl('launcher/settings/complete-first-run') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ craft.app.request.csrfToken }}',
+                    'Accept': 'application/json'
+                }
+            });
+        } catch (error) {
+            console.error('Failed to save first run setting:', error);
+        }
+
         overlay.classList.add('launcher-dismissing');
         setTimeout(() => {
-            console.log('Removing overlay from DOM');
             overlay.remove();
         }, 500);
     });
-
-    console.log('Welcome screen initialized successfully');
 });
 </script>
 {% endif %}
-
-{# Hidden field to preserve firstRunCompleted setting #}
-<input type="hidden" id="settings-launcher-first-run-field" name="settings[firstRunCompleted]" value="{{ settings.firstRunCompleted ? '1' : '' }}">
-
-{# Note: Craft auto-prefixes IDs in settings pages with 'settings-' #}
 
 {% if isProjectConfigReadOnly %}
     <div class="readable">
