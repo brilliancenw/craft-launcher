@@ -24,45 +24,15 @@ class SettingsController extends Controller
         try {
             $plugin = Launcher::getInstance();
 
-            // Debug: Check if plugin and interface service are available
-            if (!$plugin) {
-                Craft::error('Plugin instance not available', __METHOD__);
-                return $this->asJson([
-                    'success' => false,
-                    'error' => 'Plugin not initialized'
-                ]);
-            }
-
-            if (!$plugin->interface) {
-                Craft::error('Interface service not available', __METHOD__);
-                return $this->asJson([
-                    'success' => false,
-                    'error' => 'Interface service not initialized'
-                ]);
-            }
-
-            // Debug: Check table exists
-            $tableExists = $plugin->interface->tableExists();
-            Craft::info('Interface table exists: ' . ($tableExists ? 'YES' : 'NO'), __METHOD__);
-
-            if (!$tableExists) {
-                return $this->asJson([
-                    'success' => false,
-                    'error' => 'Interface settings table does not exist'
-                ]);
-            }
-
-            // Use interface service instead of plugin settings
+            // Use interface service to mark first run as completed
             $success = $plugin->interface->markFirstRunCompleted();
 
             if ($success) {
-                Craft::info('First run completed and saved successfully', __METHOD__);
                 return $this->asJson([
                     'success' => true,
                     'message' => 'Welcome screen completed'
                 ]);
             } else {
-                Craft::error('Failed to save first run completion', __METHOD__);
                 return $this->asJson([
                     'success' => false,
                     'error' => 'Failed to save interface setting'
