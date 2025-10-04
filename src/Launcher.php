@@ -49,6 +49,7 @@ class Launcher extends Plugin
                 'search' => SearchService::class,
                 'history' => HistoryService::class,
                 'userPreference' => UserPreferenceService::class,
+                'interface' => InterfaceService::class,
             ],
         ];
     }
@@ -184,12 +185,13 @@ class Launcher extends Plugin
             }
         );
 
-        // Register URL rules for user preferences
+        // Register URL rules for user preferences and settings
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
                 $event->rules['myaccount/launcher'] = 'launcher/user-account/index';
+                $event->rules['launcher/settings/complete-first-run'] = 'launcher/settings/complete-first-run';
             }
         );
 
