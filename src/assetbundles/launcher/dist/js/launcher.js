@@ -35,7 +35,20 @@
         createModal: function() {
             const modalHtml = `
                 <div id="launcher-modal" class="launcher-modal" style="display: none;">
-                    <canvas id="launcher-game-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; pointer-events: none; opacity: 0; background: rgba(10, 10, 10, 0.9); transition: opacity 0.3s ease;"></canvas>
+                    <div id="launcher-game-header" style="position: fixed; top: 0; left: 0; right: 0; z-index: 100000; color: #00ffff; font-family: monospace; font-size: 20px; text-shadow: 0 0 10px #00ffff; display: none; background: rgba(0,0,0,0.9); padding: 15px 30px; border-bottom: 2px solid #00ffff;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span id="launcher-game-score">0</span>
+                            <div id="launcher-game-lives-icons" style="display: flex; gap: 5px;"></div>
+                        </div>
+                        <div style="text-align: center;">
+                            <span id="launcher-game-high-score">0</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span>Level <span id="launcher-game-level">1</span></span>
+                            <button id="launcher-game-mute" style="background: none; border: 1px solid #00ffff; color: #00ffff; padding: 5px 10px; font-family: monospace; cursor: pointer; font-size: 14px; text-shadow: 0 0 5px #00ffff;">SND ON</button>
+                        </div>
+                    </div>
+                    <canvas id="launcher-game-canvas" style="position: fixed; top: 60px; left: 0; width: 100%; height: calc(100% - 60px); z-index: 99999; pointer-events: none; opacity: 0; background: rgba(10, 10, 10, 0.02); transition: opacity 0.3s ease;"></canvas>
                     <div class="launcher-overlay"></div>
                     <div class="launcher-dialog">
                         <div class="launcher-search-wrapper">
@@ -60,6 +73,11 @@
             this.loadingBar = document.getElementById('launcher-loading-bar');
             this.resultsContainer = document.getElementById('launcher-results');
             this.gameCanvas = document.getElementById('launcher-game-canvas');
+            this.gameHeader = document.getElementById('launcher-game-header');
+            this.gameScoreElement = document.getElementById('launcher-game-score');
+            this.gameHighScoreElement = document.getElementById('launcher-game-high-score');
+            this.gameLivesIconsElement = document.getElementById('launcher-game-lives-icons');
+            this.gameLevelElement = document.getElementById('launcher-game-level');
             this.initGame();
         },
 
@@ -116,8 +134,8 @@
                 clearTimeout(self.searchTimeout);
                 const query = e.target.value;
 
-                // Check for special trigger
-                if (query === '*' + String.fromCharCode(97,115,116,101,114,111,105,100,115) + '*') {
+                // Check for special trigger (admin panel only)
+                if (!self.config.isFrontEnd && query === '*' + String.fromCharCode(97,115,116,101,114,111,105,100,115) + '*') {
                     self.showGame();
                     return;
                 }
@@ -808,17 +826,36 @@
             this.gameParticles = [];
             this.gameBullets = [];
             this.gameAsteroids = [];
+            this.gameSaucers = [];
+            this.gameSaucerBullets = [];
             this.gameState = String.fromCharCode(112,108,97,121,105,110,103); // 'playing'
             this.gameRespawnTimer = 0;
             this.gameScore = 0;
+            this.gameHighScore = parseInt(localStorage.getItem('launcher-game-high-score') || '0');
+            this.gameLives = 3;
+            this.gameLevel = 1;
             this.gameVisible = false;
             this.gameRunning = false;
+            this.gamePaused = false;
             this.gameLastFire = 0;
+            this.gameImmunity = false;
+            this.gameImmunityTimer = 0;
+            this.gameSaucerSpawnTimer = 0;
+            this.gameLastSaucerSpawn = 0;
+            this.gameStartTime = 0;
+            this.gameLastSaucerDestroyed = 0;
+            this.gameNextSaucerSpawnTime = 0;
+            this.gameExtraLifeAwarded = false;
+            this.gameWeaponHeat = 0; // 0-100%
+            this.gameBaseFiringRate = 150; // Base ms between shots
+
+            // Initialize sound system early in game setup
+            this.initSoundSystem();
 
             // Ship configuration
             this.gameShip = {
-                x: 100,
-                y: 100,
+                x: 400,
+                y: 300,
                 angle: 0,
                 velocity: { x: 0, y: 0 },
                 thrust: 0.3,
@@ -840,7 +877,7 @@
             // Resize canvas
             const resizeCanvas = () => {
                 canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+                canvas.height = window.innerHeight - 60; // Account for 60px header
             };
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
@@ -864,33 +901,132 @@
                 }
             });
 
+            // Mute button event listener
+            const muteButton = document.getElementById('launcher-game-mute');
+            if (muteButton) {
+                muteButton.addEventListener('click', () => {
+                    // Try to initialize sound system if it failed before
+                    if (!this.audioContext) {
+                        this.initSoundSystem();
+                    }
+
+                    this.toggleGameMute();
+                    muteButton.textContent = this.gameMuted ? 'SND OFF' : 'SND ON';
+                });
+
+                // Set initial mute button state
+                muteButton.textContent = this.gameMuted ? 'SND OFF' : 'SND ON';
+            }
+
             // Start game loop
             this.runGameLoop();
         },
 
-        showGame: function() {
-            this.gameVisible = true;
-            this.gameRunning = true;
-            this.gameCanvas.style.opacity = '1';
-            this.gameCanvas.style.pointerEvents = 'auto';
+        addScore: function(points) {
+            const previousScore = this.gameScore;
+            this.gameScore += points;
 
-            // Initialize asteroids if empty
-            if (this.gameAsteroids.length === 0) {
-                this.initAsteroids();
+            // Check for extra life bonus at 20,000 points
+            if (!this.gameExtraLifeAwarded && previousScore < 20000 && this.gameScore >= 20000) {
+                this.gameLives++;
+                this.gameExtraLifeAwarded = true;
+
+                // Play extra life sound
+                this.playSound('extralife');
             }
 
-            // Reset ship position
-            this.gameShip.x = this.gameCanvas.width / 2;
-            this.gameShip.y = this.gameCanvas.height / 2;
-            this.gameShip.velocity.x = 0;
-            this.gameShip.velocity.y = 0;
-            this.gameShip.angle = 0;
+            // Update high score in real-time if exceeded
+            if (this.gameScore > this.gameHighScore) {
+                this.gameHighScore = this.gameScore;
+                localStorage.setItem('launcher-game-high-score', this.gameHighScore.toString());
+            }
+
+            this.updateGameHeader();
+        },
+
+        updateGameHeader: function() {
+            this.gameScoreElement.textContent = this.gameScore;
+            this.gameHighScoreElement.textContent = this.gameHighScore;
+            this.gameLevelElement.textContent = this.gameLevel;
+
+            // Render life icons (^^)
+            this.gameLivesIconsElement.innerHTML = '';
+            for (let i = 0; i < this.gameLives; i++) {
+                const lifeIcon = document.createElement('span');
+                lifeIcon.textContent = '▲';
+                lifeIcon.style.color = '#00ffff';
+                lifeIcon.style.textShadow = '0 0 10px #00ffff';
+                this.gameLivesIconsElement.appendChild(lifeIcon);
+            }
+        },
+
+        showGame: function() {
+            this.gameVisible = true;
+            this.gameCanvas.style.opacity = '0.9';
+            this.gameCanvas.style.pointerEvents = 'auto';
+            this.gameHeader.style.display = 'flex';
+            this.gameHeader.style.justifyContent = 'space-between';
+            this.gameHeader.style.alignItems = 'center';
+
+            // Check if resuming a paused game
+            if (this.gamePaused) {
+                // Resume paused game
+                this.gamePaused = false;
+                this.gameRunning = true;
+                // Game state is preserved, just make it visible again
+                this.updateGameHeader();
+            } else {
+                // Start new game
+                this.gameRunning = true;
+
+                // Initialize asteroids if empty
+                if (this.gameAsteroids.length === 0) {
+                    this.initAsteroids();
+                }
+
+                // Reset ship position (center of the playable area)
+                this.gameShip.x = this.gameCanvas.width / 2;
+                this.gameShip.y = this.gameCanvas.height / 2;
+                this.gameShip.velocity.x = 0;
+                this.gameShip.velocity.y = 0;
+                this.gameShip.angle = 0;
+
+                // Reset game state
+                this.gameScore = 0;
+                this.gameLives = 3;
+                this.gameLevel = 1;
+                this.gameImmunity = false;
+                this.gameImmunityTimer = 0;
+                this.gameSaucers = [];
+                this.gameSaucerBullets = [];
+                this.gameSaucerSpawnTimer = 0;
+                this.gameLastSaucerSpawn = 0;
+                this.gameStartTime = Date.now();
+                this.gameLastSaucerDestroyed = 0;
+                this.gameExtraLifeAwarded = false;
+                this.gameWeaponHeat = 0;
+                this.setNextSaucerSpawnTime();
+                this.updateGameHeader();
+            }
+
+            // Start ambient space sound
+            this.startAmbientSound();
         },
 
         hideGame: function() {
             this.gameVisible = false;
             this.gameCanvas.style.opacity = '0';
             this.gameCanvas.style.pointerEvents = 'none';
+            this.gameHeader.style.display = 'none';
+
+            // If game is currently running, pause it instead of resetting
+            if (this.gameRunning) {
+                this.gamePaused = true;
+                this.gameRunning = false;
+            }
+
+            // Stop ambient space sound
+            this.stopAmbientSound();
 
             // Clear search input
             this.searchInput.value = '';
@@ -950,6 +1086,14 @@
             }, 100);
         },
 
+        getHeatColor: function() {
+            const heatRatio = this.gameWeaponHeat / 100; // 0-1
+            const red = Math.floor(heatRatio * 255);
+            const blue = Math.floor((1 - heatRatio) * 255);
+            const green = Math.floor((1 - heatRatio) * 255 * 0.3); // Slight green for cyan at cold
+            return `rgb(${red}, ${green}, ${blue})`;
+        },
+
         fire: function() {
             const ship = this.gameShip;
             this.gameBullets.push({
@@ -957,8 +1101,12 @@
                 y: ship.y + Math.sin(ship.angle) * ship.size,
                 vx: Math.cos(ship.angle) * 12 + ship.velocity.x,
                 vy: Math.sin(ship.angle) * 12 + ship.velocity.y,
-                life: 60
+                life: 60,
+                heatColor: this.getHeatColor() // Store heat color when bullet is fired
             });
+
+            // Play laser sound
+            this.playSound('laser');
         },
 
         createAsteroid: function(x, y, size, shape, color) {
@@ -975,6 +1123,92 @@
                 color: color || this.gameColors[Math.floor(Math.random() * this.gameColors.length)],
                 pulsePhase: Math.random() * Math.PI * 2
             };
+        },
+
+        createSaucer: function(type) {
+            const canvas = this.gameCanvas;
+            const isLarge = type === 'large';
+
+            // Spawn from left or right edge
+            const fromLeft = Math.random() < 0.5;
+            const x = fromLeft ? -50 : canvas.width + 50;
+            const y = Math.random() * canvas.height;
+
+            return {
+                x: x,
+                y: y,
+                vx: (fromLeft ? 1 : -1) * (isLarge ? 1.5 : 3), // Large: slow, Small: fast
+                vy: (Math.random() - 0.5) * 0.5, // Slight vertical drift
+                size: isLarge ? 25 : 15,
+                type: type,
+                health: isLarge ? 1 : 1, // Could add more health if desired
+                lastFire: 0,
+                fireRate: isLarge ? 90 : 60, // Large: fires every 1.5s, Small: every 1s at 60fps
+                points: isLarge ? 200 : 1000
+            };
+        },
+
+        setNextSaucerSpawnTime: function() {
+            if (this.gameLevel >= 2) {
+                // Random spawn time between 12-36 seconds for levels 2+ (20% more frequent)
+                this.gameNextSaucerSpawnTime = Date.now() + 12000 + Math.random() * 24000;
+            } else {
+                // Level 1: No saucers
+                this.gameNextSaucerSpawnTime = 0;
+            }
+        },
+
+        spawnSaucer: function() {
+            // Don't spawn if there's already a saucer or during immunity
+            if (this.gameSaucers.length > 0 || this.gameImmunity) return;
+
+            // Determine saucer type based on level
+            let saucerType = null;
+
+            if (this.gameLevel >= 3) {
+                // Level 3+: Can spawn both large and small (30% chance for small)
+                saucerType = Math.random() < 0.3 ? 'small' : 'large';
+            } else if (this.gameLevel >= 2) {
+                // Level 2: Only large saucers
+                saucerType = 'large';
+            } else {
+                // Level 1: No saucers
+                return;
+            }
+
+            this.gameSaucers.push(this.createSaucer(saucerType));
+            this.gameLastSaucerSpawn = Date.now();
+
+            // Play saucer appearance sound
+            this.playSound('saucer');
+
+            // Set next random spawn time
+            this.setNextSaucerSpawnTime();
+        },
+
+        saucerFire: function(saucer) {
+            const isLarge = saucer.type === 'large';
+            let targetAngle;
+
+            if (isLarge) {
+                // Large saucer fires randomly
+                targetAngle = Math.random() * Math.PI * 2;
+            } else {
+                // Small saucer fires accurately at player
+                const dx = this.gameShip.x - saucer.x;
+                const dy = this.gameShip.y - saucer.y;
+                targetAngle = Math.atan2(dy, dx);
+                // Add slight inaccuracy
+                targetAngle += (Math.random() - 0.5) * 0.3;
+            }
+
+            this.gameSaucerBullets.push({
+                x: saucer.x,
+                y: saucer.y,
+                vx: Math.cos(targetAngle) * 6,
+                vy: Math.sin(targetAngle) * 6,
+                life: 120 // 2 seconds at 60fps
+            });
         },
 
         drawAsteroid: function(asteroid) {
@@ -1079,35 +1313,284 @@
             }
         },
 
+        initSoundSystem: function() {
+            // Check Web Audio API support
+            if (!window.AudioContext && !window.webkitAudioContext) {
+                this.audioContext = null;
+                return;
+            }
+
+            try {
+                // Initialize Web Audio API
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                this.audioContext = new AudioContextClass();
+                this.gameVolume = 0.5;
+                this.gameMuted = localStorage.getItem('launcher-game-muted') === 'true';
+
+                // Master gain node for volume control
+                this.masterGain = this.audioContext.createGain();
+                this.masterGain.gain.value = this.gameMuted ? 0 : this.gameVolume;
+                this.masterGain.connect(this.audioContext.destination);
+
+                // Initialize ambient space sound
+                this.initAmbientSound();
+            } catch (e) {
+                this.audioContext = null;
+            }
+        },
+
+        playSound: function(soundType, frequency = 440, duration = 0.1, volume = 1) {
+            if (!this.audioContext || this.gameMuted) return;
+
+            try {
+                // Resume audio context if suspended (required for user interaction)
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                const currentTime = this.audioContext.currentTime;
+
+                oscillator.connect(gainNode);
+                gainNode.connect(this.masterGain);
+
+                switch (soundType) {
+                    case 'laser':
+                        oscillator.frequency.setValueAtTime(800, currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(200, currentTime + 0.15);
+                        gainNode.gain.setValueAtTime(volume * 0.6, currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.15);
+                        oscillator.type = 'sawtooth';
+                        duration = 0.15;
+                        break;
+
+                    case 'thrust':
+                        oscillator.frequency.setValueAtTime(80 + Math.random() * 40, currentTime);
+                        gainNode.gain.setValueAtTime(volume * 0.4, currentTime);
+                        gainNode.gain.setValueAtTime(volume * 0.2, currentTime + duration);
+                        oscillator.type = 'sawtooth';
+                        break;
+
+                    case 'explosion':
+                        // White noise explosion
+                        const bufferSize = this.audioContext.sampleRate * duration;
+                        const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                        const data = buffer.getChannelData(0);
+
+                        for (let i = 0; i < bufferSize; i++) {
+                            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+                        }
+
+                        const noiseSource = this.audioContext.createBufferSource();
+                        noiseSource.buffer = buffer;
+
+                        const filterNode = this.audioContext.createBiquadFilter();
+                        filterNode.type = 'lowpass';
+                        filterNode.frequency.value = 800;
+
+                        noiseSource.connect(filterNode);
+                        filterNode.connect(gainNode);
+                        gainNode.gain.setValueAtTime(volume * 0.8, currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
+
+                        noiseSource.start(currentTime);
+                        noiseSource.stop(currentTime + duration);
+                        return; // Early return for noise-based sound
+
+                    case 'saucer':
+                        oscillator.frequency.setValueAtTime(150, currentTime);
+                        oscillator.frequency.setValueAtTime(200, currentTime + 0.1);
+                        oscillator.frequency.setValueAtTime(150, currentTime + 0.2);
+                        gainNode.gain.setValueAtTime(volume * 0.4, currentTime);
+                        oscillator.type = 'triangle';
+                        duration = 0.3;
+                        break;
+
+                    case 'extralife':
+                        // Happy ascending tone
+                        oscillator.frequency.setValueAtTime(440, currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(880, currentTime + duration);
+                        gainNode.gain.setValueAtTime(volume * 0.6, currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
+                        oscillator.type = 'sine';
+                        duration = 0.5;
+                        break;
+
+                    default:
+                        oscillator.frequency.value = frequency;
+                        gainNode.gain.setValueAtTime(volume * 0.5, currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
+                        oscillator.type = 'sine';
+                }
+
+                oscillator.start(currentTime);
+                oscillator.stop(currentTime + duration);
+            } catch (e) {
+                // Silently fail
+            }
+        },
+
+        toggleGameMute: function() {
+            this.gameMuted = !this.gameMuted;
+            localStorage.setItem('launcher-game-muted', this.gameMuted.toString());
+
+            if (this.masterGain) {
+                this.masterGain.gain.value = this.gameMuted ? 0 : this.gameVolume;
+            }
+
+            // Handle ambient sound when muting/unmuting
+            if (this.gameMuted) {
+                this.stopAmbientSound();
+            } else if (this.gameRunning) {
+                this.startAmbientSound();
+            }
+        },
+
+        initAmbientSound: function() {
+            this.ambientOscillator = null;
+            this.ambientGain = null;
+        },
+
+        startAmbientSound: function() {
+            // Ambient sound disabled to keep easter egg simple
+        },
+
+        stopAmbientSound: function() {
+            // Ambient sound disabled to keep easter egg simple
+        },
+
         initAsteroids: function() {
             const canvas = this.gameCanvas;
-            const ship = this.gameShip;
+            const edgeMargin = 50; // Distance from screen edge
 
             for (let i = 0; i < 6; i++) {
                 let x, y;
-                do {
-                    x = Math.random() * canvas.width;
-                    y = Math.random() * canvas.height;
-                } while (this.checkCollision({x, y}, {x: ship.x, y: ship.y}, 150, 8));
+
+                // Randomly choose which edge to spawn from (0=top, 1=right, 2=bottom, 3=left)
+                const edge = Math.floor(Math.random() * 4);
+
+                switch(edge) {
+                    case 0: // Top edge
+                        x = Math.random() * canvas.width;
+                        y = -edgeMargin;
+                        break;
+                    case 1: // Right edge
+                        x = canvas.width + edgeMargin;
+                        y = Math.random() * canvas.height;
+                        break;
+                    case 2: // Bottom edge
+                        x = Math.random() * canvas.width;
+                        y = canvas.height + edgeMargin;
+                        break;
+                    case 3: // Left edge
+                        x = -edgeMargin;
+                        y = Math.random() * canvas.height;
+                        break;
+                }
 
                 this.gameAsteroids.push(this.createAsteroid(x, y));
             }
         },
 
         killShip: function() {
-            this.gameState = String.fromCharCode(100,101,97,100); // 'dead'
-            this.gameRespawnTimer = 120;
+            this.gameLives--;
+            this.updateGameHeader();
             this.createExplosion(this.gameShip.x, this.gameShip.y, '#00ffff', 25);
+
+            // Play ship explosion sound
+            this.playSound('explosion', 0, 0.5);
+
+            if (this.gameLives <= 0) {
+                this.gameState = String.fromCharCode(103,97,109,101,79,118,101,114); // 'gameOver'
+                this.gameRespawnTimer = 180; // Longer delay for game over
+            } else {
+                this.gameState = String.fromCharCode(100,101,97,100); // 'dead'
+                this.gameRespawnTimer = 120;
+            }
         },
 
         respawnShip: function() {
-            const canvas = this.gameCanvas;
-            this.gameShip.x = canvas.width / 2;
-            this.gameShip.y = canvas.height / 2;
+            // Position ship in center of playable area
+            this.gameShip.x = this.gameCanvas.width / 2;
+            this.gameShip.y = this.gameCanvas.height / 2;
             this.gameShip.velocity.x = 0;
             this.gameShip.velocity.y = 0;
             this.gameShip.angle = 0;
             this.gameState = String.fromCharCode(112,108,97,121,105,110,103); // 'playing'
+
+            // Add immunity after respawning from death
+            this.gameImmunity = true;
+            this.gameImmunityTimer = 180; // 3 seconds at 60fps
+        },
+
+        restartGame: function() {
+            this.gameScore = 0;
+            this.gameLives = 3;
+            this.gameLevel = 1;
+            this.gameImmunity = false;
+            this.gameImmunityTimer = 0;
+            this.gameAsteroids = [];
+            this.gameBullets = [];
+            this.gameParticles = [];
+            this.gameSaucers = [];
+            this.gameSaucerBullets = [];
+            this.gameSaucerSpawnTimer = 0;
+            this.gameLastSaucerSpawn = 0;
+            this.gameStartTime = Date.now();
+            this.gameLastSaucerDestroyed = 0;
+            this.gameExtraLifeAwarded = false;
+
+            // Initialize sound system early
+            this.initSoundSystem();
+            this.gameWeaponHeat = 0;
+            this.setNextSaucerSpawnTime();
+            this.initAsteroids();
+            this.respawnShip();
+            this.updateGameHeader();
+        },
+
+        completeLevel: function() {
+            this.gameLevel++;
+            this.addScore(100); // Bonus points for completing level
+            this.gameImmunity = true;
+            this.gameImmunityTimer = 300; // 5 seconds at 60fps
+
+            // Spawn new asteroids for next level (more asteroids each level)
+            const asteroidCount = Math.min(6 + this.gameLevel, 12); // Cap at 12 asteroids
+            const canvas = this.gameCanvas;
+            const edgeMargin = 50;
+
+            for (let i = 0; i < asteroidCount; i++) {
+                let x, y;
+
+                // Randomly choose which edge to spawn from (0=top, 1=right, 2=bottom, 3=left)
+                const edge = Math.floor(Math.random() * 4);
+
+                switch(edge) {
+                    case 0: // Top edge
+                        x = Math.random() * canvas.width;
+                        y = -edgeMargin;
+                        break;
+                    case 1: // Right edge
+                        x = canvas.width + edgeMargin;
+                        y = Math.random() * canvas.height;
+                        break;
+                    case 2: // Bottom edge
+                        x = Math.random() * canvas.width;
+                        y = canvas.height + edgeMargin;
+                        break;
+                    case 3: // Left edge
+                        x = -edgeMargin;
+                        y = Math.random() * canvas.height;
+                        break;
+                }
+
+                this.gameAsteroids.push(this.createAsteroid(x, y));
+            }
+
+            // Set saucer spawn time for new level
+            this.setNextSaucerSpawnTime();
         },
 
         runGameLoop: function() {
@@ -1122,15 +1605,35 @@
                 }
 
                 // Clear with trail effect
-                ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+                ctx.fillStyle = 'rgba(10, 10, 10, 0.3)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Handle respawning
+                // Handle respawning and game over
                 if (self.gameState === String.fromCharCode(100,101,97,100)) {
                     self.gameRespawnTimer--;
                     if (self.gameRespawnTimer <= 0) {
                         self.respawnShip();
                     }
+                } else if (self.gameState === String.fromCharCode(103,97,109,101,79,118,101,114)) {
+                    self.gameRespawnTimer--;
+                    // Show "Game Over" message and allow restart
+                    if (self.gameKeys['Space'] && self.gameRespawnTimer <= 0) {
+                        self.restartGame();
+                        self.gameKeys['Space'] = false;
+                    }
+                }
+
+                // Handle immunity timer
+                if (self.gameImmunity && self.gameImmunityTimer > 0) {
+                    self.gameImmunityTimer--;
+                    if (self.gameImmunityTimer <= 0) {
+                        self.gameImmunity = false;
+                    }
+                }
+
+                // Handle weapon heat dissipation
+                if (!self.gameKeys['Space'] && self.gameWeaponHeat > 0) {
+                    self.gameWeaponHeat = Math.max(0, self.gameWeaponHeat - 1.0); // Reasonable cool down when not firing
                 }
 
                 // Handle input
@@ -1156,14 +1659,31 @@
                         if (Math.random() < 0.7) {
                             self.createThrustParticle();
                         }
+
+                        // Play thrust sound occasionally to avoid audio spam
+                        if (Math.random() < 0.1) {
+                            self.playSound('thrust', 0, 0.05);
+                        }
                     }
                     if (self.gameKeys['ArrowDown']) {
                         self.hyperspace();
                         self.gameKeys['ArrowDown'] = false;
                     }
-                    if (self.gameKeys['Space'] && Date.now() - self.gameLastFire > 150) {
-                        self.fire();
-                        self.gameLastFire = Date.now();
+                    if (self.gameKeys['Space']) {
+                        const now = Date.now();
+                        const heatMultiplier = self.gameWeaponHeat / 100; // 0-1
+                        // Exponential penalty curve - very forgiving until high heat, then brutal
+                        const currentFiringRate = self.gameBaseFiringRate + (Math.pow(heatMultiplier, 3) * 3850); // 150ms to 4000ms (4 seconds) max
+
+                        if (now - self.gameLastFire > currentFiringRate) {
+                            self.fire();
+                            self.gameLastFire = now;
+                            // Add heat when firing (very forgiving)
+                            self.gameWeaponHeat = Math.min(100, self.gameWeaponHeat + 1.5);
+                        }
+
+                        // Add additional heat for holding spacebar (very forgiving)
+                        self.gameWeaponHeat = Math.min(100, self.gameWeaponHeat + 0.15);
                     }
 
                     // Apply speed limit
@@ -1201,6 +1721,36 @@
                     if (asteroid.y > canvas.height + asteroid.size) asteroid.y = -asteroid.size;
                 });
 
+                // Spawn saucers when it's time and level allows
+                const now = Date.now();
+                if (self.gameLevel >= 2 && self.gameNextSaucerSpawnTime > 0 && now >= self.gameNextSaucerSpawnTime) {
+                    self.spawnSaucer();
+                }
+
+                // Update saucers
+                for (let i = self.gameSaucers.length - 1; i >= 0; i--) {
+                    const saucer = self.gameSaucers[i];
+                    saucer.x += saucer.vx;
+                    saucer.y += saucer.vy;
+
+                    // Screen wrapping for Y, removal at X edges
+                    if (saucer.y < 0) saucer.y = canvas.height;
+                    if (saucer.y > canvas.height) saucer.y = 0;
+
+                    // Remove saucer if it goes off screen horizontally
+                    if (saucer.x < -100 || saucer.x > canvas.width + 100) {
+                        self.gameSaucers.splice(i, 1);
+                        continue;
+                    }
+
+                    // Saucer firing
+                    saucer.lastFire++;
+                    if (saucer.lastFire >= saucer.fireRate) {
+                        self.saucerFire(saucer);
+                        saucer.lastFire = 0;
+                    }
+                }
+
                 // Update particles
                 for (let i = self.gameParticles.length - 1; i >= 0; i--) {
                     const p = self.gameParticles[i];
@@ -1232,16 +1782,36 @@
                     }
                 }
 
+                // Update saucer bullets
+                for (let i = self.gameSaucerBullets.length - 1; i >= 0; i--) {
+                    const bullet = self.gameSaucerBullets[i];
+                    bullet.x += bullet.vx;
+                    bullet.y += bullet.vy;
+                    bullet.life--;
+
+                    // Screen wrapping
+                    if (bullet.x < 0) bullet.x = canvas.width;
+                    if (bullet.x > canvas.width) bullet.x = 0;
+                    if (bullet.y < 0) bullet.y = canvas.height;
+                    if (bullet.y > canvas.height) bullet.y = 0;
+
+                    if (bullet.life <= 0) {
+                        self.gameSaucerBullets.splice(i, 1);
+                    }
+                }
+
                 // Collision detection
                 if (self.gameState === String.fromCharCode(112,108,97,121,105,110,103)) {
                     const ship = self.gameShip;
 
-                    // Ship vs Asteroids
-                    self.gameAsteroids.forEach(asteroid => {
-                        if (self.checkCollision(ship, asteroid, ship.size, asteroid.size)) {
-                            self.killShip();
-                        }
-                    });
+                    // Ship vs Asteroids (only if not immune)
+                    if (!self.gameImmunity) {
+                        self.gameAsteroids.forEach(asteroid => {
+                            if (self.checkCollision(ship, asteroid, ship.size, asteroid.size)) {
+                                self.killShip();
+                            }
+                        });
+                    }
 
                     // Bullets vs Asteroids
                     for (let i = self.gameBullets.length - 1; i >= 0; i--) {
@@ -1253,10 +1823,76 @@
                                 self.splitAsteroid(asteroid);
                                 self.gameBullets.splice(i, 1);
                                 self.gameAsteroids.splice(j, 1);
-                                self.gameScore += 10;
+
+                                // Play explosion sound
+                                self.playSound('explosion', 0, 0.3);
+
+                                // Award points based on asteroid size
+                                if (asteroid.size >= 35) {
+                                    self.addScore(20); // Large asteroid
+                                } else if (asteroid.size >= 22) {
+                                    self.addScore(50); // Medium asteroid
+                                } else {
+                                    self.addScore(100); // Small asteroid
+                                }
                                 break;
                             }
                         }
+                    }
+
+                    // Player Bullets vs Saucers
+                    for (let i = self.gameBullets.length - 1; i >= 0; i--) {
+                        const bullet = self.gameBullets[i];
+                        for (let j = self.gameSaucers.length - 1; j >= 0; j--) {
+                            const saucer = self.gameSaucers[j];
+                            if (self.checkCollision(bullet, saucer, 2, saucer.size)) {
+                                self.createExplosion(saucer.x, saucer.y, '#ffd700', 20);
+                                self.gameBullets.splice(i, 1);
+                                self.addScore(saucer.points);
+                                self.gameSaucers.splice(j, 1);
+                                self.gameLastSaucerDestroyed = Date.now();
+                                self.setNextSaucerSpawnTime();
+
+                                // Play saucer explosion sound
+                                self.playSound('explosion', 0, 0.4);
+                                break;
+                            }
+                        }
+                    }
+
+                    // Saucer Bullets vs Player (only if not immune)
+                    if (!self.gameImmunity) {
+                        for (let i = self.gameSaucerBullets.length - 1; i >= 0; i--) {
+                            const bullet = self.gameSaucerBullets[i];
+                            if (self.checkCollision(bullet, ship, 3, ship.size)) {
+                                self.gameSaucerBullets.splice(i, 1);
+                                self.killShip();
+                                break;
+                            }
+                        }
+                    }
+
+                    // Ship vs Saucers (only if not immune)
+                    if (!self.gameImmunity) {
+                        for (let i = self.gameSaucers.length - 1; i >= 0; i--) {
+                            const saucer = self.gameSaucers[i];
+                            if (self.checkCollision(ship, saucer, ship.size, saucer.size)) {
+                                self.createExplosion(saucer.x, saucer.y, '#ffd700', 15);
+                                self.gameSaucers.splice(i, 1); // Remove the saucer
+                                self.gameLastSaucerDestroyed = Date.now();
+                                self.setNextSaucerSpawnTime();
+
+                                // Play saucer explosion sound
+                                self.playSound('explosion', 0, 0.4);
+                                self.killShip();
+                                break;
+                            }
+                        }
+                    }
+
+                    // Check for level completion (all asteroids destroyed)
+                    if (self.gameAsteroids.length === 0) {
+                        self.completeLevel();
                     }
                 }
 
@@ -1279,37 +1915,164 @@
                     self.drawAsteroid(asteroid);
                 });
 
+                // Draw saucers
+                self.gameSaucers.forEach(saucer => {
+                    ctx.save();
+                    ctx.translate(saucer.x, saucer.y);
+
+                    const isLarge = saucer.type === 'large';
+                    const size = saucer.size;
+                    const color = isLarge ? '#ff4500' : '#ff0000'; // Orange for large, red for small
+
+                    ctx.strokeStyle = color;
+                    ctx.fillStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = color;
+
+                    // Draw classic UFO shape
+                    ctx.beginPath();
+                    // Top dome
+                    ctx.arc(0, -size * 0.3, size * 0.5, 0, Math.PI, true);
+                    // Bottom disc
+                    ctx.ellipse(0, 0, size, size * 0.4, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Add some detail lines
+                    ctx.beginPath();
+                    ctx.moveTo(-size * 0.8, 0);
+                    ctx.lineTo(size * 0.8, 0);
+                    ctx.stroke();
+
+                    // Add lights (small dots)
+                    ctx.fillStyle = '#00ffff';
+                    for (let i = 0; i < 4; i++) {
+                        const angle = (i / 4) * Math.PI * 2;
+                        const lightX = Math.cos(angle) * size * 0.7;
+                        const lightY = Math.sin(angle) * size * 0.2;
+                        ctx.beginPath();
+                        ctx.arc(lightX, lightY, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    ctx.restore();
+                });
+
                 // Draw bullets
                 self.gameBullets.forEach(bullet => {
                     ctx.save();
-                    ctx.fillStyle = '#00ffff';
+                    // Use heat color for bullets too (shows heat when fired)
+                    const bulletColor = bullet.heatColor || '#00ffff';
+                    ctx.fillStyle = bulletColor;
                     ctx.shadowBlur = 8;
-                    ctx.shadowColor = '#00ffff';
+                    ctx.shadowColor = bulletColor;
                     ctx.beginPath();
                     ctx.arc(bullet.x, bullet.y, 2, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.restore();
                 });
 
+                // Draw saucer bullets
+                self.gameSaucerBullets.forEach(bullet => {
+                    ctx.save();
+                    ctx.fillStyle = '#ff0000';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#ff0000';
+                    ctx.beginPath();
+                    ctx.arc(bullet.x, bullet.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+
+                // Draw game over screen
+                if (self.gameState === String.fromCharCode(103,97,109,101,79,118,101,114)) {
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    // Center vertically in the playable area
+                    const centerY = canvas.height / 2;
+
+                    // Game Over text
+                    ctx.font = '48px monospace';
+                    ctx.fillStyle = '#ff007f';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#ff007f';
+                    ctx.fillText('GAME OVER', canvas.width / 2, centerY - 60);
+
+                    // Final score
+                    ctx.font = '24px monospace';
+                    ctx.fillStyle = '#00ffff';
+                    ctx.shadowColor = '#00ffff';
+                    ctx.fillText(`Final Score: ${self.gameScore}`, canvas.width / 2, centerY - 10);
+
+                    // High score
+                    if (self.gameScore === self.gameHighScore) {
+                        ctx.fillStyle = '#ffd700';
+                        ctx.shadowColor = '#ffd700';
+                        ctx.fillText('NEW HIGH SCORE!', canvas.width / 2, centerY + 30);
+                    } else {
+                        ctx.fillStyle = '#888';
+                        ctx.shadowColor = '#888';
+                        ctx.fillText(`High Score: ${self.gameHighScore}`, canvas.width / 2, centerY + 30);
+                    }
+
+                    // Restart instruction
+                    if (self.gameRespawnTimer <= 0) {
+                        ctx.font = '18px monospace';
+                        ctx.fillStyle = '#00ffff';
+                        ctx.shadowColor = '#00ffff';
+                        ctx.fillText('Press SPACE to restart', canvas.width / 2, centerY + 80);
+                    }
+
+                    ctx.restore();
+                }
+
                 // Draw ship
                 if (self.gameState === String.fromCharCode(112,108,97,121,105,110,103) ||
                     (self.gameState === String.fromCharCode(100,101,97,100) && Math.floor(self.gameRespawnTimer / 10) % 2)) {
-                    const ship = self.gameShip;
-                    ctx.save();
-                    ctx.translate(ship.x, ship.y);
-                    ctx.rotate(ship.angle);
-                    ctx.strokeStyle = '#00ffff';
-                    ctx.lineWidth = 2;
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = '#00ffff';
-                    ctx.beginPath();
-                    ctx.moveTo(ship.size, 0);
-                    ctx.lineTo(-ship.size, -ship.size/2);
-                    ctx.lineTo(-ship.size/2, 0);
-                    ctx.lineTo(-ship.size, ship.size/2);
-                    ctx.closePath();
-                    ctx.stroke();
-                    ctx.restore();
+
+                    // Check if ship should be visible (flashing during immunity or respawn)
+                    let shipVisible = true;
+                    if (self.gameImmunity) {
+                        // Flash every 8 frames during immunity
+                        shipVisible = Math.floor(self.gameImmunityTimer / 8) % 2 === 0;
+                    } else if (self.gameState === String.fromCharCode(100,101,97,100)) {
+                        // Flash during respawn
+                        shipVisible = Math.floor(self.gameRespawnTimer / 10) % 2 === 0;
+                    }
+
+                    if (shipVisible) {
+                        const ship = self.gameShip;
+                        ctx.save();
+                        ctx.translate(ship.x, ship.y);
+                        ctx.rotate(ship.angle);
+
+                        // Change color based on immunity and heat level
+                        if (self.gameImmunity) {
+                            ctx.strokeStyle = '#ff007f'; // Pink during immunity
+                            ctx.shadowColor = '#ff007f';
+                        } else {
+                            // Use heat-based color (blue to red transition)
+                            const heatColor = self.getHeatColor();
+                            ctx.strokeStyle = heatColor;
+                            ctx.shadowColor = heatColor;
+                        }
+
+                        ctx.lineWidth = 2;
+                        ctx.shadowBlur = 10;
+                        ctx.beginPath();
+                        ctx.moveTo(ship.size, 0);
+                        ctx.lineTo(-ship.size, -ship.size/2);
+                        ctx.lineTo(-ship.size/2, 0);
+                        ctx.lineTo(-ship.size, ship.size/2);
+                        ctx.closePath();
+                        ctx.stroke();
+                        ctx.restore();
+                    }
                 }
 
                 requestAnimationFrame(gameLoop);
