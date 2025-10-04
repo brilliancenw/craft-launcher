@@ -1,5 +1,19 @@
 # Changelog
 
+## [v1.0.8.3] - 2025-10-04
+
+### Improved
+- **ENHANCED**: Welcome screen now properly persists dismissal state in all environments
+- **IMPROVED**: Better JSON data handling for interface settings storage
+- **UPDATED**: More robust welcome screen experience with proper state management
+
+### Technical Improvements
+- **IMPROVED**: Enhanced JSON decoding to handle various data formats
+- **ENHANCED**: Better error handling for interface settings retrieval
+- **UPDATED**: Cleaner welcome screen JavaScript without debugging code
+
+> **Interface Update**: This release improves the welcome screen experience by ensuring the dismissal state persists correctly across all deployment environments and handles edge cases in data storage.
+
 ## [v1.0.8.2] - 2025-10-04
 
 ### Fixed

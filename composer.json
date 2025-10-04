@@ -2,7 +2,7 @@
     "name": "brilliance/craft-launcher",
     "description": "Universal search launcher for Craft CMS admin panel",
     "type": "craft-plugin",
-    "version": "1.0.8.2",
+    "version": "1.0.8.3",
     "keywords": [
         "craft",
         "cms",
