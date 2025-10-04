@@ -8,6 +8,7 @@ use brilliance\launcher\services\LauncherService;
 use brilliance\launcher\services\SearchService;
 use brilliance\launcher\services\HistoryService;
 use brilliance\launcher\services\UserPreferenceService;
+use brilliance\launcher\services\InterfaceService;
 use brilliance\launcher\utilities\LauncherTableUtility;
 use brilliance\launcher\variables\LauncherVariable;
 
@@ -36,7 +37,7 @@ use yii\base\Event;
 class Launcher extends Plugin
 {
     public static ?Launcher $plugin = null;
-    public string $schemaVersion = '1.1.0';
+    public string $schemaVersion = '1.2.0';
     public bool $hasCpSettings = true;
     public bool $hasCpSection = false;
 
@@ -67,6 +68,7 @@ class Launcher extends Plugin
             'search' => SearchService::class,
             'history' => HistoryService::class,
             'userPreference' => UserPreferenceService::class,
+            'interface' => InterfaceService::class,
         ]);
 
         // Handle project config changes
@@ -600,7 +602,8 @@ class Launcher extends Plugin
         return Craft::$app->getView()->renderTemplate(
             'launcher/settings',
             [
-                'settings' => $this->getSettings()
+                'settings' => $this->getSettings(),
+                'firstRunCompleted' => $this->interface->isFirstRunCompleted()
             ]
         );
     }

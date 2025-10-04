@@ -3,7 +3,7 @@
 {% set isProjectConfigReadOnly = craft.app.projectConfig.readOnly %}
 
 {# First Run Welcome Screen #}
-{% if not settings.firstRunCompleted %}
+{% if not firstRunCompleted %}
 <div id="launcher-welcome-overlay" class="launcher-welcome-overlay">
     <div class="launcher-welcome-content">
         <div class="launcher-welcome-header">

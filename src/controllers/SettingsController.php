@@ -23,16 +23,9 @@ class SettingsController extends Controller
 
         try {
             $plugin = Launcher::getInstance();
-            $settings = $plugin->getSettings();
 
-            // Get current settings as array
-            $settingsArray = $settings->getAttributes();
-
-            // Update the specific setting
-            $settingsArray['firstRunCompleted'] = true;
-
-            // Save the settings
-            $success = Craft::$app->getPlugins()->savePluginSettings($plugin, $settingsArray);
+            // Use interface service instead of plugin settings
+            $success = $plugin->interface->markFirstRunCompleted();
 
             if ($success) {
                 Craft::info('First run completed and saved successfully', __METHOD__);
@@ -44,7 +37,7 @@ class SettingsController extends Controller
                 Craft::error('Failed to save first run completion', __METHOD__);
                 return $this->asJson([
                     'success' => false,
-                    'error' => 'Failed to save settings'
+                    'error' => 'Failed to save interface setting'
                 ]);
             }
 
