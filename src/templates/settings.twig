@@ -347,6 +347,27 @@ document.addEventListener('DOMContentLoaded', function() {
         canvas.height = window.innerHeight;
     });
 
+    // Debug button state
+    console.log('🔍 Button element details:', dismissBtn);
+    console.log('🔍 Button computed styles:', window.getComputedStyle(dismissBtn));
+    console.log('🔍 Button parent:', dismissBtn.parentElement);
+    console.log('🔍 Button position:', dismissBtn.getBoundingClientRect());
+
+    // Test if button is clickable
+    console.log('🧪 Testing manual click...');
+    dismissBtn.onclick = function() {
+        console.log('🎯 onclick handler fired!');
+    };
+
+    // Add multiple event listeners to catch any interference
+    dismissBtn.addEventListener('mousedown', function(e) {
+        console.log('👇 mousedown event:', e);
+    });
+
+    dismissBtn.addEventListener('mouseup', function(e) {
+        console.log('👆 mouseup event:', e);
+    });
+
     // Dismiss button handler
     console.log('🎯 Attaching click handler to dismiss button...');
     dismissBtn.addEventListener('click', async (e) => {
@@ -395,6 +416,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     console.log('✅ Click handler attached successfully!');
+
+    // Test programmatic click after a delay
+    setTimeout(() => {
+        console.log('🤖 Testing programmatic click in 2 seconds...');
+        dismissBtn.click();
+    }, 2000);
 });
 </script>
 {% endif %}
