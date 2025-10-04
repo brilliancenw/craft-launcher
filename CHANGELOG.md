@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.0.8.2] - 2025-10-04
+
+### Fixed
+- **CRITICAL**: Fixed migration class name conflict during plugin updates
+- **IMPROVED**: Created new migration with unique timestamp to prevent "class already in use" errors
+- **ENHANCED**: Plugin updates now work correctly in all environments
+
+> **Critical Migration Fix**: This patch resolves a PHP fatal error where the migration class name was already in use, preventing plugin updates. The migration has been recreated with a fresh timestamp to eliminate conflicts.
+
 ## [v1.0.8.1] - 2025-10-04
 
 ### Fixed

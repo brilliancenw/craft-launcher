@@ -1,11 +1,14 @@
 <?php
 
+namespace brilliance\launcher\migrations;
+
+use Craft;
 use craft\db\Migration;
 
 /**
- * m251004_052741_create_launcher_interface_settings_table migration.
+ * m251004_125540_create_launcher_interface_settings_table_fix migration.
  */
-class m251004_052741_create_launcher_interface_settings_table extends Migration
+class m251004_125540_create_launcher_interface_settings_table_fix extends Migration
 {
     /**
      * @inheritdoc
