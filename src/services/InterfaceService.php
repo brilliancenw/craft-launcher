@@ -26,7 +26,24 @@ class InterfaceService extends Component
             return $default;
         }
 
-        $data = $record['interfaceData'] ? Json::decode($record['interfaceData']) : [];
+        $rawData = $record['interfaceData'];
+        if (!$rawData) {
+            return $default;
+        }
+
+        // Handle potential double-encoding
+        $data = Json::decode($rawData);
+
+        // If result is a string, decode again (double-encoded)
+        if (is_string($data)) {
+            $data = Json::decode($data);
+        }
+
+        // Ensure we have an array
+        if (!is_array($data)) {
+            return $default;
+        }
+
         return $data['value'] ?? $default;
     }
 
