@@ -43,6 +43,9 @@ class Settings extends Model
     // Launch history settings
     public bool $enableLaunchHistory = true;
     public int $maxHistoryItems = 10;
+
+    // First run experience
+    public bool $firstRunCompleted = false;
     
     // Result navigation shortcuts
     public string $selectResultModifier = 'cmd';
@@ -70,7 +73,7 @@ class Settings extends Model
             [['maxHistoryItems'], 'default', 'value' => 10],
             [['selectResultModifier'], 'default', 'value' => 'cmd'],
             [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes', 'resultShortcuts'], 'safe'],
-            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory'], 'boolean'],
+            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory', 'firstRunCompleted'], 'boolean'],
         ];
     }
 
