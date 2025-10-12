@@ -9,6 +9,7 @@ use brilliance\launcher\services\SearchService;
 use brilliance\launcher\services\HistoryService;
 use brilliance\launcher\services\UserPreferenceService;
 use brilliance\launcher\services\InterfaceService;
+use brilliance\launcher\services\IntegrationService;
 use brilliance\launcher\utilities\LauncherTableUtility;
 use brilliance\launcher\variables\LauncherVariable;
 
@@ -50,6 +51,7 @@ class Launcher extends Plugin
                 'history' => HistoryService::class,
                 'userPreference' => UserPreferenceService::class,
                 'interface' => InterfaceService::class,
+                'integration' => IntegrationService::class,
             ],
         ];
     }
@@ -70,6 +72,7 @@ class Launcher extends Plugin
             'history' => HistoryService::class,
             'userPreference' => UserPreferenceService::class,
             'interface' => InterfaceService::class,
+            'integration' => IntegrationService::class,
         ]);
 
         // Handle project config changes
@@ -92,6 +95,8 @@ class Launcher extends Plugin
                         $hotkey = $settings->hotkey;
                         $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl('@brilliance/launcher/assetbundles/launcher/dist');
                         
+                        $searchableTypesJson = json_encode($settings->searchableTypes);
+
                         $js = <<<JS
                         // Ensure LauncherPlugin initialization happens after DOM and Craft are ready
                         if (typeof Craft !== 'undefined') {
@@ -104,7 +109,8 @@ class Launcher extends Plugin
                                             searchUrl: Craft.getActionUrl('launcher/search'),
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
-                                            selectResultModifier: '{$settings->selectResultModifier}'
+                                            selectResultModifier: '{$settings->selectResultModifier}',
+                                            searchableTypes: $searchableTypesJson
                                         });
                                     }
                                 });
@@ -117,7 +123,8 @@ class Launcher extends Plugin
                                             searchUrl: Craft.getActionUrl('launcher/search'),
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
-                                            selectResultModifier: '{$settings->selectResultModifier}'
+                                            selectResultModifier: '{$settings->selectResultModifier}',
+                                            searchableTypes: $searchableTypesJson
                                         });
                                     }
                                 });
@@ -284,6 +291,7 @@ class Launcher extends Plugin
 
         // Convert boolean to string for JavaScript
         $openInNewTabJs = $openInNewTab ? 'true' : 'false';
+        $searchableTypesJson = json_encode($settings->searchableTypes);
 
         $js = <<<JS
         // Front-end Launcher initialization
@@ -299,6 +307,7 @@ class Launcher extends Plugin
                     debounceDelay: {$settings->debounceDelay},
                     assetUrl: '$assetUrl',
                     selectResultModifier: '{$settings->selectResultModifier}',
+                    searchableTypes: $searchableTypesJson,
                     isFrontEnd: true,
                     openInNewTab: $openInNewTabJs,
                     frontEndContext: $contextJson

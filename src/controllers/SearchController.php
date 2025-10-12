@@ -74,10 +74,16 @@ class SearchController extends Controller
                 Craft::info('Popular items requested: Found ' . count($popularItems) . ' items', 'launcher');
                 
                 if (!empty($popularItems)) {
-                    Craft::info('Returning popular items: ' . json_encode(array_map(function($item) { 
-                        return $item['title'] . ' (' . $item['launchCount'] . ' launches)'; 
+                    Craft::info('Returning popular items: ' . json_encode(array_map(function($item) {
+                        return $item['title'] . ' (' . $item['launchCount'] . ' launches)';
                     }, $popularItems)), 'launcher');
-                    
+
+                    // Add integration data to popular items
+                    foreach ($popularItems as &$item) {
+                        $item['integrations'] = Launcher::$plugin->integration->getIntegrationsForItem($item);
+                    }
+                    unset($item);
+
                     return $this->asJson([
                         'success' => true,
                         'results' => $popularItems,
@@ -255,6 +261,42 @@ class SearchController extends Controller
         }
 
         return $validatedContext;
+    }
+
+    /**
+     * Execute an integration action
+     */
+    public function actionExecuteIntegration(): Response
+    {
+        try {
+            $this->requireAcceptsJson();
+            $this->requirePostRequest();
+
+            $integrationHandle = Craft::$app->getRequest()->getBodyParam('integration');
+            $action = Craft::$app->getRequest()->getBodyParam('action');
+            $params = Craft::$app->getRequest()->getBodyParam('params', []);
+
+            if (!$integrationHandle || !$action) {
+                return $this->asJson([
+                    'success' => false,
+                    'message' => 'Integration handle and action are required',
+                ], 400);
+            }
+
+            Craft::info('Integration action request: ' . $integrationHandle . '::' . $action, 'launcher');
+
+            // Execute the integration action
+            $result = Launcher::$plugin->integration->executeAction($integrationHandle, $action, $params);
+
+            return $this->asJson($result);
+
+        } catch (\Exception $e) {
+            Craft::error('Integration action failed: ' . $e->getMessage(), 'launcher');
+            return $this->asJson([
+                'success' => false,
+                'message' => 'Action execution failed: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

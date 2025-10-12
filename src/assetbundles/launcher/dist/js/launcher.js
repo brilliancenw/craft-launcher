@@ -7,7 +7,8 @@
             hotkey: 'cmd+k',
             searchUrl: '',
             debounceDelay: 300,
-            selectResultModifier: 'cmd'
+            selectResultModifier: 'cmd',
+            searchableTypes: {}
         },
         searchTimeout: null,
         currentResults: [],
@@ -610,7 +611,7 @@
             this.currentContentType = null;
 
             // Get available content types from settings
-            const contentTypes = [
+            const allContentTypes = [
                 {type: 'entries', label: 'Entries', description: 'All entry content'},
                 {type: 'categories', label: 'Categories', description: 'Category items'},
                 {type: 'assets', label: 'Assets', description: 'Media and files'},
@@ -622,8 +623,26 @@
                 {type: 'volumes', label: 'Asset Volumes', description: 'Asset volume settings'},
                 {type: 'fields', label: 'Fields', description: 'Field definitions'},
                 {type: 'plugins', label: 'Plugins', description: 'Plugin settings'},
-                {type: 'settings', label: 'Settings', description: 'System settings'}
+                {type: 'settings', label: 'Settings', description: 'System settings'},
+                {type: 'utilities', label: 'Utilities', description: 'System utilities and tools'}
             ];
+
+            // Filter content types based on searchableTypes settings
+            const contentTypes = allContentTypes.filter(ct => {
+                // Map browse type to settings key (some have different names)
+                const typeMapping = {
+                    'groups': 'categoryGroups',
+                    'volumes': 'assetVolumes'
+                };
+                const settingsKey = typeMapping[ct.type] || ct.type;
+
+                // Check if this type is enabled in settings
+                const searchableTypes = this.config.searchableTypes || {};
+
+                // Only include if explicitly enabled (true or 1)
+                const isEnabled = searchableTypes[settingsKey];
+                return isEnabled === true || isEnabled === 1 || isEnabled === '1';
+            });
 
             this.displayBrowseResults(contentTypes);
         },
@@ -762,6 +781,7 @@
                     'Volume': 'volumes',
                     'Group': 'groups',
                     'Settings': 'settings',
+                    'Utility': 'utilities',
                     'Category Group': 'categories',
                     'Field Group': 'groups',
                     'User Group': 'groups',
@@ -784,6 +804,7 @@
                     'volumes': 'volumes',
                     'groups': 'groups',
                     'settings': 'settings',
+                    'utilities': 'utilities',
                     // Handle icon names
                     'folder': 'categories',
                     'newspaper': 'entries',

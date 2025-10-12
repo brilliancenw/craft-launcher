@@ -24,8 +24,12 @@ class LauncherService extends Component
                 } else {
                     $item['shortcut'] = (string)$index;
                 }
-                
+
                 $item['index'] = $index;
+
+                // Add integration data
+                $item['integrations'] = Launcher::$plugin->integration->getIntegrationsForItem($item);
+
                 $formatted[] = $item;
                 $index++;
             }

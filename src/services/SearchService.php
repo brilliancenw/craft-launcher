@@ -85,6 +85,11 @@ class SearchService extends Component
             case 'settings':
                 return ['settings' => $this->getAllStaticSettings()];
                 break;
+            case 'utilities':
+                if ($settings->searchableTypes['utilities'] ?? false) {
+                    return ['utilities' => $this->getAllUtilities()];
+                }
+                break;
         }
 
         return [];
@@ -150,6 +155,11 @@ class SearchService extends Component
 
         // Search static settings destinations
         $results['settings'] = $this->searchStaticSettings($query);
+
+        // Search utilities
+        if ($settings->searchableTypes['utilities'] ?? false) {
+            $results['utilities'] = $this->searchUtilities($query);
+        }
 
         // Commerce searches (if Commerce is installed)
         if ($this->isCommerceInstalled()) {
@@ -1312,5 +1322,253 @@ class SearchService extends Component
             Craft::error('Commerce order search error: ' . $e->getMessage(), __METHOD__);
             return [];
         }
+    }
+
+    /**
+     * Search utilities
+     */
+    private function searchUtilities(string $query): array
+    {
+        if (empty($query)) {
+            return [];
+        }
+
+        $queryLower = strtolower($query);
+        $results = [];
+
+        // Define available utilities with search terms
+        $utilities = [
+            [
+                'handle' => 'clear-caches',
+                'title' => 'Clear Caches',
+                'url' => UrlHelper::cpUrl('utilities/clear-caches'),
+                'searchTerms' => ['clear', 'caches', 'cache', 'flush', 'clean', 'reset'],
+            ],
+            [
+                'handle' => 'updates',
+                'title' => 'Updates',
+                'url' => UrlHelper::cpUrl('utilities/updates'),
+                'searchTerms' => ['updates', 'update', 'upgrade', 'version'],
+            ],
+            [
+                'handle' => 'system-report',
+                'title' => 'System Report',
+                'url' => UrlHelper::cpUrl('utilities/system-report'),
+                'searchTerms' => ['system', 'report', 'info', 'information', 'diagnostics'],
+            ],
+            [
+                'handle' => 'php-info',
+                'title' => 'PHP Info',
+                'url' => UrlHelper::cpUrl('utilities/php-info'),
+                'searchTerms' => ['php', 'phpinfo', 'info', 'configuration'],
+            ],
+            [
+                'handle' => 'deprecation-errors',
+                'title' => 'Deprecation Warnings',
+                'url' => UrlHelper::cpUrl('utilities/deprecation-errors'),
+                'searchTerms' => ['deprecation', 'warnings', 'deprecated', 'errors'],
+            ],
+            [
+                'handle' => 'database-backup',
+                'title' => 'Database Backup',
+                'url' => UrlHelper::cpUrl('utilities/db-backup'),
+                'searchTerms' => ['database', 'backup', 'db', 'export', 'dump'],
+            ],
+            [
+                'handle' => 'find-replace',
+                'title' => 'Find and Replace',
+                'url' => UrlHelper::cpUrl('utilities/find-replace'),
+                'searchTerms' => ['find', 'replace', 'search', 'update', 'bulk'],
+            ],
+            [
+                'handle' => 'migrations',
+                'title' => 'Migrations',
+                'url' => UrlHelper::cpUrl('utilities/migrations'),
+                'searchTerms' => ['migrations', 'migrate', 'database', 'schema'],
+            ],
+            [
+                'handle' => 'project-config',
+                'title' => 'Project Config',
+                'url' => UrlHelper::cpUrl('utilities/project-config'),
+                'searchTerms' => ['project', 'config', 'configuration', 'yaml', 'sync'],
+            ],
+            [
+                'handle' => 'queue-manager',
+                'title' => 'Queue Manager',
+                'url' => UrlHelper::cpUrl('utilities/queue-manager'),
+                'searchTerms' => ['queue', 'jobs', 'tasks', 'background'],
+            ],
+            [
+                'handle' => 'asset-indexes',
+                'title' => 'Asset Indexes',
+                'url' => UrlHelper::cpUrl('utilities/asset-indexes'),
+                'searchTerms' => ['asset', 'index', 'rebuild', 'refresh', 'sync'],
+            ],
+            [
+                'handle' => 'system-messages',
+                'title' => 'System Messages',
+                'url' => UrlHelper::cpUrl('utilities/system-messages'),
+                'searchTerms' => ['system', 'messages', 'email', 'templates'],
+            ],
+        ];
+
+        // Add plugin utilities if installed
+        if (Craft::$app->getPlugins()->isPluginInstalled('blitz')) {
+            $utilities[] = [
+                'handle' => 'blitz-cache',
+                'title' => 'Blitz Cache',
+                'url' => UrlHelper::cpUrl('utilities/blitz-cache'),
+                'searchTerms' => ['blitz', 'cache', 'static', 'caching'],
+            ];
+            $utilities[] = [
+                'handle' => 'blitz-diagnostics',
+                'title' => 'Blitz Diagnostics',
+                'url' => UrlHelper::cpUrl('utilities/blitz-diagnostics'),
+                'searchTerms' => ['blitz', 'diagnostics', 'cache', 'debug'],
+            ];
+        }
+
+        if (Craft::$app->getPlugins()->isPluginInstalled('launcher')) {
+            $utilities[] = [
+                'handle' => 'launcher',
+                'title' => 'Launcher',
+                'url' => UrlHelper::cpUrl('utilities/launcher'),
+                'searchTerms' => ['launcher', 'database', 'table', 'history'],
+            ];
+        }
+
+        // Search through utilities
+        foreach ($utilities as $utility) {
+            $found = false;
+
+            // Check if query matches any search term
+            foreach ($utility['searchTerms'] as $term) {
+                if (stripos($term, $queryLower) !== false || stripos($queryLower, $term) !== false) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if ($found) {
+                $results[] = [
+                    'id' => $utility['handle'],
+                    'title' => $utility['title'],
+                    'url' => $utility['url'],
+                    'type' => 'Utility',
+                    'handle' => $utility['handle'],
+                    'icon' => 'tool',
+                ];
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get all utilities for browse mode
+     */
+    private function getAllUtilities(): array
+    {
+        $results = [];
+
+        // Define available utilities
+        $utilities = [
+            [
+                'handle' => 'clear-caches',
+                'title' => 'Clear Caches',
+                'url' => UrlHelper::cpUrl('utilities/clear-caches'),
+            ],
+            [
+                'handle' => 'updates',
+                'title' => 'Updates',
+                'url' => UrlHelper::cpUrl('utilities/updates'),
+            ],
+            [
+                'handle' => 'system-report',
+                'title' => 'System Report',
+                'url' => UrlHelper::cpUrl('utilities/system-report'),
+            ],
+            [
+                'handle' => 'php-info',
+                'title' => 'PHP Info',
+                'url' => UrlHelper::cpUrl('utilities/php-info'),
+            ],
+            [
+                'handle' => 'deprecation-errors',
+                'title' => 'Deprecation Warnings',
+                'url' => UrlHelper::cpUrl('utilities/deprecation-errors'),
+            ],
+            [
+                'handle' => 'database-backup',
+                'title' => 'Database Backup',
+                'url' => UrlHelper::cpUrl('utilities/db-backup'),
+            ],
+            [
+                'handle' => 'find-replace',
+                'title' => 'Find and Replace',
+                'url' => UrlHelper::cpUrl('utilities/find-replace'),
+            ],
+            [
+                'handle' => 'migrations',
+                'title' => 'Migrations',
+                'url' => UrlHelper::cpUrl('utilities/migrations'),
+            ],
+            [
+                'handle' => 'project-config',
+                'title' => 'Project Config',
+                'url' => UrlHelper::cpUrl('utilities/project-config'),
+            ],
+            [
+                'handle' => 'queue-manager',
+                'title' => 'Queue Manager',
+                'url' => UrlHelper::cpUrl('utilities/queue-manager'),
+            ],
+            [
+                'handle' => 'asset-indexes',
+                'title' => 'Asset Indexes',
+                'url' => UrlHelper::cpUrl('utilities/asset-indexes'),
+            ],
+            [
+                'handle' => 'system-messages',
+                'title' => 'System Messages',
+                'url' => UrlHelper::cpUrl('utilities/system-messages'),
+            ],
+        ];
+
+        // Add plugin utilities if installed
+        if (Craft::$app->getPlugins()->isPluginInstalled('blitz')) {
+            $utilities[] = [
+                'handle' => 'blitz-cache',
+                'title' => 'Blitz Cache',
+                'url' => UrlHelper::cpUrl('utilities/blitz-cache'),
+            ];
+            $utilities[] = [
+                'handle' => 'blitz-diagnostics',
+                'title' => 'Blitz Diagnostics',
+                'url' => UrlHelper::cpUrl('utilities/blitz-diagnostics'),
+            ];
+        }
+
+        if (Craft::$app->getPlugins()->isPluginInstalled('launcher')) {
+            $utilities[] = [
+                'handle' => 'launcher',
+                'title' => 'Launcher',
+                'url' => UrlHelper::cpUrl('utilities/launcher'),
+            ];
+        }
+
+        // Add all utilities to results
+        foreach ($utilities as $utility) {
+            $results[] = [
+                'id' => $utility['handle'],
+                'title' => $utility['title'],
+                'url' => $utility['url'],
+                'type' => 'Utility',
+                'handle' => $utility['handle'],
+                'icon' => 'tool',
+            ];
+        }
+
+        return $results;
     }
 }

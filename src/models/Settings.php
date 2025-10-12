@@ -23,6 +23,8 @@ class Settings extends Model
         'userGroups' => true,
         'plugins' => true,
         'routes' => true,
+        'utilities' => true,
+        'settings' => true,
     ];
     
     public array $searchableEntryTypes = [];

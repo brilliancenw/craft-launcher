@@ -444,28 +444,16 @@ document.addEventListener('DOMContentLoaded', function() {
             <th>Description</th>
         </tr>
         <tr>
-            <th class="light">Entries</th>
+            <th class="light">Asset Volumes</th>
             <td>
                 {{ forms.lightswitchField({
-                    id: 'searchableTypes-entries',
-                    name: 'searchableTypes[entries]',
-                    on: settings.searchableTypes.entries ?? true,
+                    id: 'searchableTypes-assetVolumes',
+                    name: 'searchableTypes[assetVolumes]',
+                    on: settings.searchableTypes.assetVolumes ?? true,
                     disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
-            <td class="light">Search all entry content across sections</td>
-        </tr>
-        <tr>
-            <th class="light">Categories</th>
-            <td>
-                {{ forms.lightswitchField({
-                    id: 'searchableTypes-categories',
-                    name: 'searchableTypes[categories]',
-                    on: settings.searchableTypes.categories ?? true,
-                    disabled: isProjectConfigReadOnly,
-                }) }}
-            </td>
-            <td class="light">Search categories from all category groups</td>
+            <td class="light">Navigate to asset volume settings</td>
         </tr>
         <tr>
             <th class="light">Assets</th>
@@ -480,40 +468,16 @@ document.addEventListener('DOMContentLoaded', function() {
             <td class="light">Search files and media assets</td>
         </tr>
         <tr>
-            <th class="light">Users</th>
+            <th class="light">Categories</th>
             <td>
                 {{ forms.lightswitchField({
-                    id: 'searchableTypes-users',
-                    name: 'searchableTypes[users]',
-                    on: settings.searchableTypes.users ?? true,
+                    id: 'searchableTypes-categories',
+                    name: 'searchableTypes[categories]',
+                    on: settings.searchableTypes.categories ?? true,
                     disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
-            <td class="light">Search user accounts</td>
-        </tr>
-        <tr>
-            <th class="light">Global Sets</th>
-            <td>
-                {{ forms.lightswitchField({
-                    id: 'searchableTypes-globals',
-                    name: 'searchableTypes[globals]',
-                    on: settings.searchableTypes.globals ?? true,
-                    disabled: isProjectConfigReadOnly,
-                }) }}
-            </td>
-            <td class="light">Search global content sets</td>
-        </tr>
-        <tr>
-            <th class="light">Sections</th>
-            <td>
-                {{ forms.lightswitchField({
-                    id: 'searchableTypes-sections',
-                    name: 'searchableTypes[sections]',
-                    on: settings.searchableTypes.sections ?? true,
-                    disabled: isProjectConfigReadOnly,
-                }) }}
-            </td>
-            <td class="light">Navigate to section settings</td>
+            <td class="light">Search categories from all category groups</td>
         </tr>
         <tr>
             <th class="light">Category Groups</th>
@@ -528,28 +492,16 @@ document.addEventListener('DOMContentLoaded', function() {
             <td class="light">Navigate to category group settings</td>
         </tr>
         <tr>
-            <th class="light">Asset Volumes</th>
+            <th class="light">Entries</th>
             <td>
                 {{ forms.lightswitchField({
-                    id: 'searchableTypes-assetVolumes',
-                    name: 'searchableTypes[assetVolumes]',
-                    on: settings.searchableTypes.assetVolumes ?? true,
+                    id: 'searchableTypes-entries',
+                    name: 'searchableTypes[entries]',
+                    on: settings.searchableTypes.entries ?? true,
                     disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
-            <td class="light">Navigate to asset volume settings</td>
-        </tr>
-        <tr>
-            <th class="light">Fields</th>
-            <td>
-                {{ forms.lightswitchField({
-                    id: 'searchableTypes-fields',
-                    name: 'searchableTypes[fields]',
-                    on: settings.searchableTypes.fields ?? true,
-                    disabled: isProjectConfigReadOnly,
-                }) }}
-            </td>
-            <td class="light">Navigate to field definitions</td>
+            <td class="light">Search all entry content across sections</td>
         </tr>
         <tr>
             <th class="light">Field Groups</th>
@@ -564,16 +516,28 @@ document.addEventListener('DOMContentLoaded', function() {
             <td class="light">Navigate to field group settings</td>
         </tr>
         <tr>
-            <th class="light">User Groups</th>
+            <th class="light">Fields</th>
             <td>
                 {{ forms.lightswitchField({
-                    id: 'searchableTypes-userGroups',
-                    name: 'searchableTypes[userGroups]',
-                    on: settings.searchableTypes.userGroups ?? true,
+                    id: 'searchableTypes-fields',
+                    name: 'searchableTypes[fields]',
+                    on: settings.searchableTypes.fields ?? true,
                     disabled: isProjectConfigReadOnly,
                 }) }}
             </td>
-            <td class="light">Navigate to user group settings</td>
+            <td class="light">Navigate to field definitions</td>
+        </tr>
+        <tr>
+            <th class="light">Global Sets</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-globals',
+                    name: 'searchableTypes[globals]',
+                    on: settings.searchableTypes.globals ?? true,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Search global content sets</td>
         </tr>
         <tr>
             <th class="light">Plugins</th>
@@ -599,8 +563,72 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td class="light">Navigate to route settings</td>
         </tr>
+        <tr>
+            <th class="light">Sections</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-sections',
+                    name: 'searchableTypes[sections]',
+                    on: settings.searchableTypes.sections ?? true,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Navigate to section settings</td>
+        </tr>
+        <tr>
+            <th class="light">Settings</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-settings',
+                    name: 'searchableTypes[settings]',
+                    on: settings.searchableTypes.settings ?? true,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Search and access system settings pages</td>
+        </tr>
+        <tr>
+            <th class="light">User Groups</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-userGroups',
+                    name: 'searchableTypes[userGroups]',
+                    on: settings.searchableTypes.userGroups ?? true,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Navigate to user group settings</td>
+        </tr>
+        <tr>
+            <th class="light">Users</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-users',
+                    name: 'searchableTypes[users]',
+                    on: settings.searchableTypes.users ?? true,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Search user accounts</td>
+        </tr>
+        <tr>
+            <th class="light">Utilities</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-utilities',
+                    name: 'searchableTypes[utilities]',
+                    on: settings.searchableTypes.utilities ?? true,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Search and browse system utilities (Clear Caches, Migrations, etc.)</td>
+        </tr>
     </tbody>
 </table>
+
+<div id="searchable-types-warning" style="display: none; margin-top: 14px; padding: 14px; background: #fef3cd; border: 1px solid #f0ad4e; border-radius: 4px; color: #8a6d3b;">
+    <strong>Warning:</strong> All content types are disabled. The launcher will have no searchable content.
+</div>
 
 <hr>
 
@@ -913,3 +941,136 @@ document.addEventListener('DOMContentLoaded', function() {
         </table>
     </div>
 </div>
+
+<script>
+(function() {
+    function checkSearchableTypes() {
+        let anyEnabled = false;
+
+        // Find all inputs by name attribute
+        const inputs = document.querySelectorAll('input[type="hidden"][name^="settings[searchableTypes]["]');
+
+        inputs.forEach(function(input) {
+            if (input.value === '1') {
+                anyEnabled = true;
+            }
+        });
+
+        // Show or hide warning (Craft prepends "settings-" to the ID)
+        const warning = document.getElementById('settings-searchable-types-warning');
+        if (warning) {
+            warning.style.display = anyEnabled ? 'none' : 'block';
+        }
+    }
+
+    // Check on page load and when Craft is ready
+    if (typeof Craft !== 'undefined' && Craft.cp) {
+        console.log('[Launcher Settings] Using Craft.cp.ready');
+        Craft.cp.ready(function() {
+            console.log('[Launcher Settings] Craft.cp ready fired');
+
+            // Wait a bit for Craft's lightswitch components to initialize
+            setTimeout(function() {
+                console.log('[Launcher Settings] Running initial check');
+                checkSearchableTypes();
+
+                // Monitor all searchable type toggles for changes
+                const inputs = document.querySelectorAll('input[type="hidden"][name^="settings[searchableTypes]["]');
+                console.log('[Launcher Settings] Attaching listeners to', inputs.length, 'inputs');
+
+                // Use MutationObserver to watch for value changes on all inputs
+                inputs.forEach(function(input) {
+                    // Create observer for this input
+                    const observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                                console.log('[Launcher Settings] Input value changed:', input.name, 'New value:', input.value);
+                                setTimeout(checkSearchableTypes, 50);
+                            }
+                        });
+                    });
+
+                    // Start observing the input for attribute changes
+                    observer.observe(input, { attributes: true, attributeFilter: ['value'] });
+
+                    // Also listen to the lightswitch button clicks as backup
+                    const parent = input.parentElement;
+                    if (parent) {
+                        const lightswitch = parent.querySelector('.lightswitch');
+                        if (lightswitch) {
+                            console.log('[Launcher Settings] Found lightswitch for:', input.name);
+                            lightswitch.addEventListener('click', function() {
+                                console.log('[Launcher Settings] Lightswitch clicked for:', input.name);
+                                // Check multiple times as Craft may update the value asynchronously
+                                setTimeout(checkSearchableTypes, 50);
+                                setTimeout(checkSearchableTypes, 150);
+                            });
+                        }
+                    }
+                });
+            }, 250);
+        });
+    } else {
+        console.log('[Launcher Settings] Using DOMContentLoaded fallback');
+        // Fallback if Craft.cp is not available
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[Launcher Settings] DOMContentLoaded fired');
+
+            // Poll for inputs to appear (try every 200ms for up to 5 seconds)
+            let attempts = 0;
+            const maxAttempts = 25;
+
+            const pollForInputs = function() {
+                attempts++;
+                console.log('[Launcher Settings] Polling attempt', attempts);
+
+                const inputs = document.querySelectorAll('input[type="hidden"][name^="settings[searchableTypes]["]');
+
+                if (inputs.length > 0) {
+                    console.log('[Launcher Settings] Found', inputs.length, 'inputs after', attempts, 'attempts!');
+                    checkSearchableTypes();
+
+                    // Use MutationObserver to watch for value changes on all inputs
+                    inputs.forEach(function(input) {
+                        // Create observer for this input
+                        const observer = new MutationObserver(function(mutations) {
+                            mutations.forEach(function(mutation) {
+                                if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                                    console.log('[Launcher Settings] Input value changed:', input.name, 'New value:', input.value);
+                                    setTimeout(checkSearchableTypes, 50);
+                                }
+                            });
+                        });
+
+                        // Start observing the input for attribute changes
+                        observer.observe(input, { attributes: true, attributeFilter: ['value'] });
+
+                        // Also listen to the lightswitch button clicks as backup
+                        const parent = input.parentElement;
+                        if (parent) {
+                            const lightswitch = parent.querySelector('.lightswitch');
+                            if (lightswitch) {
+                                console.log('[Launcher Settings] Found lightswitch for:', input.name);
+                                lightswitch.addEventListener('click', function() {
+                                    console.log('[Launcher Settings] Lightswitch clicked for:', input.name);
+                                    // Check multiple times as Craft may update the value asynchronously
+                                    setTimeout(checkSearchableTypes, 50);
+                                    setTimeout(checkSearchableTypes, 150);
+                                });
+                            }
+                        }
+                    });
+                } else if (attempts < maxAttempts) {
+                    // Keep polling
+                    setTimeout(pollForInputs, 200);
+                } else {
+                    console.error('[Launcher Settings] Gave up after', maxAttempts, 'attempts');
+                }
+            };
+
+            // Start polling
+            setTimeout(pollForInputs, 200);
+        });
+    }
+})();
+</script>
