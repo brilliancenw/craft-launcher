@@ -71,10 +71,19 @@ class IntegrationService extends Component
     public function getIntegrationsForItem(array $item): array
     {
         $integrationData = [];
+        $settings = \brilliance\launcher\Launcher::$plugin->getSettings();
+        $enabledIntegrations = $settings->enabledIntegrations ?? [];
 
         foreach ($this->getIntegrations() as $integration) {
             try {
-                if ($integration->canHandleItem($item)) {
+                $handle = $integration->getHandle();
+
+                // Check if integration is enabled in settings (default to true if not set)
+                $isEnabled = isset($enabledIntegrations[$handle])
+                    ? ($enabledIntegrations[$handle] === true || $enabledIntegrations[$handle] === '1' || $enabledIntegrations[$handle] === 1)
+                    : true; // Default to enabled if not in settings
+
+                if ($isEnabled && $integration->canHandleItem($item)) {
                     $data = $integration->getIntegrationData($item);
                     if ($data !== null) {
                         $integrationData[] = $data;

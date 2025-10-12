@@ -337,6 +337,9 @@
         },
 
         displayResults: function(results, isRecent, data) {
+            // Debug: Log all results to see what data is available
+            console.log('[Launcher] Displaying results:', results);
+
             // Add "Edit this page" option for front-end context
             if (this.isFrontEnd && this.frontEndContext && this.frontEndContext.currentElement && !this.browseMode) {
                 const currentElement = this.frontEndContext.currentElement;
@@ -374,6 +377,11 @@
             }
 
             results.forEach((result, index) => {
+                // Debug: Log integration data
+                if (result.integrations && result.integrations.length > 0) {
+                    console.log('[Launcher] Result with integrations:', result.title, result.integrations);
+                }
+
                 const iconType = result.type || result.icon;
                 const iconSvg = this.getIconSvg(iconType);
                 // Generate shortcut display based on index and settings
@@ -391,6 +399,41 @@
                 // Add remove button for popular items
                 const removeButtonHtml = result.isPopular && result.itemHash ?
                     `<button class="launcher-remove-btn" data-item-hash="${result.itemHash}" title="Remove from history" aria-label="Remove from history">×</button>` : '';
+
+                // Build integration rows
+                let integrationHtml = '';
+                if (result.integrations && result.integrations.length > 0) {
+                    result.integrations.forEach(integration => {
+                        integrationHtml += '<div class="launcher-integration-row">';
+
+                        // Integration icon (with title attribute for hover tooltip)
+                        integrationHtml += '<div class="launcher-integration-info">';
+                        if (integration.icon) {
+                            const iconTitle = integration.name || integration.handle;
+                            integrationHtml += `<span class="launcher-integration-icon" title="${iconTitle}">${integration.icon}</span>`;
+                        }
+                        integrationHtml += '</div>';
+
+                        // Integration content (status and actions)
+                        integrationHtml += '<div class="launcher-integration-content">';
+
+                        // Status badge
+                        if (integration.status) {
+                            const statusClass = `launcher-integration-badge launcher-integration-${integration.status.type || 'default'}`;
+                            integrationHtml += `<span class="${statusClass}">${integration.status.label}</span>`;
+                        }
+
+                        // Action buttons
+                        if (integration.actions && integration.actions.length > 0) {
+                            integration.actions.forEach(action => {
+                                integrationHtml += `<button class="launcher-integration-action" data-integration="${integration.handle}" data-action="${action.action}" data-result-index="${index}" data-confirm="${action.confirm || false}">${action.label}</button>`;
+                            });
+                        }
+
+                        integrationHtml += '</div>'; // Close content
+                        integrationHtml += '</div>'; // Close row
+                    });
+                }
 
                 html += `
                     <div class="launcher-result ${index === 0 ? 'selected' : ''}" data-index="${index}">
@@ -411,6 +454,7 @@
                                 ${result.product ? `<span class="launcher-result-section">${result.product}</span>` : ''}
                                 ${result.launchCount ? `<span class="launcher-result-count launcher-result-count-hidden">${result.launchCount} launches</span>` : ''}
                             </div>
+                            ${integrationHtml ? `<div class="launcher-integration-container">${integrationHtml}</div>` : ''}
                         </div>
                         <div class="launcher-result-actions">
                             ${shortcutHtml}
@@ -434,6 +478,13 @@
                     if (e.target.classList.contains('launcher-remove-btn')) {
                         e.stopPropagation();
                         self.removeHistoryItem(e.target.dataset.itemHash, index);
+                        return;
+                    }
+
+                    // Check if the click was on an integration action button
+                    if (e.target.classList.contains('launcher-integration-action')) {
+                        e.stopPropagation();
+                        self.executeIntegrationAction(e.target);
                         return;
                     }
 
@@ -603,6 +654,104 @@
             })
             .catch(error => {
                 console.error('Failed to remove history item:', error);
+            });
+        },
+
+        executeIntegrationAction: function(button) {
+            const self = this;
+            const integration = button.dataset.integration;
+            const action = button.dataset.action;
+            const resultIndex = parseInt(button.dataset.resultIndex);
+            const shouldConfirm = button.dataset.confirm === 'true';
+            const result = this.currentResults[resultIndex];
+
+            if (!result) {
+                console.error('Could not find result for integration action');
+                return;
+            }
+
+            // Show confirmation if needed
+            if (shouldConfirm) {
+                const confirmed = confirm(`Are you sure you want to ${action} for "${result.title}"?`);
+                if (!confirmed) {
+                    return;
+                }
+            }
+
+            console.log('Executing integration action:', integration, action, 'for result:', result);
+
+            // Disable button and show loading state
+            button.disabled = true;
+            const originalText = button.textContent;
+            button.textContent = 'Working...';
+
+            const actionUrl = this.config.executeIntegrationUrl || (typeof Craft !== 'undefined' ? Craft.getActionUrl('launcher/search/execute-integration') : null);
+            const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
+            const csrfTokenValue = this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : null);
+
+            if (!actionUrl) {
+                console.warn('No execute integration URL available');
+                button.disabled = false;
+                button.textContent = originalText;
+                return;
+            }
+
+            const requestBody = {
+                integration: integration,
+                action: action,
+                params: {
+                    item: result
+                }
+            };
+
+            if (csrfTokenName && csrfTokenValue) {
+                requestBody[csrfTokenName] = csrfTokenValue;
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            if (csrfTokenValue) {
+                headers['X-CSRF-Token'] = csrfTokenValue;
+            }
+
+            fetch(actionUrl, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Integration action response:', data);
+
+                if (data.success) {
+                    // Show success feedback briefly
+                    button.textContent = data.message || 'Done!';
+
+                    // Refresh the current view to update integration status
+                    setTimeout(() => {
+                        if (self.searchInput.value) {
+                            // Re-run search to get updated integration data
+                            self.performSearch(self.searchInput.value);
+                        } else {
+                            // Re-fetch popular/recent items to get updated integration data
+                            self.performSearch('');
+                        }
+                    }, 800);
+                } else {
+                    console.warn('Integration action failed:', data.message);
+                    button.disabled = false;
+                    button.textContent = originalText;
+                    alert(data.message || 'Action failed. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Failed to execute integration action:', error);
+                button.disabled = false;
+                button.textContent = originalText;
+                alert('Action failed. Please try again.');
             });
         },
 

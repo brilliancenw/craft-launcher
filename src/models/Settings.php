@@ -46,6 +46,9 @@ class Settings extends Model
     public bool $enableLaunchHistory = true;
     public int $maxHistoryItems = 10;
 
+    // Integration settings
+    public array $enabledIntegrations = [];
+
     // Result navigation shortcuts
     public string $selectResultModifier = 'cmd';
     public array $resultShortcuts = [
@@ -71,7 +74,7 @@ class Settings extends Model
             [['maxResults'], 'default', 'value' => 10],
             [['maxHistoryItems'], 'default', 'value' => 10],
             [['selectResultModifier'], 'default', 'value' => 'cmd'],
-            [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes', 'resultShortcuts'], 'safe'],
+            [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes', 'resultShortcuts', 'enabledIntegrations'], 'safe'],
             [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory'], 'boolean'],
         ];
     }
@@ -98,6 +101,7 @@ class Settings extends Model
             'maxHistoryItems' => 'Max Popular Items to Show',
             'selectResultModifier' => 'Result Selection Modifier Key',
             'resultShortcuts' => 'Result Navigation Shortcuts',
+            'enabledIntegrations' => 'Enabled Integrations',
         ];
     }
 }

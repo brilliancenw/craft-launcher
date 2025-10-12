@@ -23,6 +23,11 @@ abstract class BaseIntegration implements LauncherIntegrationInterface
     /**
      * @inheritdoc
      */
+    abstract public function getIcon(): string;
+
+    /**
+     * @inheritdoc
+     */
     abstract public function getSupportedTypes(): array;
 
     /**

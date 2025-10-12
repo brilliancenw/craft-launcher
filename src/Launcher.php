@@ -276,6 +276,7 @@ class Launcher extends Plugin
         $searchUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search']);
         $navigateUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search/navigate']);
         $removeHistoryUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search/remove-history-item']);
+        $executeIntegrationUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search/execute-integration']);
 
         // Get CSRF token details
         $request = Craft::$app->getRequest();
@@ -302,6 +303,7 @@ class Launcher extends Plugin
                     searchUrl: '$searchUrl',
                     navigateUrl: '$navigateUrl',
                     removeHistoryUrl: '$removeHistoryUrl',
+                    executeIntegrationUrl: '$executeIntegrationUrl',
                     csrfTokenName: '$csrfTokenName',
                     csrfTokenValue: '$csrfTokenValue',
                     debounceDelay: {$settings->debounceDelay},

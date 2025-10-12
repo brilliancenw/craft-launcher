@@ -36,4 +36,12 @@ class LauncherVariable
     {
         return Launcher::$plugin->userPreference;
     }
+
+    /**
+     * Get the integration service
+     */
+    public function getIntegration()
+    {
+        return Launcher::$plugin->integration;
+    }
 }

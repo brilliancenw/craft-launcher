@@ -24,6 +24,13 @@ interface LauncherIntegrationInterface
     public function getName(): string;
 
     /**
+     * Get the integration icon
+     *
+     * @return string SVG markup, image URL, or emoji/text
+     */
+    public function getIcon(): string;
+
+    /**
      * Get the item types this integration supports
      *
      * @return string[] Array of item types (Entry, Category, GlobalSet, Asset, Utility, etc.)

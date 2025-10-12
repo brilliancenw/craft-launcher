@@ -749,6 +749,54 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <hr>
 
+<h1>Plugin Integrations</h1>
+<p>Enable or disable integrations with other installed plugins. Integrations provide contextual information and actions in search results.</p>
+
+{% set availableIntegrations = craft.launcher.integration.getIntegrations() %}
+{% if availableIntegrations|length > 0 %}
+    <table class="data fullwidth fixed-layout" dir="ltr">
+        <thead>
+            <tr>
+                <th style="width: 30%;">Plugin</th>
+                <th style="width: 50%;">Description</th>
+                <th style="width: 20%; text-align: center;">Enabled</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for integration in availableIntegrations %}
+                {% set integrationHandle = integration.getHandle() %}
+                {% set integrationName = integration.getName() %}
+                {% set isEnabled = settings.enabledIntegrations[integrationHandle] is defined
+                    ? settings.enabledIntegrations[integrationHandle]
+                    : true %}
+                <tr>
+                    <td>
+                        <strong>{{ integrationName }}</strong>
+                    </td>
+                    <td>
+                        {% if integrationHandle == 'blitz' %}
+                            Shows cache status and provides cache clearing actions for cached elements
+                        {% else %}
+                            {{ integration.getName() }} integration
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {{ forms.lightswitchField({
+                            name: 'enabledIntegrations[' ~ integrationHandle ~ ']',
+                            on: isEnabled,
+                            disabled: isProjectConfigReadOnly,
+                        }) }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p class="light">No plugin integrations are currently available. Integrations appear here when compatible plugins are installed.</p>
+{% endif %}
+
+<hr>
+
 <h1>Result Navigation Shortcuts</h1>
 <p>Configure keyboard shortcuts for navigating to search results.</p>
 

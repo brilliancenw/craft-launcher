@@ -32,6 +32,17 @@ class BlitzIntegration extends BaseIntegration
     /**
      * @inheritdoc
      */
+    public function getIcon(): string
+    {
+        // Blitz lightning bolt icon
+        return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8.5 1L3 9h5l-.5 6L13 7H8l.5-6z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+        </svg>';
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getSupportedTypes(): array
     {
         return ['Entry', 'Category', 'GlobalSet', 'Global'];
@@ -63,8 +74,8 @@ class BlitzIntegration extends BaseIntegration
             return false;
         }
 
-        // Must have a URL (entries/categories/globals with URIs)
-        if (empty($item['url']) && empty($item['uri'])) {
+        // Must have either a URL/URI or an element ID we can look up
+        if (empty($item['url']) && empty($item['uri']) && empty($item['id'])) {
             return false;
         }
 
@@ -84,6 +95,12 @@ class BlitzIntegration extends BaseIntegration
             // Get the item's URI
             $uri = $this->extractUri($item);
             if (!$uri) {
+                // Element doesn't have a front-end URI (might be disabled, no URL, etc)
+                $this->logInfo('Item has no URI for cache checking', [
+                    'item_id' => $item['id'] ?? null,
+                    'item_title' => $item['title'] ?? null,
+                    'item_type' => $item['type'] ?? null,
+                ]);
                 return null;
             }
 
@@ -96,22 +113,49 @@ class BlitzIntegration extends BaseIntegration
                 'uri' => $uri,
             ]);
 
+            // Check cache status
             $isCached = $this->isCached($siteUri);
+            $isCacheable = $this->isCacheable($siteUri);
+
+            $this->logInfo('Blitz integration data generated', [
+                'uri' => $uri,
+                'siteId' => $siteId,
+                'isCached' => $isCached,
+                'isCacheable' => $isCacheable,
+            ]);
+
+            // Determine status label and type
+            if (!$isCacheable) {
+                $statusLabel = 'Not Cacheable';
+                $statusType = 'warning';
+            } elseif ($isCached) {
+                $statusLabel = 'Cached';
+                $statusType = 'success';
+            } else {
+                $statusLabel = 'Uncached';
+                $statusType = 'secondary';
+            }
+
+            // Build actions array - only show Clear Cache if actually cached
+            $actions = [];
+            if ($isCached) {
+                $actions[] = [
+                    'label' => 'Clear Cache',
+                    'action' => 'clearCache',
+                    'confirm' => true,
+                    'confirmMessage' => 'Clear the Blitz cache for this page?',
+                ];
+            }
 
             return [
                 'handle' => $this->getHandle(),
+                'name' => $this->getName(),
+                'icon' => $this->getIcon(),
                 'status' => [
-                    'label' => $isCached ? 'Cached' : 'Uncached',
-                    'type' => $isCached ? 'success' : 'secondary',
+                    'label' => $statusLabel,
+                    'type' => $statusType,
                 ],
-                'actions' => [
-                    [
-                        'label' => 'Clear Cache',
-                        'action' => 'clearCache',
-                        'confirm' => true,
-                        'confirmMessage' => 'Clear the Blitz cache for this page?',
-                    ],
-                ],
+                'actions' => $actions,
             ];
         } catch (\Exception $e) {
             $this->logError('Error getting Blitz integration data', [
@@ -210,6 +254,34 @@ class BlitzIntegration extends BaseIntegration
     }
 
     /**
+     * Check if a page is cacheable (not excluded from caching)
+     *
+     * @param SiteUriModel $siteUri
+     * @return bool
+     */
+    private function isCacheable(SiteUriModel $siteUri): bool
+    {
+        try {
+            // Check if caching is enabled globally
+            if (!Blitz::$plugin->settings->cachingEnabled) {
+                return false;
+            }
+
+            // Check if this URI should be cached
+            $shouldCache = Blitz::$plugin->cacheRequest->getIsCacheableSiteUri($siteUri);
+
+            return $shouldCache;
+        } catch (\Exception $e) {
+            $this->logError('Error checking if cacheable', [
+                'siteUri' => $siteUri->toArray(),
+                'error' => $e->getMessage(),
+            ]);
+            // If we can't determine, assume it's cacheable to avoid false warnings
+            return true;
+        }
+    }
+
+    /**
      * Extract URI from item data
      *
      * @param array $item
@@ -222,9 +294,17 @@ class BlitzIntegration extends BaseIntegration
             return $item['uri'];
         }
 
-        // Try to extract from URL
+        // Try to get element and its URI (do this first since URLs might be CP URLs)
+        if (!empty($item['id']) && !empty($item['type'])) {
+            $element = $this->getElementById($item['id'], $item['type']);
+            if ($element && $element->uri) {
+                return $element->uri;
+            }
+        }
+
+        // Try to extract from URL (only if not a CP URL)
         if (!empty($item['url'])) {
-            // If it's a CP URL, we can't determine the front-end URI
+            // Skip CP URLs
             if (str_contains($item['url'], '/admin/') || str_contains($item['url'], 'index.php?p=admin')) {
                 return null;
             }
@@ -233,14 +313,6 @@ class BlitzIntegration extends BaseIntegration
             $urlParts = parse_url($item['url']);
             if (isset($urlParts['path'])) {
                 return ltrim($urlParts['path'], '/');
-            }
-        }
-
-        // Try to get element and its URI
-        if (!empty($item['id']) && !empty($item['type'])) {
-            $element = $this->getElementById($item['id'], $item['type']);
-            if ($element && $element->uri) {
-                return $element->uri;
             }
         }
 

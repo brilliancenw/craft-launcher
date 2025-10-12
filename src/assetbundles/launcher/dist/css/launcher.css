@@ -182,10 +182,9 @@
 .launcher-result-actions {
     position: absolute;
     right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 12px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     z-index: 1;
 }
@@ -422,4 +421,146 @@ body.rtl .launcher-results::-webkit-scrollbar-thumb:hover {
     40% {
         opacity: 1;
     }
+}
+
+/* Integration badges and actions */
+.launcher-integration-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.launcher-integration-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.launcher-integration-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 24px;
+    flex-shrink: 0;
+}
+
+.launcher-integration-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: #667eea;
+    cursor: default;
+    pointer-events: none;
+}
+
+.launcher-integration-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+.launcher-integration-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #667eea;
+    white-space: nowrap;
+    cursor: default;
+    pointer-events: none;
+}
+
+.launcher-integration-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    flex-wrap: wrap;
+}
+
+.launcher-integration-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    user-select: none;
+    cursor: default;
+}
+
+.launcher-integration-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.launcher-integration-secondary {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.launcher-integration-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.launcher-integration-danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.launcher-integration-default {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.launcher-integration-action {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    background: white;
+    color: #3f4d5a;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.launcher-integration-action:hover {
+    background: #da5a47;
+    border-color: #da5a47;
+    color: white;
+    box-shadow: 0 2px 4px rgba(218, 90, 71, 0.3);
+    transform: translateY(-1px);
+}
+
+.launcher-integration-action:active {
+    background: #c74a38;
+    border-color: #c74a38;
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(218, 90, 71, 0.3);
+}
+
+.launcher-integration-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.launcher-integration-action:disabled:hover {
+    background: white;
+    border-color: #cbd5e0;
+    color: #3f4d5a;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
