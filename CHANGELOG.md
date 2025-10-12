@@ -1,75 +1,61 @@
 # Changelog
 
-## [v1.0.8.3] - 2025-10-04
+## [v1.1.0] - 2025-10-12
 
-### Improved
-- **ENHANCED**: Welcome screen now properly persists dismissal state in all environments
-- **IMPROVED**: Better JSON data handling for interface settings storage
-- **UPDATED**: More robust welcome screen experience with proper state management
+### New Features
 
-### Technical Improvements
-- **IMPROVED**: Enhanced JSON decoding to handle various data formats
-- **ENHANCED**: Better error handling for interface settings retrieval
-- **UPDATED**: Cleaner welcome screen JavaScript without debugging code
+**Plugin Integration Framework**
+- **NEW**: Extensible integration system allowing third-party plugins to add contextual information to search results
+- **NEW**: Event-based registration system (EVENT_REGISTER_INTEGRATIONS) for plugin integrations
+- **NEW**: Complete developer API with LauncherIntegrationInterface and BaseIntegration helper class
+- **NEW**: Comprehensive documentation for creating custom integrations
 
-> **Interface Update**: This release improves the welcome screen experience by ensuring the dismissal state persists correctly across all deployment environments and handles edge cases in data storage.
+**Built-in Integrations**
+- **NEW**: Blitz Cache integration - shows cache status and provides clear cache actions
+- **NEW**: View Count integration - displays view statistics for elements
+- **NEW**: Dynamic element ID resolution from CP URLs for frontend-tracked items
+- **NEW**: Support for custom admin panel paths (respects cpTrigger configuration)
 
-## [v1.0.8.2] - 2025-10-04
+### Critical Fixes
 
-### Fixed
-- **CRITICAL**: Fixed migration class name conflict during plugin updates
-- **IMPROVED**: Created new migration with unique timestamp to prevent "class already in use" errors
-- **ENHANCED**: Plugin updates now work correctly in all environments
-
-> **Critical Migration Fix**: This patch resolves a PHP fatal error where the migration class name was already in use, preventing plugin updates. The migration has been recreated with a fresh timestamp to eliminate conflicts.
-
-## [v1.0.8.1] - 2025-10-04
-
-### Fixed
-- **FIXED**: Welcome screen now works in production environments with read-only settings
-- **IMPROVED**: Created new database table for UI state management separate from plugin configuration
-- **ENHANCED**: First-run experience now persists correctly in all deployment environments
-
-### Technical Improvements
-- **ADDED**: `InterfaceService` for managing UI state data outside of plugin settings
-- **ADDED**: New database migration for `launcher_interface_settings` table
-- **IMPROVED**: Better separation of configuration vs. state data
-- **UPDATED**: Schema version bumped to 1.2.0 for migration trigger
-
-> **Bug Fix**: This patch resolves an issue where the welcome screen would appear every time in production environments that use read-only plugin settings. The welcome screen dismissal is now stored in a dedicated database table instead of plugin settings, ensuring proper functionality in all environments.
-
-## [v1.0.8] - 2025-10-03
-
-### Fixed
-- Fixed "Open Front-end Links in New Tab" setting not being respected on front-end
-- Corrected PHP heredoc syntax issue that prevented boolean preferences from being passed to JavaScript
-
-### Improved
-- Enhanced user interface responsiveness and interaction handling
-- Better front-end launcher experience with proper preference management
-
-> **Minor Bug Fix**: This release resolves an issue where the "Open Front-end Links in New Tab" user preference was being ignored on the front-end. Users can now properly control link behavior through their account preferences.
-
-## [v1.0.7] - 2025-10-03
-
-### Fixed
-- **CRITICAL**: Fixed settings page crash caused by unregistered Twig variable
-- **IMPROVED**: Added LauncherVariable class to properly expose plugin services to Twig templates
+**Settings Management**
+- **FIXED**: Settings page crash on fresh installations caused by unregistered Twig variable
+- **IMPROVED**: Added LauncherVariable class to properly expose plugin services to templates
 - **ENHANCED**: Settings page now properly displays database table status diagnostics
 
-### Added
-- **NEW**: Direct link to Launcher utility when history table is missing
-- **IMPROVED**: Better user experience with clear call-to-action button for table creation
-- **ENHANCED**: More helpful error messaging when database table needs to be created
+**Frontend Integration**
+- **FIXED**: Launcher keyboard shortcut not working on website frontend
+- **FIXED**: "Open Front-end Links in New Tab" preference not being respected
+- **FIXED**: Integration display on frontend results
+- **IMPROVED**: Corrected PHP heredoc syntax for boolean preferences
+
+**Production Environment Support**
+- **FIXED**: Welcome screen persistence in production environments with read-only settings
+- **IMPROVED**: Created InterfaceService for UI state management separate from plugin configuration
+- **ADDED**: Database table for UI state management (launcher_interface_settings)
+
+**Database & Migrations**
+- **FIXED**: Migration class name conflicts during plugin updates
+- **FIXED**: Migration failures when launcher_user_history table doesn't exist
+- **IMPROVED**: Idempotent migrations that can be run multiple times safely
+- **ENHANCED**: Better error handling for partial plugin installations
+
+**User Experience Improvements**
+- **FIXED**: Welcome screen showing repeatedly after dismissal
+- **IMPROVED**: Integration display across all contexts (popular, recent, search, frontend)
+- **ENHANCED**: Element ID extraction from CP URLs
+- **IMPROVED**: Better handling of items without direct element IDs
 
 ### Technical Improvements
-- **ADDED**: Twig variable registration via `CraftVariable::EVENT_INIT`
-- **FIXED**: `craft.launcher.history.getTableStatus()` now accessible in templates
-- **IMPROVED**: Settings template with improved UI for table management
 
-> **Settings Page Fix**: This release resolves a critical issue where accessing the plugin settings page resulted in a Twig runtime error. The plugin's services are now properly exposed to the Twig environment, and users get clear guidance when the history table needs to be created.
+- **ENHANCED**: Logging throughout integration system for better debugging
+- **IMPROVED**: Error handling and debugging capabilities
+- **ADDED**: Multi-step element lookup chain for robust ID resolution
+- **IMPROVED**: Support for dynamic CP trigger configuration (security improvement)
+- **ENHANCED**: Better separation of configuration vs. state data
+- **IMPROVED**: More robust welcome screen experience with proper state management
 
-Thanks to @rauwebieten for reporting this issue!
+> **Major Update**: This release introduces a powerful plugin integration framework that allows Blitz, View Count, and other plugins to display contextual information directly in Launcher search results. It also consolidates several critical fixes for settings management, frontend functionality, and production deployments.
 
 ## [v1.0.6.2] - 2024-09-26
 
@@ -108,14 +94,6 @@ Thanks to @rauwebieten for reporting this issue!
 - **FIXED**: Corrected version mismatch issue from v1.0.5 where composer.json version didn't match git tag
 - **IMPROVED**: Ensures proper Packagist integration and package availability via Composer
 
-### Features from v1.0.5 (now properly released)
-- **NEW**: Admin utility for database maintenance - manually add missing history table if needed
-- **FIXED**: Missing database columns for personal history tracking
-- **IMPROVED**: Settings search reliability and performance improvements
-- **ENHANCED**: Database schema validation and consistent gear icon display
-
-## [v1.0.5] - 2024-09-26
-
 ### Added
 - **NEW**: Admin utility for database maintenance - manually add missing history table if needed
 
@@ -133,7 +111,7 @@ Thanks to @rauwebieten for reporting this issue!
 ## [v1.0.4] - 2024-09-14
 
 ### Added
-- **NEW**: Front-end launcher functionality - use the launcher on your live website! ([#1](https://github.com/brilliancenw/craft-launcher/issues/1))
+- **NEW**: Front-end launcher functionality - use the launcher on your live website!
 - **NEW**: Personal user preferences in My Account → Launcher section
 - **NEW**: "Open Front-end Links in New Tab" option for seamless content editing workflow
 - **NEW**: Context-aware search - search for "edit" while viewing an entry to quickly edit that specific page
@@ -167,41 +145,7 @@ Thanks to @rauwebieten for reporting this issue!
 - **ADDED**: Security and privacy information for administrators
 - **ADDED**: Usage examples and pro tips for content editors
 
-### Developer Experience
-- **ADDED**: New template: `_user-account-content.twig` for user preferences
-- **ENHANCED**: Project config synchronization for plugin settings
-- **IMPROVED**: Modular architecture with separate front-end and admin concerns
-
 > **What's New**: The launcher now works on your front-end! Enable it in your account preferences to access admin functions while browsing your live site. Thanks to @wmdhosting for the excellent feature suggestion!
-
-## [v1.0.3] - 2024-09-14
-
-### Added
-- **NEW**: Static settings destinations search - quickly find admin pages like Email Settings, Routes, Users, Plugins, etc.
-- **NEW**: Loading indicator with animated dots provides visual feedback during search operations
-- **NEW**: Professional gear icon for settings search results that matches Craft's admin panel design
-
-### Enhanced
-- **IMPROVED**: Popular Items UI with smoother user experience
-- **IMPROVED**: Launch counter now fades in/out smoothly (0.5s transition) on hover and keyboard focus
-- **IMPROVED**: All keyboard shortcuts now work correctly - cmd-1 through cmd-9 launch the correct items
-- **IMPROVED**: Missing cmd-9 shortcut now displays and functions properly
-
-### Fixed
-- **FIXED**: Keyboard shortcut alignment - cmd-2 now correctly launches the second item (was off by one)
-- **FIXED**: Popular Items fencepost error that prevented cmd-9 from showing
-- **FIXED**: Settings icon mapping so static settings show gear icon instead of default circle
-
-### Removed
-- **REMOVED**: Misleading "(Hover over items to remove)" text from Popular Items section
-- **REMOVED**: Confusing "Content" and "Media" entries from settings search results
-
-### Technical Improvements
-- **ENHANCED**: Better search performance with loading states for larger sites
-- **ENHANCED**: Icon consistency across all launcher result types
-- **ENHANCED**: Cleaner codebase with improved keyboard navigation logic
-
-> **What's New**: You can now search for administrative settings like "email", "users", "routes", or "plugins" to quickly navigate to control panel pages. The launcher also provides better visual feedback during searches and more intuitive keyboard navigation.
 
 ## [v1.0.2] - 2024-09-09
 
@@ -231,7 +175,7 @@ Thanks to @rauwebieten for reporting this issue!
 - **ENHANCED**: Plugin store description with improved shortcut information
 - **ADDED**: Configuration documentation for new result navigation settings
 
-> **Upgrade Note**: Existing keyboard shortcuts will continue working. The new modifier key settings default to Command (⌘) to maintain current behavior.
+> **Upgrade Note**: Existing keyboard shortcuts will continue working. The new modifier key settings default to Command to maintain current behavior.
 
 ## [v1.0.1] - 2024-09-06
 
