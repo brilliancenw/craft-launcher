@@ -94,9 +94,17 @@ class SearchController extends Controller
             
             // Fallback to recent items if no popular items or history disabled
             $results = Launcher::$plugin->launcher->getRecentItems();
+
+            // Add integration data to recent items
+            $results = array_values($results);
+            foreach ($results as &$item) {
+                $item['integrations'] = Launcher::$plugin->integration->getIntegrationsForItem($item);
+            }
+            unset($item);
+
             return $this->asJson([
                 'success' => true,
-                'results' => array_values($results),
+                'results' => $results,
                 'isRecent' => true,
             ]);
         }

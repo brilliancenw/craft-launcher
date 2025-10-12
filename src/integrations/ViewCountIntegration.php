@@ -93,6 +93,34 @@ class ViewCountIntegration extends BaseIntegration
         }
 
         try {
+            // If item doesn't have an ID, try to look it up by URL
+            if (empty($item['id']) && !empty($item['url']) && !empty($item['type'])) {
+                $this->logInfo('ViewCount: Item missing ID, attempting lookup by URL', [
+                    'url' => $item['url'],
+                    'type' => $item['type'],
+                ]);
+                $element = $this->getElementByUrl($item['url'], $item['type']);
+                if ($element) {
+                    $this->logInfo('ViewCount: Element found by URL', [
+                        'elementId' => $element->id,
+                    ]);
+                    $item['id'] = $element->id;
+                } else {
+                    $this->logInfo('ViewCount: Element NOT found by URL', [
+                        'url' => $item['url'],
+                        'type' => $item['type'],
+                    ]);
+                }
+            }
+
+            // Still no ID? Can't proceed
+            if (empty($item['id'])) {
+                $this->logInfo('ViewCount: No element ID available, skipping', [
+                    'item' => $item,
+                ]);
+                return null;
+            }
+
             $elementId = (int) $item['id'];
 
             // Get the view count for this element
@@ -160,5 +188,197 @@ class ViewCountIntegration extends BaseIntegration
     {
         // View Count integration has no actions (read-only)
         return $this->errorResponse('View Count has no actions');
+    }
+
+    /**
+     * Try to get element by URL
+     *
+     * @param string $url
+     * @param string $type
+     * @return \craft\base\ElementInterface|null
+     */
+    private function getElementByUrl(string $url, string $type)
+    {
+        try {
+            // First, try to extract element ID from CP URL
+            $elementId = $this->extractElementIdFromCpUrl($url, $type);
+            if ($elementId) {
+                return $this->getElementById($elementId, $type);
+            }
+
+            // Otherwise, try to extract URI from URL and find by URI
+            $uri = $this->extractUriFromUrl($url);
+            if (!$uri) {
+                return null;
+            }
+
+            // Try to find element by URI
+            switch ($type) {
+                case 'Entry':
+                    return \craft\elements\Entry::find()->uri($uri)->one();
+                case 'Category':
+                    return \craft\elements\Category::find()->uri($uri)->one();
+                case 'Asset':
+                    // Assets don't typically have URIs
+                    return null;
+                case 'Global':
+                case 'GlobalSet':
+                    // Globals don't have URIs
+                    return null;
+                case 'User':
+                    // Users don't have URIs
+                    return null;
+                default:
+                    return null;
+            }
+        } catch (\Exception $e) {
+            $this->logError('Error getting element by URL', [
+                'url' => $url,
+                'type' => $type,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Get element by ID and type
+     *
+     * @param int $id
+     * @param string $type
+     * @return \craft\base\ElementInterface|null
+     */
+    private function getElementById(int $id, string $type)
+    {
+        try {
+            switch ($type) {
+                case 'Entry':
+                    return Craft::$app->getEntries()->getEntryById($id);
+                case 'Category':
+                    return Craft::$app->getCategories()->getCategoryById($id);
+                case 'Asset':
+                    return Craft::$app->getAssets()->getAssetById($id);
+                case 'Global':
+                case 'GlobalSet':
+                    return Craft::$app->getGlobals()->getSetById($id);
+                case 'User':
+                    return Craft::$app->getUsers()->getUserById($id);
+                default:
+                    return null;
+            }
+        } catch (\Exception $e) {
+            $this->logError('Error getting element', [
+                'id' => $id,
+                'type' => $type,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Extract element ID from CP URL
+     * CP URLs typically look like: /admin/entries/sectionHandle/123-slug
+     *
+     * @param string $url
+     * @param string $type
+     * @return int|null
+     */
+    private function extractElementIdFromCpUrl(string $url, string $type): ?int
+    {
+        try {
+            $cpTrigger = Craft::$app->getConfig()->getGeneral()->cpTrigger;
+
+            $this->logInfo('ViewCount: Attempting to extract element ID from CP URL', [
+                'url' => $url,
+                'type' => $type,
+                'cpTrigger' => $cpTrigger,
+            ]);
+
+            // Check if this is a CP URL
+            if (!str_contains($url, '/' . $cpTrigger . '/') && !str_contains($url, 'index.php?p=' . $cpTrigger)) {
+                $this->logInfo('ViewCount: URL is not a CP URL', ['url' => $url]);
+                return null;
+            }
+
+            // Parse different CP URL patterns based on element type
+            switch ($type) {
+                case 'Entry':
+                    // Pattern: /admin/entries/sectionHandle/123-slug or /admin/entries/sectionHandle/123
+                    if (preg_match('#/' . preg_quote($cpTrigger) . '/entries/[^/]+/(\d+)#', $url, $matches)) {
+                        $this->logInfo('ViewCount: Extracted entry ID from CP URL', ['id' => $matches[1]]);
+                        return (int) $matches[1];
+                    }
+                    break;
+
+                case 'Category':
+                    // Pattern: /admin/categories/groupHandle/123-slug
+                    if (preg_match('#/' . preg_quote($cpTrigger) . '/categories/[^/]+/(\d+)#', $url, $matches)) {
+                        $this->logInfo('ViewCount: Extracted category ID from CP URL', ['id' => $matches[1]]);
+                        return (int) $matches[1];
+                    }
+                    break;
+
+                case 'Asset':
+                    // Pattern: /admin/assets/volumeHandle/123
+                    if (preg_match('#/' . preg_quote($cpTrigger) . '/assets/[^/]+/(\d+)#', $url, $matches)) {
+                        $this->logInfo('ViewCount: Extracted asset ID from CP URL', ['id' => $matches[1]]);
+                        return (int) $matches[1];
+                    }
+                    break;
+
+                case 'User':
+                    // Pattern: /admin/users/123
+                    if (preg_match('#/' . preg_quote($cpTrigger) . '/users/(\d+)#', $url, $matches)) {
+                        $this->logInfo('ViewCount: Extracted user ID from CP URL', ['id' => $matches[1]]);
+                        return (int) $matches[1];
+                    }
+                    break;
+
+                case 'Global':
+                case 'GlobalSet':
+                    // Globals are accessed by handle, not ID in URLs
+                    return null;
+            }
+
+            $this->logInfo('ViewCount: Could not extract element ID from CP URL', [
+                'url' => $url,
+                'type' => $type,
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            $this->logError('Error extracting element ID from CP URL', [
+                'url' => $url,
+                'type' => $type,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Extract URI from URL
+     *
+     * @param string $url
+     * @return string|null
+     */
+    private function extractUriFromUrl(string $url): ?string
+    {
+        // Get the CP trigger (default is 'admin' but can be customized)
+        $cpTrigger = Craft::$app->getConfig()->getGeneral()->cpTrigger;
+
+        // Skip CP URLs
+        if (str_contains($url, '/' . $cpTrigger . '/') || str_contains($url, 'index.php?p=' . $cpTrigger)) {
+            return null;
+        }
+
+        // Parse the URL to get the path
+        $urlParts = parse_url($url);
+        if (isset($urlParts['path'])) {
+            return ltrim($urlParts['path'], '/');
+        }
+
+        return null;
     }
 }

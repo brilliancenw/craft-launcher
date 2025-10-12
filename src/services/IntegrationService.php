@@ -81,6 +81,13 @@ class IntegrationService extends Component
         $settings = \brilliance\launcher\Launcher::$plugin->getSettings();
         $enabledIntegrations = $settings->enabledIntegrations ?? [];
 
+        Craft::info('Getting integrations for item: ' . json_encode([
+            'id' => $item['id'] ?? 'NO_ID',
+            'type' => $item['type'] ?? 'NO_TYPE',
+            'title' => $item['title'] ?? 'NO_TITLE',
+            'url' => $item['url'] ?? 'NO_URL',
+        ]), 'launcher-integrations');
+
         foreach ($this->getIntegrations() as $integration) {
             try {
                 $handle = $integration->getHandle();
@@ -90,10 +97,18 @@ class IntegrationService extends Component
                     ? ($enabledIntegrations[$handle] === true || $enabledIntegrations[$handle] === '1' || $enabledIntegrations[$handle] === 1)
                     : true; // Default to enabled if not in settings
 
-                if ($isEnabled && $integration->canHandleItem($item)) {
-                    $data = $integration->getIntegrationData($item);
-                    if ($data !== null) {
-                        $integrationData[] = $data;
+                Craft::info("Integration '{$handle}' - enabled: " . ($isEnabled ? 'yes' : 'no'), 'launcher-integrations');
+
+                if ($isEnabled) {
+                    $canHandle = $integration->canHandleItem($item);
+                    Craft::info("Integration '{$handle}' - canHandle: " . ($canHandle ? 'yes' : 'no'), 'launcher-integrations');
+
+                    if ($canHandle) {
+                        $data = $integration->getIntegrationData($item);
+                        Craft::info("Integration '{$handle}' - data: " . json_encode($data), 'launcher-integrations');
+                        if ($data !== null) {
+                            $integrationData[] = $data;
+                        }
                     }
                 }
             } catch (\Exception $e) {
@@ -103,6 +118,8 @@ class IntegrationService extends Component
                 );
             }
         }
+
+        Craft::info('Total integrations returned: ' . count($integrationData), 'launcher-integrations');
 
         return $integrationData;
     }

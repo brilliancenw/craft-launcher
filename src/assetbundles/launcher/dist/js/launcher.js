@@ -345,6 +345,9 @@
                 const currentElement = this.frontEndContext.currentElement;
                 const currentEditUrl = currentElement.editUrl;
 
+                // Find the existing result for this page to preserve its integrations
+                const existingResult = results.find(result => result.url === currentEditUrl);
+
                 // Filter out any existing history items that match the current page's edit URL
                 results = results.filter(result => result.url !== currentEditUrl);
 
@@ -354,7 +357,9 @@
                     url: currentElement.editUrl,
                     type: currentElement.type,
                     section: currentElement.section || currentElement.group,
-                    icon: currentElement.type.toLowerCase()
+                    icon: currentElement.type.toLowerCase(),
+                    // Preserve integrations from the original result if it exists
+                    integrations: existingResult?.integrations || []
                 };
                 results = [contextResult, ...results];
             }
