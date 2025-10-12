@@ -2,6 +2,7 @@
 namespace brilliance\launcher\services;
 
 use brilliance\launcher\integrations\BlitzIntegration;
+use brilliance\launcher\integrations\ViewCountIntegration;
 use brilliance\launcher\integrations\LauncherIntegrationInterface;
 use Craft;
 use craft\base\Component;
@@ -59,6 +60,12 @@ class IntegrationService extends Component
         if (Craft::$app->getPlugins()->isPluginInstalled('blitz')
             && Craft::$app->getPlugins()->isPluginEnabled('blitz')) {
             $this->integrations[] = new BlitzIntegration();
+        }
+
+        // Register View Count integration if available
+        if (Craft::$app->getPlugins()->isPluginInstalled('view-count')
+            && Craft::$app->getPlugins()->isPluginEnabled('view-count')) {
+            $this->integrations[] = new ViewCountIntegration();
         }
     }
 

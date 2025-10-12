@@ -776,6 +776,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>
                         {% if integrationHandle == 'blitz' %}
                             Shows cache status and provides cache clearing actions for cached elements
+                        {% elseif integrationHandle == 'view-count' %}
+                            Displays view count statistics for entries, categories, and other elements
                         {% else %}
                             {{ integration.getName() }} integration
                         {% endif %}

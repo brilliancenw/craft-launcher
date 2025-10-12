@@ -394,6 +394,185 @@ $success = Launcher::$plugin->history->clearUserHistory();
 $stats = Launcher::$plugin->history->getUserStats();
 ```
 
+### Plugin Integrations
+
+The Launcher includes an extensible integration system that allows plugins to display contextual information and actions in search results.
+
+![Plugin Integrations](docs/images/integrations-demo.png)
+
+#### Built-in Integrations
+
+**Blitz Cache Integration**
+- Shows cache status (Cached/Uncached/Not Cacheable)
+- Provides "Clear Cache" action for cached pages
+- Automatically detects cacheable pages
+
+**View Count Integration**
+- Displays view count statistics for elements
+- Formats counts with K/M suffixes for large numbers
+- Works with entries, categories, and other elements
+
+#### Creating Custom Integrations
+
+Third-party plugin developers can register their own integrations to appear in Launcher search results.
+
+**Step 1: Create an Integration Class**
+
+```php
+<?php
+namespace myplugin\integrations;
+
+use brilliance\launcher\integrations\BaseIntegration;
+
+class MyPluginIntegration extends BaseIntegration
+{
+    public function getHandle(): string
+    {
+        return 'my-plugin';
+    }
+
+    public function getName(): string
+    {
+        return 'My Plugin';
+    }
+
+    public function getIcon(): string
+    {
+        // Return SVG markup, image URL, or emoji
+        return '<svg>...</svg>';
+    }
+
+    public function getSupportedTypes(): array
+    {
+        // Element types this integration supports
+        return ['Entry', 'Category', 'Asset'];
+    }
+
+    public function canHandleItem(array $item): bool
+    {
+        // Check if your plugin is installed and item is valid
+        return parent::canHandleItem($item)
+            && !empty($item['id']);
+    }
+
+    public function getIntegrationData(array $item): ?array
+    {
+        if (!$this->canHandleItem($item)) {
+            return null;
+        }
+
+        // Fetch your plugin's data
+        $status = $this->getStatus($item['id']);
+
+        return [
+            'handle' => $this->getHandle(),
+            'name' => $this->getName(),
+            'icon' => $this->getIcon(),
+            'status' => [
+                'label' => $status,
+                'type' => 'success', // success, secondary, warning, danger, default
+            ],
+            'actions' => [
+                [
+                    'label' => 'Perform Action',
+                    'action' => 'my-action',
+                    'confirm' => true, // Show confirmation dialog?
+                ],
+            ],
+        ];
+    }
+
+    public function executeAction(string $action, array $params): array
+    {
+        if ($action === 'my-action') {
+            // Perform your action
+            return $this->successResponse('Action completed!');
+        }
+
+        return $this->errorResponse('Unknown action');
+    }
+}
+```
+
+**Step 2: Register Your Integration**
+
+In your plugin's `init()` method:
+
+```php
+use craft\base\Plugin;
+use yii\base\Event;
+use brilliance\launcher\services\IntegrationService;
+use brilliance\launcher\services\RegisterIntegrationsEvent;
+
+class MyPlugin extends Plugin
+{
+    public function init()
+    {
+        parent::init();
+
+        // Register integration with Launcher
+        Event::on(
+            IntegrationService::class,
+            IntegrationService::EVENT_REGISTER_INTEGRATIONS,
+            function(RegisterIntegrationsEvent $event) {
+                $event->integrations[] = new MyPluginIntegration();
+            }
+        );
+    }
+}
+```
+
+**Integration Data Structure**
+
+```php
+[
+    'handle' => 'my-plugin',           // Unique identifier
+    'name' => 'My Plugin',             // Display name
+    'icon' => '<svg>...</svg>',        // Icon (SVG, URL, or emoji)
+    'status' => [
+        'label' => 'Active',           // Status text
+        'type' => 'success',           // Badge color (success, secondary, warning, danger, default)
+    ],
+    'actions' => [                     // Optional action buttons
+        [
+            'label' => 'Do Something', // Button label
+            'action' => 'action-id',   // Action identifier
+            'confirm' => true,         // Show confirmation?
+        ],
+    ],
+]
+```
+
+**Available Helper Methods**
+
+BaseIntegration provides helpful methods:
+
+```php
+// Success response for actions
+$this->successResponse('Success!', ['data' => 'value']);
+
+// Error response for actions
+$this->errorResponse('Failed!', ['error' => 'details']);
+
+// Logging
+$this->logInfo('Info message', ['context' => 'data']);
+$this->logError('Error message', ['context' => 'data']);
+```
+
+**Best Practices**
+
+1. **Performance**: Keep integration logic lightweight - it runs on every search result
+2. **Error Handling**: Always wrap logic in try/catch and return null on errors
+3. **Permissions**: Check user permissions before showing sensitive data
+4. **Icons**: Use simple SVG icons (16x16) for best visual consistency
+5. **Actions**: Provide confirmation prompts for destructive actions
+6. **Status Types**:
+   - `success` (green) - Positive states
+   - `secondary` (gray) - Neutral states
+   - `warning` (yellow) - Caution states
+   - `danger` (red) - Error states
+   - `default` (blue) - Information states
+
 ## Database Schema
 
 The plugin creates one additional table for launch history tracking:
