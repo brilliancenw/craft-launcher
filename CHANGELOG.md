@@ -1,5 +1,22 @@
 # Changelog
 
+## [v1.1.1] - 2025-10-12
+
+### Documentation Updates
+
+**Plugin Store Description**
+- **UPDATED**: Featured new plugin integration framework in store listing
+- **ADDED**: Direct links to Blitz and View Count plugins
+- **ENHANCED**: Highlighted front-end launcher capabilities
+- **IMPROVED**: Better description of extensibility features for plugin developers
+
+**Changelog**
+- **CLEANED**: Removed references to deleted releases for accuracy
+- **CONSOLIDATED**: All fixes from removed versions now properly documented in v1.1.0
+- **IMPROVED**: Clearer release history showing only published versions
+
+> **Documentation Release**: This release updates the plugin store description and changelog to accurately reflect the current state of the plugin and highlight the new integration framework features.
+
 ## [v1.1.0] - 2025-10-12
 
 ### New Features
