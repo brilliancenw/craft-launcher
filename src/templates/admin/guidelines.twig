@@ -1,0 +1,87 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = "Content Guidelines" %}
+{% set selectedSubnavItem = selectedTab %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('launcher/admin/save-guidelines') }}
+        {{ redirectInput('launcher/guidelines') }}
+
+        <div class="readable">
+            <h1>Content Guidelines</h1>
+            <p>Define rules and standards for content creation. The AI assistant will follow these guidelines when creating content.</p>
+
+            {{ forms.textareaField({
+                label: 'General Content Guidelines',
+                instructions: 'Overall rules for content creation (length, structure, formatting, etc.).',
+                id: 'contentGuidelines',
+                name: 'contentGuidelines',
+                value: aiSettings.contentGuidelines,
+                rows: 6,
+                placeholder: 'Blog posts should be between 800-1200 words. Always include an introduction, body with subheadings, and conclusion. Use short paragraphs (3-4 sentences max).'
+            }) }}
+
+            {{ forms.textareaField({
+                label: 'Content Tone',
+                instructions: 'The emotional character of your content (e.g., informative, conversational, authoritative).',
+                id: 'contentTone',
+                name: 'contentTone',
+                value: aiSettings.contentTone,
+                rows: 4,
+                placeholder: 'Informative and helpful, but conversational. Avoid jargon when possible. Use active voice.'
+            }) }}
+
+            {{ forms.textareaField({
+                label: 'Writing Style',
+                instructions: 'Specific style preferences (sentence structure, vocabulary level, formatting preferences).',
+                id: 'writingStyle',
+                name: 'writingStyle',
+                value: aiSettings.writingStyle,
+                rows: 4,
+                placeholder: 'Use clear, concise language. Prefer short sentences. Break up long sections with subheadings and lists.'
+            }) }}
+
+            {{ forms.textareaField({
+                label: 'SEO Guidelines',
+                instructions: 'Requirements for search engine optimization.',
+                id: 'seoGuidelines',
+                name: 'seoGuidelines',
+                value: aiSettings.seoGuidelines,
+                rows: 6,
+                placeholder: 'Meta descriptions should be 150-160 characters. Include focus keyword in title, first paragraph, and at least one H2. Use alt text for all images.'
+            }) }}
+
+            <hr>
+
+            <h2>Custom Guidelines</h2>
+            <p class="light">Additional custom guidelines can be added here in the future for specific content types.</p>
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">Save Content Guidelines</button>
+        </div>
+    </form>
+
+    <hr>
+
+    <div class="readable">
+        <h2>How the AI Uses These Guidelines</h2>
+        <p>When you ask the AI to create content, it will:</p>
+        <ul>
+            <li><strong>Follow length requirements:</strong> Match word counts and structure</li>
+            <li><strong>Apply tone and style:</strong> Write in your preferred voice</li>
+            <li><strong>Implement SEO best practices:</strong> Follow your optimization rules</li>
+            <li><strong>Check compliance:</strong> Ensure all guidelines are met before presenting content</li>
+        </ul>
+
+        <h3>Example Use Cases</h3>
+        <ul>
+            <li>"Create a blog post about our new plugin" → Follows all guidelines automatically</li>
+            <li>"Draft a product description" → Applies appropriate tone and SEO</li>
+            <li>"Write an announcement" → Matches your brand voice and style</li>
+        </ul>
+    </div>
+{% endblock %}

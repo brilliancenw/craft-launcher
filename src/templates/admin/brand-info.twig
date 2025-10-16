@@ -1,0 +1,106 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = "Brand Information" %}
+{% set selectedSubnavItem = selectedTab %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('launcher/admin/save-brand-info') }}
+        {{ redirectInput('launcher/brand-info') }}
+
+        <div class="readable">
+            <h1>Brand Information</h1>
+            <p>Provide information about your brand to help the AI assistant understand your identity and voice.</p>
+
+            {{ forms.textField({
+                label: 'Website Name',
+                instructions: 'The name of your website or brand.',
+                id: 'websiteName',
+                name: 'websiteName',
+                value: aiSettings.websiteName,
+                placeholder: 'Brilliance Northwest'
+            }) }}
+
+            {{ forms.textField({
+                label: 'Brand Owner',
+                instructions: 'Company or individual name.',
+                id: 'brandOwner',
+                name: 'brandOwner',
+                value: aiSettings.brandOwner,
+                placeholder: 'Brilliance Northwest LLC'
+            }) }}
+
+            {{ forms.textField({
+                label: 'Brand Tagline',
+                instructions: 'A short tagline or slogan.',
+                id: 'brandTagline',
+                name: 'brandTagline',
+                value: aiSettings.brandTagline,
+                placeholder: 'Building exceptional digital experiences'
+            }) }}
+
+            {{ forms.textareaField({
+                label: 'Brand Description',
+                instructions: 'A brief description of your brand, what you do, and what makes you unique.',
+                id: 'brandDescription',
+                name: 'brandDescription',
+                value: aiSettings.brandDescription,
+                rows: 4,
+                placeholder: 'We are a web development agency specializing in...'
+            }) }}
+
+            {{ forms.textareaField({
+                label: 'Brand Voice',
+                instructions: 'Describe how your brand communicates (e.g., professional, friendly, technical, casual).',
+                id: 'brandVoice',
+                name: 'brandVoice',
+                value: aiSettings.brandVoice,
+                rows: 4,
+                placeholder: 'Professional yet approachable. We speak with expertise but keep things accessible...'
+            }) }}
+
+            {{ forms.textareaField({
+                label: 'Target Audience',
+                instructions: 'Who are you speaking to? Describe your ideal customer or audience.',
+                id: 'targetAudience',
+                name: 'targetAudience',
+                value: aiSettings.targetAudience,
+                rows: 4,
+                placeholder: 'Small to medium businesses looking for custom web solutions...'
+            }) }}
+
+            {{ forms.textField({
+                label: 'Brand Logo URL',
+                instructions: 'URL to your logo (optional).',
+                id: 'brandLogoUrl',
+                name: 'brandLogoUrl',
+                value: aiSettings.brandLogoUrl,
+                placeholder: 'https://example.com/logo.png'
+            }) }}
+
+            <hr>
+
+            <h2>Brand Colors</h2>
+            <p class="light">You can add brand colors here in the future. For now, describe them in your brand description.</p>
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">Save Brand Information</button>
+        </div>
+    </form>
+
+    <hr>
+
+    <div class="readable">
+        <h2>Why This Matters</h2>
+        <p>The AI assistant uses this information to:</p>
+        <ul>
+            <li><strong>Match your voice:</strong> Content will be written in your brand's style</li>
+            <li><strong>Understand context:</strong> The AI knows who you are and what you do</li>
+            <li><strong>Target appropriately:</strong> Content considers your audience</li>
+            <li><strong>Stay consistent:</strong> All AI-generated content aligns with your brand</li>
+        </ul>
+    </div>
+{% endblock %}

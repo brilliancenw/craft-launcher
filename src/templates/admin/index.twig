@@ -1,0 +1,36 @@
+{% extends "_layouts/cp" %}
+{% set title = "Launcher Dashboard" %}
+{% set selectedSubnavItem = selectedTab %}
+
+{% block content %}
+    <div class="readable">
+        <h1>Launcher Dashboard</h1>
+
+        <p>Welcome to the Launcher admin panel! Configure your AI assistant settings here.</p>
+
+        {% if not hasApiKey %}
+            <div class="readable">
+                <blockquote class="note warning">
+                    <p><strong>API Configuration Required</strong></p>
+                    <p>No API key is configured for the selected provider ({{ aiSettings.aiProvider }}). Please configure your API key in the <a href="{{ url('launcher/api-config') }}">API Configuration</a> tab to enable the AI assistant.</p>
+                </blockquote>
+            </div>
+        {% endif %}
+
+        <h2>Quick Stats</h2>
+        <ul>
+            <li><strong>Total Conversations:</strong> {{ conversationCount }}</li>
+            <li><strong>Your Conversations:</strong> {{ userConversationCount }}</li>
+            <li><strong>AI Provider:</strong> {{ aiSettings.aiProvider|title }}</li>
+            <li><strong>AI Assistant:</strong> {% if settings.enableAIAssistant %}Enabled{% else %}Disabled{% endif %}</li>
+        </ul>
+
+        <h2>Quick Links</h2>
+        <ul>
+            <li><a href="{{ url('launcher/api-config') }}">Configure API Keys</a></li>
+            <li><a href="{{ url('launcher/brand-info') }}">Set Brand Information</a></li>
+            <li><a href="{{ url('launcher/guidelines') }}">Define Content Guidelines</a></li>
+            <li><a href="{{ cpUrl('settings/plugins/launcher') }}">Plugin Settings</a></li>
+        </ul>
+    </div>
+{% endblock %}

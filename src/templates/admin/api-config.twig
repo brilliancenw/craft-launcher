@@ -1,0 +1,200 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set title = "API Configuration" %}
+{% set selectedSubnavItem = selectedTab %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('launcher/admin/save-api-config') }}
+        {{ redirectInput('launcher/api-config') }}
+
+        <div class="readable">
+            <h1>API Configuration</h1>
+            <p>Configure your AI provider and API keys. API keys are encrypted and stored securely in the database.</p>
+
+            {{ forms.selectField({
+                label: 'AI Provider',
+                instructions: 'Choose which AI provider to use for the assistant.',
+                id: 'aiProvider',
+                name: 'aiProvider',
+                value: aiSettings.aiProvider,
+                options: {
+                    'claude': 'Claude (Anthropic)',
+                    'openai': 'OpenAI (Coming Soon)',
+                    'gemini': 'Gemini (Google - Coming Soon)'
+                },
+                required: true
+            }) }}
+
+            <hr>
+
+            <h2>Claude (Anthropic)</h2>
+
+            {{ forms.textField({
+                label: 'Claude API Key',
+                instructions: 'Enter your Claude API key from console.anthropic.com. Current key: ' ~ (maskedKeys.claude ?: 'Not set'),
+                id: 'claudeApiKey',
+                name: 'claudeApiKey',
+                value: '',
+                placeholder: 'sk-ant-...',
+                type: 'password',
+                autocomplete: 'off'
+            }) }}
+
+            <p class="light"><strong>Note:</strong> Leave blank to keep existing key. Only enter a new key if you want to update it.</p>
+
+            <div id="claude-model-selector" style="margin-top: 24px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <button type="button" id="fetch-models-btn" class="btn" style="margin: 0;">
+                        Fetch Available Models
+                    </button>
+                    <span id="fetch-models-status" style="color: #666;"></span>
+                </div>
+
+                <div id="model-select-container" style="display: none;">
+                    {{ forms.selectField({
+                        label: 'Claude Model',
+                        instructions: 'Select which Claude model to use. Newer models appear first.',
+                        id: 'claudeModel',
+                        name: 'claudeModel',
+                        value: aiSettings.claudeModel ?? 'claude-sonnet-4-20250514',
+                        options: []
+                    }) }}
+                </div>
+
+                <p id="no-models-message" class="light" style="display: none; color: #dc2626;">
+                    <strong>No models available.</strong> Please configure your Claude API key and try again.
+                </p>
+            </div>
+
+            <hr>
+
+            <h2>OpenAI (Coming Soon)</h2>
+
+            {{ forms.textField({
+                label: 'OpenAI API Key',
+                instructions: 'OpenAI provider support coming soon. Current key: ' ~ (maskedKeys.openai ?: 'Not set'),
+                id: 'openaiApiKey',
+                name: 'openaiApiKey',
+                value: '',
+                placeholder: 'sk-...',
+                type: 'password',
+                disabled: true,
+                autocomplete: 'off'
+            }) }}
+
+            <hr>
+
+            <h2>Gemini (Google - Coming Soon)</h2>
+
+            {{ forms.textField({
+                label: 'Gemini API Key',
+                instructions: 'Gemini provider support coming soon. Current key: ' ~ (maskedKeys.gemini ?: 'Not set'),
+                id: 'geminiApiKey',
+                name: 'geminiApiKey',
+                value: '',
+                placeholder: 'AI...',
+                type: 'password',
+                disabled: true,
+                autocomplete: 'off'
+            }) }}
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">Save API Configuration</button>
+        </div>
+    </form>
+
+    <hr>
+
+    <div class="readable">
+        <h2>Getting API Keys</h2>
+
+        <h3>Claude (Anthropic)</h3>
+        <ol>
+            <li>Visit <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a></li>
+            <li>Sign up or log in to your account</li>
+            <li>Navigate to API Keys section</li>
+            <li>Create a new API key</li>
+            <li>Copy and paste it above</li>
+        </ol>
+
+        <p><strong>Pricing:</strong> Claude API uses a pay-as-you-go model. Visit <a href="https://www.anthropic.com/pricing" target="_blank" rel="noopener">anthropic.com/pricing</a> for current rates.</p>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fetchBtn = document.getElementById('fetch-models-btn');
+        const statusSpan = document.getElementById('fetch-models-status');
+        const modelContainer = document.getElementById('model-select-container');
+        const noModelsMessage = document.getElementById('no-models-message');
+        const modelSelect = document.getElementById('claudeModel');
+
+        if (!fetchBtn || !statusSpan || !modelContainer || !modelSelect) {
+            return;
+        }
+
+        // Fetch models on button click
+        fetchBtn.addEventListener('click', async function() {
+            fetchBtn.disabled = true;
+            statusSpan.textContent = 'Fetching models...';
+            statusSpan.style.color = '#666';
+            modelContainer.style.display = 'none';
+            noModelsMessage.style.display = 'none';
+
+            try {
+                const response = await fetch(Craft.getActionUrl('launcher/ai/models'), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-Token': Craft.csrfTokenValue
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.models && data.models.length > 0) {
+                    // Clear existing options
+                    modelSelect.innerHTML = '';
+
+                    // Add models to select (they're already sorted by creation date, newest first)
+                    data.models.forEach(function(model) {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        option.textContent = model.display_name + ' (' + model.id + ')';
+                        modelSelect.appendChild(option);
+                    });
+
+                    // Set current value if it exists in the list
+                    const currentValue = '{{ aiSettings.claudeModel ?? "claude-sonnet-4-20250514" }}';
+                    if (currentValue && Array.from(modelSelect.options).some(opt => opt.value === currentValue)) {
+                        modelSelect.value = currentValue;
+                    }
+
+                    modelContainer.style.display = 'block';
+                    statusSpan.textContent = 'Found ' + data.models.length + ' model(s)';
+                    statusSpan.style.color = '#059669';
+                } else {
+                    noModelsMessage.style.display = 'block';
+                    statusSpan.textContent = data.message || 'No models found';
+                    statusSpan.style.color = '#dc2626';
+                }
+            } catch (error) {
+                console.error('Error fetching models:', error);
+                statusSpan.textContent = 'Error: ' + error.message;
+                statusSpan.style.color = '#dc2626';
+                noModelsMessage.style.display = 'block';
+            } finally {
+                fetchBtn.disabled = false;
+            }
+        });
+
+        // Auto-fetch models if API key is configured
+        {% if maskedKeys.claude %}
+            fetchBtn.click();
+        {% endif %}
+    });
+    </script>
+{% endblock %}

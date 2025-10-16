@@ -16,10 +16,12 @@ class LauncherAsset extends AssetBundle
 
         $this->js = [
             'js/launcher.js',
+            // ai-assistant.js is now integrated into launcher.js
         ];
 
         $this->css = [
             'css/launcher.css',
+            // ai-assistant.css styles are now integrated into launcher.css
         ];
 
         parent::init();

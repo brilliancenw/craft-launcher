@@ -10,6 +10,10 @@ use brilliance\launcher\services\HistoryService;
 use brilliance\launcher\services\UserPreferenceService;
 use brilliance\launcher\services\InterfaceService;
 use brilliance\launcher\services\IntegrationService;
+use brilliance\launcher\services\AIConversationService;
+use brilliance\launcher\services\AIToolService;
+use brilliance\launcher\services\CraftContextService;
+use brilliance\launcher\services\AISettingsService;
 use brilliance\launcher\utilities\LauncherTableUtility;
 use brilliance\launcher\variables\LauncherVariable;
 
@@ -40,7 +44,7 @@ class Launcher extends Plugin
     public static ?Launcher $plugin = null;
     public string $schemaVersion = '1.2.0';
     public bool $hasCpSettings = true;
-    public bool $hasCpSection = false;
+    public bool $hasCpSection = true;
 
     public static function config(): array
     {
@@ -52,6 +56,10 @@ class Launcher extends Plugin
                 'userPreference' => UserPreferenceService::class,
                 'interface' => InterfaceService::class,
                 'integration' => IntegrationService::class,
+                'aiConversationService' => AIConversationService::class,
+                'aiToolService' => AIToolService::class,
+                'craftContextService' => CraftContextService::class,
+                'aiSettingsService' => AISettingsService::class,
             ],
         ];
     }
@@ -66,6 +74,13 @@ class Launcher extends Plugin
         parent::init();
         self::$plugin = $this;
 
+        // Set controller namespace based on application type
+        if (Craft::$app instanceof ConsoleApplication) {
+            $this->controllerNamespace = 'brilliance\\launcher\\console\\controllers';
+        } else {
+            $this->controllerNamespace = 'brilliance\\launcher\\controllers';
+        }
+
         $this->setComponents([
             'launcher' => LauncherService::class,
             'search' => SearchService::class,
@@ -73,15 +88,16 @@ class Launcher extends Plugin
             'userPreference' => UserPreferenceService::class,
             'interface' => InterfaceService::class,
             'integration' => IntegrationService::class,
+            'aiConversationService' => AIConversationService::class,
+            'aiToolService' => AIToolService::class,
+            'craftContextService' => CraftContextService::class,
+            'aiSettingsService' => AISettingsService::class,
         ]);
 
         // Handle project config changes
         $this->attachProjectConfigEventListeners();
 
-        // Register console commands
-        if (Craft::$app instanceof ConsoleApplication) {
-            $this->controllerNamespace = 'brilliance\\launcher\\console\\controllers';
-        }
+        // Console commands are automatically available via the controller namespace set above
 
         if (Craft::$app->getRequest()->getIsCpRequest()) {
             Event::on(
@@ -94,8 +110,13 @@ class Launcher extends Plugin
                         $settings = $this->getSettings();
                         $hotkey = $settings->hotkey;
                         $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl('@brilliance/launcher/assetbundles/launcher/dist');
-                        
+
                         $searchableTypesJson = json_encode($settings->searchableTypes);
+
+                        // AI Assistant config
+                        $enableAI = $settings->enableAIAssistant ?? false;
+                        $aiHotkey = $settings->aiHotkey ?? 'cmd+j';
+                        $enableAIJson = $enableAI ? 'true' : 'false';
 
                         $js = <<<JS
                         // Ensure LauncherPlugin initialization happens after DOM and Craft are ready
@@ -110,7 +131,12 @@ class Launcher extends Plugin
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
                                             selectResultModifier: '{$settings->selectResultModifier}',
-                                            searchableTypes: $searchableTypesJson
+                                            searchableTypes: $searchableTypesJson,
+                                            enableAI: $enableAIJson,
+                                            aiHotkey: '$aiHotkey',
+                                            aiSendMessageUrl: Craft.getActionUrl('launcher/ai/send'),
+                                            aiStartConversationUrl: Craft.getActionUrl('launcher/ai/start'),
+                                            aiValidateUrl: Craft.getActionUrl('launcher/ai/validate')
                                         });
                                     }
                                 });
@@ -124,15 +150,55 @@ class Launcher extends Plugin
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
                                             selectResultModifier: '{$settings->selectResultModifier}',
-                                            searchableTypes: $searchableTypesJson
+                                            searchableTypes: $searchableTypesJson,
+                                            enableAI: $enableAIJson,
+                                            aiHotkey: '$aiHotkey',
+                                            aiSendMessageUrl: Craft.getActionUrl('launcher/ai/send'),
+                                            aiStartConversationUrl: Craft.getActionUrl('launcher/ai/start'),
+                                            aiValidateUrl: Craft.getActionUrl('launcher/ai/validate')
                                         });
                                     }
                                 });
                             }
                         }
                         JS;
-                        
+
                         Craft::$app->getView()->registerJs($js, View::POS_END);
+
+                        // Remove old AI Assistant initialization (now integrated into LauncherPlugin)
+                        if (false && $settings->enableAIAssistant ?? false) {
+                            $aiHotkey = $settings->aiHotkey ?? 'cmd+j';
+                            $aiJs = <<<AIJS
+                            // Initialize AI Assistant
+                            if (typeof Craft !== 'undefined') {
+                                if (Craft.cp && Craft.cp.ready) {
+                                    Craft.cp.ready(function() {
+                                        if (window.LauncherAI) {
+                                            window.LauncherAI.init({
+                                                hotkey: '$aiHotkey',
+                                                sendMessageUrl: Craft.getActionUrl('launcher/ai/send'),
+                                                startConversationUrl: Craft.getActionUrl('launcher/ai/start'),
+                                                validateUrl: Craft.getActionUrl('launcher/ai/validate')
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        if (window.LauncherAI) {
+                                            window.LauncherAI.init({
+                                                hotkey: '$aiHotkey',
+                                                sendMessageUrl: Craft.getActionUrl('launcher/ai/send'),
+                                                startConversationUrl: Craft.getActionUrl('launcher/ai/start'),
+                                                validateUrl: Craft.getActionUrl('launcher/ai/validate')
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                            AIJS;
+
+                            Craft::$app->getView()->registerJs($aiJs, View::POS_END);
+                        }
                     }
                 }
             );
@@ -192,13 +258,28 @@ class Launcher extends Plugin
             }
         );
 
-        // Register URL rules for user preferences and settings
+        // Register URL rules for user preferences, settings, and admin panel
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
+                // User preferences
                 $event->rules['myaccount/launcher'] = 'launcher/user-account/index';
+
+                // Plugin settings
                 $event->rules['launcher/settings/complete-first-run'] = 'launcher/settings/complete-first-run';
+
+                // Admin panel CP section
+                $event->rules['launcher'] = 'launcher/admin/index';
+                $event->rules['launcher/api-config'] = 'launcher/admin/api-config';
+                $event->rules['launcher/brand-info'] = 'launcher/admin/brand-info';
+                $event->rules['launcher/guidelines'] = 'launcher/admin/guidelines';
+
+                // Admin panel save actions
+                $event->rules['POST launcher/save-api-config'] = 'launcher/admin/save-api-config';
+                $event->rules['POST launcher/save-brand-info'] = 'launcher/admin/save-brand-info';
+                $event->rules['POST launcher/save-guidelines'] = 'launcher/admin/save-guidelines';
+                $event->rules['POST launcher/validate-key'] = 'launcher/admin/validate-key';
             }
         );
 
@@ -586,7 +667,36 @@ class Launcher extends Plugin
 
     public function getCpNavItem(): ?array
     {
-        return null;
+        $item = parent::getCpNavItem();
+
+        if ($item === null) {
+            return null;
+        }
+
+        $item['label'] = 'Launcher';
+        $item['url'] = 'launcher';
+
+        // Add subnav items
+        $item['subnav'] = [
+            'dashboard' => [
+                'label' => 'Dashboard',
+                'url' => 'launcher',
+            ],
+            'api-config' => [
+                'label' => 'API Configuration',
+                'url' => 'launcher/api-config',
+            ],
+            'brand-info' => [
+                'label' => 'Brand Information',
+                'url' => 'launcher/brand-info',
+            ],
+            'guidelines' => [
+                'label' => 'Content Guidelines',
+                'url' => 'launcher/guidelines',
+            ],
+        ];
+
+        return $item;
     }
 
     public function getUserPermissions(): array

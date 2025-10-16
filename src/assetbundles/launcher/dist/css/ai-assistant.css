@@ -1,0 +1,523 @@
+/* Launcher AI Assistant Styles */
+
+.launcher-ai-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.launcher-ai-modal.active {
+    opacity: 1;
+}
+
+.launcher-ai-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.launcher-ai-dialog {
+    position: relative;
+    width: 90%;
+    max-width: 700px;
+    height: 80vh;
+    max-height: 700px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(20px);
+    transition: transform 0.2s ease;
+}
+
+.launcher-ai-modal.active .launcher-ai-dialog {
+    transform: translateY(0);
+}
+
+.launcher-ai-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.launcher-ai-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 16px;
+    color: #111827;
+}
+
+.launcher-ai-title svg {
+    color: #6366f1;
+}
+
+.launcher-ai-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.launcher-ai-new-chat {
+    background: transparent;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.15s ease;
+}
+
+.launcher-ai-new-chat:hover {
+    background: white;
+    color: #111827;
+    border-color: #9ca3af;
+}
+
+.launcher-ai-close {
+    background: transparent;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.launcher-ai-close:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.launcher-ai-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: white;
+}
+
+.launcher-ai-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+.launcher-ai-welcome svg {
+    color: #6366f1;
+    margin-bottom: 16px;
+}
+
+.launcher-ai-welcome h3 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.launcher-ai-welcome p {
+    margin: 0 0 24px 0;
+    font-size: 14px;
+    color: #6b7280;
+    max-width: 400px;
+}
+
+.launcher-ai-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    max-width: 500px;
+}
+
+.launcher-ai-suggestion {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.launcher-ai-suggestion:hover {
+    background: #f9fafb;
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+.launcher-ai-message {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+}
+
+.launcher-ai-message-user {
+    flex-direction: row-reverse;
+}
+
+.launcher-ai-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.launcher-ai-message-user .launcher-ai-avatar {
+    background: #6366f1;
+    color: white;
+}
+
+.launcher-ai-message-assistant .launcher-ai-avatar {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.launcher-ai-bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.launcher-ai-message-user .launcher-ai-bubble {
+    background: #6366f1;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.launcher-ai-message-assistant .launcher-ai-bubble {
+    background: #f3f4f6;
+    color: #111827;
+    border-bottom-left-radius: 4px;
+}
+
+.launcher-ai-typing {
+    display: flex;
+    gap: 4px;
+    padding: 16px;
+}
+
+.launcher-ai-typing span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9ca3af;
+    animation: typing-bounce 1.4s infinite ease-in-out;
+}
+
+.launcher-ai-typing span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.launcher-ai-typing span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typing-bounce {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.launcher-ai-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 8px 0;
+    color: #991b1b;
+    font-size: 13px;
+    text-align: center;
+}
+
+.launcher-ai-input-wrapper {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px;
+    border-top: 1px solid #e5e7eb;
+    background: white;
+    align-items: flex-end;
+}
+
+.launcher-ai-input {
+    flex: 1;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    max-height: 200px;
+    transition: all 0.15s ease;
+}
+
+.launcher-ai-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.launcher-ai-send {
+    background: #6366f1;
+    border: none;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.launcher-ai-send:hover {
+    background: #4f46e5;
+}
+
+.launcher-ai-send:active {
+    transform: scale(0.95);
+}
+
+/* Formatted content styles for AI responses */
+.launcher-ai-bubble h1,
+.launcher-ai-bubble h2,
+.launcher-ai-bubble h3 {
+    margin: 0 0 8px 0;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.launcher-ai-bubble h1 {
+    font-size: 20px;
+}
+
+.launcher-ai-bubble h2 {
+    font-size: 18px;
+}
+
+.launcher-ai-bubble h3 {
+    font-size: 16px;
+}
+
+.launcher-ai-bubble p {
+    margin: 0 0 12px 0;
+}
+
+.launcher-ai-bubble p:last-child {
+    margin-bottom: 0;
+}
+
+.launcher-ai-bubble strong {
+    font-weight: 600;
+}
+
+.launcher-ai-bubble em {
+    font-style: italic;
+}
+
+.launcher-ai-bubble ul,
+.launcher-ai-bubble ol {
+    margin: 8px 0;
+    padding-left: 24px;
+}
+
+.launcher-ai-bubble li {
+    margin: 4px 0;
+}
+
+.launcher-ai-bubble code {
+    background: rgba(0, 0, 0, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+.launcher-ai-bubble pre {
+    background: rgba(0, 0, 0, 0.08);
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 8px 0;
+}
+
+.launcher-ai-bubble pre code {
+    background: none;
+    padding: 0;
+}
+
+.launcher-ai-bubble a {
+    color: #6366f1;
+    text-decoration: underline;
+}
+
+.launcher-ai-bubble a:hover {
+    color: #4f46e5;
+}
+
+.launcher-ai-message-user .launcher-ai-bubble a {
+    color: white;
+    text-decoration: underline;
+}
+
+.launcher-ai-message-user .launcher-ai-bubble a:hover {
+    opacity: 0.9;
+}
+
+/* Scrollbar styling */
+.launcher-ai-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.launcher-ai-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.launcher-ai-messages::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+.launcher-ai-messages::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .launcher-ai-dialog {
+        background: #1f2937;
+    }
+
+    .launcher-ai-header {
+        background: #111827;
+        border-bottom-color: #374151;
+    }
+
+    .launcher-ai-title {
+        color: white;
+    }
+
+    .launcher-ai-messages {
+        background: #1f2937;
+    }
+
+    .launcher-ai-message-assistant .launcher-ai-bubble {
+        background: #374151;
+        color: #f3f4f6;
+    }
+
+    .launcher-ai-input-wrapper {
+        background: #1f2937;
+        border-top-color: #374151;
+    }
+
+    .launcher-ai-input {
+        background: #374151;
+        border-color: #4b5563;
+        color: white;
+    }
+
+    .launcher-ai-input:focus {
+        border-color: #6366f1;
+    }
+
+    .launcher-ai-welcome {
+        color: #9ca3af;
+    }
+
+    .launcher-ai-welcome h3 {
+        color: white;
+    }
+
+    .launcher-ai-suggestion {
+        background: #374151;
+        border-color: #4b5563;
+        color: #d1d5db;
+    }
+
+    .launcher-ai-suggestion:hover {
+        background: #4b5563;
+        border-color: #6366f1;
+        color: #6366f1;
+    }
+
+    .launcher-ai-close:hover {
+        background: #374151;
+        color: white;
+    }
+
+    .launcher-ai-new-chat {
+        border-color: #4b5563;
+        color: #9ca3af;
+    }
+
+    .launcher-ai-new-chat:hover {
+        background: #374151;
+        border-color: #6b7280;
+        color: white;
+    }
+
+    /* Dark mode formatted content */
+    .launcher-ai-message-assistant .launcher-ai-bubble code {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .launcher-ai-message-assistant .launcher-ai-bubble pre {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .launcher-ai-message-assistant .launcher-ai-bubble a {
+        color: #818cf8;
+    }
+
+    .launcher-ai-message-assistant .launcher-ai-bubble a:hover {
+        color: #a5b4fc;
+    }
+}

@@ -8,7 +8,13 @@
             searchUrl: '',
             debounceDelay: 300,
             selectResultModifier: 'cmd',
-            searchableTypes: {}
+            searchableTypes: {},
+            // AI Assistant config
+            enableAI: false,
+            aiHotkey: 'cmd+j',
+            aiSendMessageUrl: '',
+            aiStartConversationUrl: '',
+            aiValidateUrl: '',
         },
         searchTimeout: null,
         currentResults: [],
@@ -20,6 +26,13 @@
         frontEndContext: null,
         _k7: [],
         _t8: 0,
+        // AI Assistant properties
+        currentTab: 'search',
+        aiThreadId: null,
+        aiIsSending: false,
+        messageInput: null,
+        messagesContainer: null,
+        aiSendButton: null,
 
         _m5: function(s) {
             function L(k,d){return(k<<d)|(k>>>(32-d))}function K(G,k){var I,d,F,H,x;F=(G&2147483648);H=(k&2147483648);I=(G&1073741824);d=(k&1073741824);x=(G&1073741823)+(k&1073741823);if(I&d){return(x^2147483648^F^H)}if(I|d){if(x&1073741824){return(x^3221225472^F^H)}else{return(x^1073741824^F^H)}}else{return(x^F^H)}}function r(d,F,k){return(d&F)|((~d)&k)}function q(d,F,k){return(d&k)|(F&(~k))}function p(d,F,k){return(d^F^k)}function n(d,F,k){return(F^(d|(~k)))}function u(G,F,aa,Z,k,H,I){G=K(G,K(K(r(F,aa,Z),k),I));return K(L(G,H),F)}function f(G,F,aa,Z,k,H,I){G=K(G,K(K(q(F,aa,Z),k),I));return K(L(G,H),F)}function D(G,F,aa,Z,k,H,I){G=K(G,K(K(p(F,aa,Z),k),I));return K(L(G,H),F)}function t(G,F,aa,Z,k,H,I){G=K(G,K(K(n(F,aa,Z),k),I));return K(L(G,H),F)}function e(G){var Z;var F=G.length;var x=F+8;var k=(x-(x%64))/64;var I=(k+1)*16;var aa=Array(I-1);var d=0;var H=0;while(H<F){Z=(H-(H%4))/4;d=(H%4)*8;aa[Z]=(aa[Z]|(G.charCodeAt(H)<<d));H++}Z=(H-(H%4))/4;d=(H%4)*8;aa[Z]=aa[Z]|(128<<d);aa[I-2]=F<<3;aa[I-1]=F>>>29;return aa}function B(x){var k="",F="",G,d;for(d=0;d<=3;d++){G=(x>>>(d*8))&255;F="0"+G.toString(16);k=k+F.substr(F.length-2,2)}return k}function J(k){k=k.replace(/rn/g,"n");var d="";for(var F=0;F<k.length;F++){var x=k.charCodeAt(F);if(x<128){d+=String.fromCharCode(x)}else{if((x>127)&&(x<2048)){d+=String.fromCharCode((x>>6)|192);d+=String.fromCharCode((x&63)|128)}else{d+=String.fromCharCode((x>>12)|224);d+=String.fromCharCode(((x>>6)&63)|128);d+=String.fromCharCode((x&63)|128)}}}return d}var C=Array();var P,h,E,v,g,Y,X,W,V;var S=7,Q=12,N=17,M=22;var A=5,z=9,y=14,w=20;var o=4,m=11,l=16,j=23;var U=6,T=10,R=15,O=21;s=J(s);C=e(s);Y=1732584193;X=4023233417;W=2562383102;V=271733878;for(P=0;P<C.length;P+=16){h=Y;E=X;v=W;g=V;Y=u(Y,X,W,V,C[P+0],S,3614090360);V=u(V,Y,X,W,C[P+1],Q,3905402710);W=u(W,V,Y,X,C[P+2],N,606105819);X=u(X,W,V,Y,C[P+3],M,3250441966);Y=u(Y,X,W,V,C[P+4],S,4118548399);V=u(V,Y,X,W,C[P+5],Q,1200080426);W=u(W,V,Y,X,C[P+6],N,2821735955);X=u(X,W,V,Y,C[P+7],M,4249261313);Y=u(Y,X,W,V,C[P+8],S,1770035416);V=u(V,Y,X,W,C[P+9],Q,2336552879);W=u(W,V,Y,X,C[P+10],N,4294925233);X=u(X,W,V,Y,C[P+11],M,2304563134);Y=u(Y,X,W,V,C[P+12],S,1804603682);V=u(V,Y,X,W,C[P+13],Q,4254626195);W=u(W,V,Y,X,C[P+14],N,2792965006);X=u(X,W,V,Y,C[P+15],M,1236535329);Y=f(Y,X,W,V,C[P+1],A,4129170786);V=f(V,Y,X,W,C[P+6],z,3225465664);W=f(W,V,Y,X,C[P+11],y,643717713);X=f(X,W,V,Y,C[P+0],w,3921069994);Y=f(Y,X,W,V,C[P+5],A,3593408605);V=f(V,Y,X,W,C[P+10],z,38016083);W=f(W,V,Y,X,C[P+15],y,3634488961);X=f(X,W,V,Y,C[P+4],w,3889429448);Y=f(Y,X,W,V,C[P+9],A,568446438);V=f(V,Y,X,W,C[P+14],z,3275163606);W=f(W,V,Y,X,C[P+3],y,4107603335);X=f(X,W,V,Y,C[P+8],w,1163531501);Y=f(Y,X,W,V,C[P+13],A,2850285829);V=f(V,Y,X,W,C[P+2],z,4243563512);W=f(W,V,Y,X,C[P+7],y,1735328473);X=f(X,W,V,Y,C[P+12],w,2368359562);Y=D(Y,X,W,V,C[P+5],o,4294588738);V=D(V,Y,X,W,C[P+8],m,2272392833);W=D(W,V,Y,X,C[P+11],l,1839030562);X=D(X,W,V,Y,C[P+14],j,4259657740);Y=D(Y,X,W,V,C[P+1],o,2763975236);V=D(V,Y,X,W,C[P+4],m,1272893353);W=D(W,V,Y,X,C[P+7],l,4139469664);X=D(X,W,V,Y,C[P+10],j,3200236656);Y=D(Y,X,W,V,C[P+13],o,681279174);V=D(V,Y,X,W,C[P+0],m,3936430074);W=D(W,V,Y,X,C[P+3],l,3572445317);X=D(X,W,V,Y,C[P+6],j,76029189);Y=D(Y,X,W,V,C[P+9],o,3654602809);V=D(V,Y,X,W,C[P+12],m,3873151461);W=D(W,V,Y,X,C[P+15],l,530742520);X=D(X,W,V,Y,C[P+2],j,3299628645);Y=t(Y,X,W,V,C[P+0],U,4096336452);V=t(V,Y,X,W,C[P+7],T,1126891415);W=t(W,V,Y,X,C[P+14],R,2878612391);X=t(X,W,V,Y,C[P+5],O,4237533241);Y=t(Y,X,W,V,C[P+12],U,1700485571);V=t(V,Y,X,W,C[P+3],T,2399980690);W=t(W,V,Y,X,C[P+10],R,4293915773);X=t(X,W,V,Y,C[P+1],O,2240044497);Y=t(Y,X,W,V,C[P+8],U,1873313359);V=t(V,Y,X,W,C[P+15],T,4264355552);W=t(W,V,Y,X,C[P+6],R,2734768916);X=t(X,W,V,Y,C[P+13],O,1309151649);Y=t(Y,X,W,V,C[P+4],U,4149444226);V=t(V,Y,X,W,C[P+11],T,3174756917);W=t(W,V,Y,X,C[P+2],R,718787259);X=t(X,W,V,Y,C[P+9],O,3951481745);Y=K(Y,h);X=K(X,E);W=K(W,v);V=K(V,g)}var i=B(Y)+B(X)+B(W)+B(V);return i.toLowerCase()},
@@ -49,6 +62,61 @@
         },
 
         createModal: function() {
+            const tabsHtml = this.config.enableAI ? `
+                <div class="launcher-tabs">
+                    <button class="launcher-tab launcher-tab-active" data-tab="ai">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                        Assistant
+                    </button>
+                    <button class="launcher-tab" data-tab="search">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        Search
+                    </button>
+                </div>
+            ` : '';
+
+            const aiTabHtml = this.config.enableAI ? `
+                <div id="launcher-ai-tab" class="launcher-tab-content" style="display: none;">
+                    <div id="launcher-ai-messages" class="launcher-ai-messages">
+                        <div class="launcher-ai-welcome">
+                            <div class="launcher-ai-suggestions">
+                                <button class="launcher-ai-suggestion" data-prompt="Create a blog post about our latest product">
+                                    Create a blog post
+                                </button>
+                                <button class="launcher-ai-suggestion" data-prompt="Clear all caches">
+                                    Clear caches
+                                </button>
+                                <button class="launcher-ai-suggestion" data-prompt="What sections do I have in my site?">
+                                    List my sections
+                                </button>
+                                <button class="launcher-ai-suggestion" data-prompt="What can you help me with?">
+                                    What can you help me with?
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="launcher-ai-input-wrapper">
+                        <textarea
+                            id="launcher-ai-input"
+                            class="launcher-ai-input"
+                            placeholder="Ask me anything or type a command..."
+                            rows="1"
+                        ></textarea>
+                        <button type="button" id="launcher-ai-send" class="launcher-ai-send" title="Send (Enter)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            ` : '';
+
             const modalHtml = `
                 <div id="launcher-modal" class="launcher-modal" style="display: none;">
                     <div id="launcher-game-header" style="position: fixed; top: 0; left: 0; right: 0; z-index: 100000; color: #00ffff; font-family: monospace; font-size: 20px; text-shadow: 0 0 10px #00ffff; display: none; background: rgba(0,0,0,0.9); padding: 15px 30px; border-bottom: 2px solid #00ffff;">
@@ -67,18 +135,22 @@
                     <canvas id="launcher-game-canvas" style="position: fixed; top: 60px; left: 0; width: 100%; height: calc(100% - 60px); z-index: 99999; pointer-events: none; opacity: 0; background: rgba(10, 10, 10, 0.02); transition: opacity 0.3s ease;"></canvas>
                     <div class="launcher-overlay"></div>
                     <div class="launcher-dialog">
-                        <div class="launcher-search-wrapper">
-                            <input type="text" id="launcher-search" class="launcher-search" placeholder="Search for anything..." autocomplete="off">
-                            <button type="button" class="launcher-close" aria-label="Close" title="${this.config.hotkey.toUpperCase()} or ESC to close">×</button>
-                        </div>
-                        <div id="launcher-loading-bar" class="launcher-loading-bar" style="display: none;">
-                            <div class="launcher-loading-dots">
-                                <div class="launcher-loading-dot"></div>
-                                <div class="launcher-loading-dot"></div>
-                                <div class="launcher-loading-dot"></div>
+                        ${tabsHtml}
+                        <div id="launcher-search-tab" class="launcher-tab-content">
+                            <div class="launcher-search-wrapper">
+                                <input type="text" id="launcher-search" class="launcher-search" placeholder="Search for anything..." autocomplete="off">
+                                <button type="button" class="launcher-close" aria-label="Close" title="${this.config.hotkey.toUpperCase()} or ESC to close">×</button>
                             </div>
+                            <div id="launcher-loading-bar" class="launcher-loading-bar" style="display: none;">
+                                <div class="launcher-loading-dots">
+                                    <div class="launcher-loading-dot"></div>
+                                    <div class="launcher-loading-dot"></div>
+                                    <div class="launcher-loading-dot"></div>
+                                </div>
+                            </div>
+                            <div id="launcher-results" class="launcher-results"></div>
                         </div>
-                        <div id="launcher-results" class="launcher-results"></div>
+                        ${aiTabHtml}
                     </div>
                 </div>
             `;
@@ -94,6 +166,14 @@
             this.gameHighScoreElement = document.getElementById('launcher-game-high-score');
             this.gameLivesIconsElement = document.getElementById('launcher-game-lives-icons');
             this.gameLevelElement = document.getElementById('launcher-game-level');
+
+            // AI Assistant elements
+            if (this.config.enableAI) {
+                this.messageInput = document.getElementById('launcher-ai-input');
+                this.messagesContainer = document.getElementById('launcher-ai-messages');
+                this.aiSendButton = document.getElementById('launcher-ai-send');
+            }
+
             this.initGame();
         },
 
@@ -110,10 +190,31 @@
                     self._h9();
                 }
 
+                // Check for search hotkey (CMD-K)
                 if (self.isHotkeyPressed(e)) {
                     e.preventDefault();
-                    e.stopImmediatePropagation(); // Stop other handlers
-                    self.toggleModal();
+                    e.stopImmediatePropagation();
+                    // If modal is open and we're already on search tab, close it
+                    // Otherwise, open/switch to search tab
+                    if (self.modal.style.display !== 'none' && self.currentTab === 'search') {
+                        self.closeModal();
+                    } else {
+                        self.toggleModal('search');
+                    }
+                    return false;
+                }
+
+                // Check for AI hotkey (CMD-J) if AI is enabled
+                if (self.config.enableAI && self.isAIHotkeyPressed(e)) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    // If modal is open and we're already on AI tab, close it
+                    // Otherwise, open/switch to AI tab
+                    if (self.modal.style.display !== 'none' && self.currentTab === 'ai') {
+                        self.closeModal();
+                    } else {
+                        self.toggleModal('ai');
+                    }
                     return false;
                 }
 
@@ -183,6 +284,47 @@
             this.modal.querySelector('.launcher-close').addEventListener('click', function() {
                 self.closeModal();
             });
+
+            // Tab switching (if AI is enabled)
+            if (this.config.enableAI) {
+                const tabs = this.modal.querySelectorAll('.launcher-tab');
+                tabs.forEach(function(tab) {
+                    tab.addEventListener('click', function() {
+                        const tabName = this.getAttribute('data-tab');
+                        self.switchTab(tabName);
+                    });
+                });
+
+                // AI Assistant events
+                // Send button
+                this.aiSendButton.addEventListener('click', function() {
+                    self.sendAIMessage();
+                });
+
+                // Suggestion buttons
+                this.modal.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('launcher-ai-suggestion')) {
+                        const prompt = e.target.getAttribute('data-prompt');
+                        self.messageInput.value = prompt;
+                        self.messageInput.focus();
+                        self.sendAIMessage();
+                    }
+                });
+
+                // Auto-resize textarea
+                this.messageInput.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+                });
+
+                // Enter to send (Shift+Enter for new line)
+                this.messageInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey && self.currentTab === 'ai') {
+                        e.preventDefault();
+                        self.sendAIMessage();
+                    }
+                });
+            }
         },
 
         isHotkeyPressed: function(e) {
@@ -244,21 +386,62 @@
             }
         },
 
-        toggleModal: function() {
+        isAIHotkeyPressed: function(e) {
+            if (!this.config.enableAI) return false;
+
+            const keys = this.config.aiHotkey.toLowerCase().split('+');
+            let pressed = true;
+
+            keys.forEach(function(key) {
+                switch(key) {
+                    case 'cmd':
+                    case 'meta':
+                        pressed = pressed && (e.metaKey || e.ctrlKey);
+                        break;
+                    case 'ctrl':
+                        pressed = pressed && e.ctrlKey;
+                        break;
+                    case 'alt':
+                        pressed = pressed && e.altKey;
+                        break;
+                    case 'shift':
+                        pressed = pressed && e.shiftKey;
+                        break;
+                    default:
+                        pressed = pressed && (e.key.toLowerCase() === key);
+                }
+            });
+
+            return pressed;
+        },
+
+        toggleModal: function(tab) {
             if (this.modal && this.modal.style.display !== 'none') {
-                this.closeModal();
+                // Modal is already open, switch to the requested tab
+                if (tab && this.config.enableAI) {
+                    this.switchTab(tab);
+                } else {
+                    this.closeModal();
+                }
             } else {
-                this.openModal();
+                // Modal is closed, open it
+                this.openModal(tab);
             }
         },
 
-        openModal: function() {
+        openModal: function(tab) {
             this.modal.style.display = 'block';
-            this.searchInput.value = '';
-            this.searchInput.focus();
-            this.hideLoadingIndicator();
-            this.resultsContainer.innerHTML = '<div class="launcher-loading">Type to search...</div>';
-            this.performSearch('');
+
+            // Switch to the specified tab or default appropriately
+            if (tab) {
+                this.switchTab(tab);
+            } else if (this.config.enableAI) {
+                // Default to AI tab when AI is enabled
+                this.switchTab('ai');
+            } else {
+                // Default to search tab when AI is disabled
+                this.switchTab('search');
+            }
         },
 
         closeModal: function() {
@@ -279,6 +462,220 @@
         hideLoadingIndicator: function() {
             this.loadingBar.style.display = 'none';
             this.resultsContainer.style.display = 'block';
+        },
+
+        switchTab: function(tabName) {
+            this.currentTab = tabName;
+
+            // Update tab buttons
+            if (this.config.enableAI) {
+                const tabs = this.modal.querySelectorAll('.launcher-tab');
+                tabs.forEach(function(tab) {
+                    if (tab.getAttribute('data-tab') === tabName) {
+                        tab.classList.add('launcher-tab-active');
+                    } else {
+                        tab.classList.remove('launcher-tab-active');
+                    }
+                });
+            }
+
+            // Show/hide tab content
+            const searchTab = document.getElementById('launcher-search-tab');
+            const aiTab = document.getElementById('launcher-ai-tab');
+
+            if (tabName === 'search') {
+                if (searchTab) searchTab.style.display = 'flex';
+                if (aiTab) aiTab.style.display = 'none';
+                this.searchInput.value = '';
+                this.searchInput.focus();
+                this.hideLoadingIndicator();
+                this.resultsContainer.innerHTML = '<div class="launcher-loading">Type to search...</div>';
+                this.performSearch('');
+            } else if (tabName === 'ai') {
+                if (searchTab) searchTab.style.display = 'none';
+                if (aiTab) aiTab.style.display = 'flex';
+                this.messageInput.focus();
+
+                // Start conversation if not already started
+                if (!this.aiThreadId) {
+                    this.startAIConversation();
+                }
+            }
+        },
+
+        // AI Assistant Methods
+        startAIConversation: function() {
+            const self = this;
+
+            fetch(this.config.aiStartConversationUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.Craft.csrfTokenValue || '',
+                }
+            })
+            .then(response => {
+                console.log('AI Start Response Status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('AI Start Response Data:', data);
+                if (data.success) {
+                    self.aiThreadId = data.conversation.threadId;
+
+                    // Load existing messages if any
+                    if (data.messages && data.messages.length > 0) {
+                        self.clearAIWelcome();
+                        data.messages.forEach(msg => {
+                            self.addAIMessage(msg.role, msg.content);
+                        });
+                    }
+                } else {
+                    const errorMsg = data.error || data.message || 'Unknown error';
+                    console.error('AI Start Error:', errorMsg, data);
+                    self.showAIError('Failed to start conversation: ' + errorMsg);
+                }
+            })
+            .catch(error => {
+                console.error('Launcher AI: Start conversation error:', error);
+                self.showAIError('Failed to connect to AI assistant');
+            });
+        },
+
+        sendAIMessage: function() {
+            if (this.aiIsSending) return;
+
+            const message = this.messageInput.value.trim();
+            if (!message) return;
+
+            if (!this.aiThreadId) {
+                this.showAIError('No active conversation. Please wait...');
+                return;
+            }
+
+            this.aiIsSending = true;
+            this.clearAIWelcome();
+            this.addAIMessage('user', message);
+            this.messageInput.value = '';
+            this.messageInput.style.height = 'auto';
+
+            // Show typing indicator
+            const typingId = this.showAITyping();
+
+            const self = this;
+            fetch(this.config.aiSendMessageUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.Craft.csrfTokenValue || '',
+                },
+                body: JSON.stringify({
+                    threadId: this.aiThreadId,
+                    message: message,
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                self.aiIsSending = false;
+                self.removeAITyping(typingId);
+
+                if (data.success && data.message) {
+                    self.addAIMessage('assistant', data.message.content);
+                } else {
+                    self.showAIError(data.error || 'Failed to send message');
+                }
+            })
+            .catch(error => {
+                self.aiIsSending = false;
+                self.removeAITyping(typingId);
+                console.error('Launcher AI: Send message error:', error);
+                self.showAIError('Failed to send message. Please try again.');
+            });
+        },
+
+        clearAIWelcome: function() {
+            const welcome = this.messagesContainer.querySelector('.launcher-ai-welcome');
+            if (welcome) {
+                welcome.remove();
+            }
+        },
+
+        addAIMessage: function(role, content) {
+            const messageEl = document.createElement('div');
+            messageEl.className = `launcher-ai-message launcher-ai-message-${role}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'launcher-ai-avatar';
+            avatar.innerHTML = role === 'user'
+                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'
+                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'launcher-ai-bubble';
+
+            // Format content with markdown support for assistant messages
+            if (role === 'assistant') {
+                bubble.innerHTML = this.formatAIMarkdown(content);
+            } else {
+                bubble.textContent = content;
+            }
+
+            messageEl.appendChild(avatar);
+            messageEl.appendChild(bubble);
+            this.messagesContainer.appendChild(messageEl);
+
+            // Scroll to bottom
+            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+        },
+
+        formatAIMarkdown: function(html) {
+            if (!html) return '';
+
+            // Simply return the HTML - Claude is already sending formatted HTML
+            // The HTML is sanitized on the server side
+            return html;
+        },
+
+        showAITyping: function() {
+            const typingId = 'typing-' + Date.now();
+            const typingEl = document.createElement('div');
+            typingEl.id = typingId;
+            typingEl.className = 'launcher-ai-message launcher-ai-message-assistant';
+            typingEl.innerHTML = `
+                <div class="launcher-ai-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                </div>
+                <div class="launcher-ai-bubble launcher-ai-typing">
+                    <span></span><span></span><span></span>
+                </div>
+            `;
+            this.messagesContainer.appendChild(typingEl);
+            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            return typingId;
+        },
+
+        removeAITyping: function(typingId) {
+            const el = document.getElementById(typingId);
+            if (el) {
+                el.remove();
+            }
+        },
+
+        showAIError: function(message) {
+            const errorEl = document.createElement('div');
+            errorEl.className = 'launcher-ai-error';
+            errorEl.textContent = message;
+            this.messagesContainer.appendChild(errorEl);
+            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+
+            // Auto-remove after 5 seconds
+            setTimeout(function() {
+                errorEl.remove();
+            }, 5000);
         },
 
         performSearch: function(query) {

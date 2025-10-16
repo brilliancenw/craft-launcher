@@ -693,6 +693,60 @@ document.addEventListener('DOMContentLoaded', function() {
     </tbody>
 </table>
 
+<hr>
+
+<h1>Assistant</h1>
+<p>Enable and configure the AI-powered assistant for content creation and system management.</p>
+
+<table class="data fullwidth fixed-layout" dir="ltr">
+    <tbody>
+        <tr>
+            <th style="width: 25%;">Option</th>
+            <th style="width: 25%;">Enable</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <th class="light">Enable Assistant</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'enableAIAssistant',
+                    name: 'enableAIAssistant',
+                    on: settings.enableAIAssistant,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Enable the AI assistant with CMD-J hotkey. Configure API keys and settings in the <a href="{{ url('launcher/api-config') }}">Launcher admin panel</a>.</td>
+        </tr>
+        <tr>
+            <th class="light">
+                <label for="aiHotkey">Assistant Hotkey</label>
+            </th>
+            <td colspan="2">
+                {{ forms.textField({
+                    id: 'aiHotkey',
+                    name: 'aiHotkey',
+                    value: settings.aiHotkey,
+                    placeholder: 'cmd+j',
+                    errors: settings.getErrors('aiHotkey'),
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+                <p class="light" style="margin-top: 8px;">Keyboard shortcut to open the AI assistant (e.g., cmd+j, ctrl+shift+a)</p>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+{% if settings.enableAIAssistant %}
+    <div class="readable" style="margin-top: 14px; padding: 14px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; color: #155724;">
+        <p style="margin: 0;"><strong>Assistant is enabled!</strong> Press <kbd>{{ settings.aiHotkey }}</kbd> anywhere in the control panel to open the assistant.</p>
+        <p style="margin: 8px 0 0 0;">Configure API keys, brand information, and content guidelines in the <a href="{{ url('launcher') }}" style="color: #155724; font-weight: 600;">Launcher admin panel</a>.</p>
+    </div>
+{% else %}
+    <div class="readable" style="margin-top: 14px; padding: 14px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; color: #856404;">
+        <p style="margin: 0;"><strong>Assistant is disabled.</strong> Enable it above to access AI-powered content creation and system management.</p>
+    </div>
+{% endif %}
+
 {% set isCommerceInstalled = craft.app.plugins.isPluginInstalled('commerce') %}
 {% if isCommerceInstalled %}
     <hr>

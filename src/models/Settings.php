@@ -49,6 +49,33 @@ class Settings extends Model
     // Integration settings
     public array $enabledIntegrations = [];
 
+    // AI Assistant settings
+    public bool $enableAIAssistant = false;
+    public string $aiHotkey = 'cmd+j';
+    public string $aiProvider = 'claude';
+    public string $claudeApiKey = '';
+    public string $openaiApiKey = '';
+    public string $geminiApiKey = '';
+    public int $maxAIConversationHistory = 50;
+    public bool $enableAIStreaming = true;
+
+    // Website/Brand information
+    public string $websiteName = '';
+    public string $brandOwner = '';
+    public string $brandTagline = '';
+    public string $brandDescription = '';
+    public string $brandVoice = '';
+    public string $targetAudience = '';
+    public array $brandColors = [];
+    public string $brandLogoUrl = '';
+
+    // Content Guidelines
+    public string $contentGuidelines = '';
+    public string $contentTone = '';
+    public string $writingStyle = '';
+    public string $seoGuidelines = '';
+    public array $customGuidelines = [];
+
     // Result navigation shortcuts
     public string $selectResultModifier = 'cmd';
     public array $resultShortcuts = [
@@ -67,15 +94,22 @@ class Settings extends Model
     public function rules(): array
     {
         return [
-            [['hotkey', 'selectResultModifier'], 'string'],
+            [['hotkey', 'selectResultModifier', 'aiHotkey', 'aiProvider'], 'string'],
             [['hotkey'], 'required'],
-            [['debounceDelay', 'maxResults', 'maxHistoryItems'], 'number', 'integerOnly' => true],
+            [['debounceDelay', 'maxResults', 'maxHistoryItems', 'maxAIConversationHistory'], 'number', 'integerOnly' => true],
             [['debounceDelay'], 'default', 'value' => 300],
             [['maxResults'], 'default', 'value' => 10],
             [['maxHistoryItems'], 'default', 'value' => 10],
+            [['maxAIConversationHistory'], 'default', 'value' => 50],
             [['selectResultModifier'], 'default', 'value' => 'cmd'],
-            [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes', 'resultShortcuts', 'enabledIntegrations'], 'safe'],
-            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory'], 'boolean'],
+            [['aiHotkey'], 'default', 'value' => 'cmd+j'],
+            [['aiProvider'], 'default', 'value' => 'claude'],
+            [['aiProvider'], 'in', 'range' => ['claude', 'openai', 'gemini']],
+            [['claudeApiKey', 'openaiApiKey', 'geminiApiKey'], 'string'],
+            [['websiteName', 'brandOwner', 'brandTagline', 'brandDescription', 'brandVoice', 'targetAudience', 'brandLogoUrl'], 'string'],
+            [['contentGuidelines', 'contentTone', 'writingStyle', 'seoGuidelines'], 'string'],
+            [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes', 'resultShortcuts', 'enabledIntegrations', 'brandColors', 'customGuidelines'], 'safe'],
+            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory', 'enableAIAssistant', 'enableAIStreaming'], 'boolean'],
         ];
     }
 
@@ -102,6 +136,33 @@ class Settings extends Model
             'selectResultModifier' => 'Result Selection Modifier Key',
             'resultShortcuts' => 'Result Navigation Shortcuts',
             'enabledIntegrations' => 'Enabled Integrations',
+
+            // AI Assistant
+            'enableAIAssistant' => 'Enable AI Assistant',
+            'aiHotkey' => 'AI Assistant Hotkey',
+            'aiProvider' => 'AI Provider',
+            'claudeApiKey' => 'Claude API Key',
+            'openaiApiKey' => 'OpenAI API Key',
+            'geminiApiKey' => 'Gemini API Key',
+            'maxAIConversationHistory' => 'Max Messages Per Conversation',
+            'enableAIStreaming' => 'Enable Streaming Responses',
+
+            // Brand Information
+            'websiteName' => 'Website Name',
+            'brandOwner' => 'Brand Owner',
+            'brandTagline' => 'Brand Tagline',
+            'brandDescription' => 'Brand Description',
+            'brandVoice' => 'Brand Voice',
+            'targetAudience' => 'Target Audience',
+            'brandColors' => 'Brand Colors',
+            'brandLogoUrl' => 'Brand Logo URL',
+
+            // Content Guidelines
+            'contentGuidelines' => 'General Content Guidelines',
+            'contentTone' => 'Content Tone',
+            'writingStyle' => 'Writing Style',
+            'seoGuidelines' => 'SEO Guidelines',
+            'customGuidelines' => 'Custom Guidelines',
         ];
     }
 }
