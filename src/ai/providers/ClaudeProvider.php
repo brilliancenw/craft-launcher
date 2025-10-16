@@ -199,10 +199,12 @@ class ClaudeProvider extends BaseAIProvider
         string $systemPrompt,
         bool $stream
     ): array {
+        $formattedMessages = $this->formatMessages($messages);
+
         $payload = [
             'model' => $this->getModel(),
             'max_tokens' => $this->config['maxTokens'] ?? 4096,
-            'messages' => $this->formatMessages($messages),
+            'messages' => $formattedMessages,
         ];
 
         if (!empty($systemPrompt)) {
@@ -220,6 +222,9 @@ class ClaudeProvider extends BaseAIProvider
         if ($stream) {
             $payload['stream'] = true;
         }
+
+        // Log the formatted messages for debugging
+        Craft::info('Formatted messages being sent to Claude (count: ' . count($formattedMessages) . '): ' . json_encode($formattedMessages, JSON_PRETTY_PRINT), __METHOD__);
 
         return $payload;
     }
@@ -359,10 +364,16 @@ class ClaudeProvider extends BaseAIProvider
         $content = '';
         $toolCalls = [];
 
+        // Log the raw response for debugging
+        Craft::info('Claude API Response - stop_reason: ' . ($response['stop_reason'] ?? 'unknown') . ', content blocks: ' . count($response['content'] ?? []), __METHOD__);
+
         // Extract content blocks
         foreach ($response['content'] ?? [] as $block) {
+            Craft::info('Processing content block type: ' . ($block['type'] ?? 'unknown'), __METHOD__);
+
             if ($block['type'] === 'text') {
                 $content .= $block['text'];
+                Craft::info('Text block content length: ' . strlen($block['text']), __METHOD__);
             } elseif ($block['type'] === 'tool_use') {
                 $toolCall = [
                     'id' => $block['id'],
@@ -375,6 +386,8 @@ class ClaudeProvider extends BaseAIProvider
                 Craft::info('Parsed tool call from Claude: ' . json_encode($toolCall), __METHOD__);
             }
         }
+
+        Craft::info('Final parsed content length: ' . strlen($content) . ', tool calls: ' . count($toolCalls), __METHOD__);
 
         return new AIResponse(
             content: $content,

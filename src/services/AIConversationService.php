@@ -206,6 +206,8 @@ class AIConversationService extends Component
 
     /**
      * Handle tool/function calls from AI
+     * This method handles multiple rounds of tool calling - Claude may need to call tools
+     * multiple times before providing a final text response.
      */
     private function handleToolCalls(
         AIConversationRecord $conversation,
@@ -216,58 +218,83 @@ class AIConversationService extends Component
         string $systemPrompt
     ): AIResponse {
         $toolService = Launcher::$plugin->aiToolService;
-        $toolResults = [];
+        $maxRounds = 5; // Prevent infinite loops
+        $round = 0;
 
-        // Store the assistant's tool call message
-        $this->storeMessage(
-            $conversation->id,
-            'assistant',
-            $response->content,
-            $response->toolCalls
-        );
+        // Loop until we get a response without tool calls (or hit max rounds)
+        while ($response->hasToolCalls() && $round < $maxRounds) {
+            $round++;
+            Craft::info("Tool calling round {$round} - executing " . count($response->toolCalls) . " tool(s)", __METHOD__);
 
-        // Execute each tool call
-        foreach ($response->toolCalls as $toolCall) {
-            $result = $toolService->executeTool(
-                $toolCall['name'],
-                $toolCall['parameters']
-            );
+            $toolResults = [];
 
-            $toolResults[] = [
-                'type' => 'tool_result',
-                'tool_use_id' => $toolCall['id'],
-                'content' => json_encode($result),
-            ];
-
-            // Store tool result message for history
+            // Store the assistant's tool call message
             $this->storeMessage(
                 $conversation->id,
-                'tool',
-                json_encode($result),
-                null,
-                [[
-                    'tool_call_id' => $toolCall['id'],
-                    'tool_name' => $toolCall['name'],
-                    'result' => $result,
-                ]]
+                'assistant',
+                $response->content,
+                $response->toolCalls
             );
+
+            // Execute each tool call
+            foreach ($response->toolCalls as $toolCall) {
+                $result = $toolService->executeTool(
+                    $toolCall['name'],
+                    $toolCall['parameters']
+                );
+
+                $toolResults[] = [
+                    'type' => 'tool_result',
+                    'tool_use_id' => $toolCall['id'],
+                    'content' => json_encode($result),
+                ];
+
+                // Store tool result message for history
+                $this->storeMessage(
+                    $conversation->id,
+                    'tool',
+                    json_encode($result),
+                    null,
+                    [[
+                        'tool_call_id' => $toolCall['id'],
+                        'tool_name' => $toolCall['name'],
+                        'result' => $result,
+                    ]]
+                );
+            }
+
+            // Add assistant's tool use message to conversation history
+            $messages[] = [
+                'role' => 'assistant',
+                'content' => $response->content ?: '',
+                'tool_use' => $response->toolCalls,
+            ];
+
+            // Add tool results as user message with tool_result content blocks
+            $messages[] = [
+                'role' => 'user',
+                'content' => $toolResults,
+            ];
+
+            // Log the messages being sent for the next API call
+            Craft::info("Round {$round}: Sending messages to Claude (count: " . count($messages) . ')', __METHOD__);
+
+            // Get next response with tool results
+            $response = $provider->sendMessage($messages, $tools, $systemPrompt);
+
+            Craft::info("Round {$round}: Response - Content length: " . strlen($response->content ?? '') . ', has more tool calls: ' . ($response->hasToolCalls() ? 'YES' : 'NO'), __METHOD__);
         }
 
-        // Add assistant's tool use message to conversation history
-        $messages[] = [
-            'role' => 'assistant',
-            'content' => $response->content ?: '',
-            'tool_use' => $response->toolCalls,
-        ];
+        if ($round >= $maxRounds) {
+            Craft::warning("Hit maximum tool calling rounds ({$maxRounds}), stopping", __METHOD__);
+        }
 
-        // Add tool results as user message with tool_result content blocks
-        $messages[] = [
-            'role' => 'user',
-            'content' => $toolResults,
-        ];
+        Craft::info('Final response after all tool execution - Content length: ' . strlen($response->content ?? ''), __METHOD__);
+        if (!empty($response->content)) {
+            Craft::info('Final response content preview: ' . substr($response->content, 0, 200), __METHOD__);
+        }
 
-        // Get final response with tool results
-        return $provider->sendMessage($messages, $tools, $systemPrompt);
+        return $response;
     }
 
     /**
