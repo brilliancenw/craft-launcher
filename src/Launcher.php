@@ -565,12 +565,13 @@ class Launcher extends Plugin
         // Extract data from the event
         $data = $event->newValue ?? [];
 
-        // Update the plugin settings
+        // Update the plugin settings internally without triggering project config writes
+        // The project config system handles persistence, this handler is for side effects only
         if (isset($data['settings']) && is_array($data['settings'])) {
             $settings = new Settings($data['settings']);
-            
-            // Save the settings to the plugin
-            Craft::$app->getPlugins()->savePluginSettings($this, $settings->toArray());
+
+            // Call parent setSettings to update internal state without writing to project config
+            parent::setSettings($settings->toArray());
         }
     }
 
@@ -714,10 +715,12 @@ class Launcher extends Plugin
         parent::setSettings($settings);
 
         // Save settings to project config when they change
-        if (Craft::$app->getIsInstalled() && !Craft::$app->getProjectConfig()->getIsApplyingExternalChanges()) {
-            $projectConfig = Craft::$app->getProjectConfig();
+        $projectConfig = Craft::$app->getProjectConfig();
+        if (Craft::$app->getIsInstalled()
+            && !$projectConfig->getIsApplyingExternalChanges()
+            && !$projectConfig->readOnly) {
             $pluginHandle = $this->handle;
-            
+
             // Update the project config with the new settings
             $projectConfig->set(
                 "plugins.{$pluginHandle}.settings",
