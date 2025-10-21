@@ -1,5 +1,22 @@
 # Changelog
 
+## [v1.1.2] - 2025-10-21
+
+### Critical Fixes
+
+**Production Environment Support**
+- **FIXED**: Project config read-only mode errors in staging/production environments
+- **FIXED**: Circular project config writes when applying external changes
+- **IMPROVED**: Added read-only check to setSettings() method to prevent writes in production
+- **IMPROVED**: Updated handleProjectConfigChange() to use parent::setSettings() avoiding circular writes
+
+### Technical Improvements
+- **ENHANCED**: Better handling of project config synchronization across environments
+- **IMPROVED**: Plugin now properly respects Craft's read-only project config mode
+- **ADDED**: Defensive checks to prevent project config modifications during initialization
+
+> **Critical Patch**: This release fixes errors that occur when running `craft up` in staging/production environments where project config is read-only. The plugin now properly handles read-only mode without attempting to write back to project config.
+
 ## [v1.1.1] - 2025-10-12
 
 ### Documentation Updates
