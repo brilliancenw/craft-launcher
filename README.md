@@ -615,7 +615,7 @@ class MyPlugin extends Plugin
     {
         // Return different content based on context
         $tips = $context === 'assistant' ? [
-            'Use my plugin to enhance your AI responses',
+            'Use my plugin to enhance your assistant responses',
             'Configure settings in the plugin panel'
         ] : [
             'Press Cmd+Shift+P to open my plugin',
@@ -711,10 +711,10 @@ public function getDrawerContent(string $context): array
     // Add context-specific tips
     if ($context === 'assistant') {
         $sections[] = [
-            'title' => 'AI Integration',
+            'title' => 'Assistant Integration',
             'items' => [
-                'Ask the AI to use my plugin features',
-                'Plugin data is automatically available to AI'
+                'Ask the assistant to use my plugin features',
+                'Plugin data is automatically available to the assistant'
             ]
         ];
     } else {

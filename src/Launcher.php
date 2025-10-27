@@ -791,7 +791,7 @@ class Launcher extends Plugin
                     [
                         'title' => 'Quick Tips',
                         'items' => $context === 'assistant' ? [
-                            'Ask in natural language - the AI understands context',
+                            'Ask in natural language - the assistant understands context',
                             'Request drafts - content is created for review, never auto-published',
                             'Use specific section names when creating content'
                         ] : [
