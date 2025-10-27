@@ -131,6 +131,7 @@
                             <div id="launcher-results" class="launcher-results"></div>
                         </div>
                     </div>
+                    <div class="launcher-resize-handle" title="Drag to resize"></div>
                 </div>
             `;
 
@@ -149,6 +150,8 @@
             this.drawerToggle = this.modal.querySelector('.launcher-drawer-toggle');
             this.drawerContent = this.modal.querySelector('.launcher-drawer-content');
             this.drawerOpen = false;
+            this.resizeHandle = this.modal.querySelector('.launcher-resize-handle');
+            this.dialog = this.modal.querySelector('.launcher-dialog');
 
             // Store references to tab elements
             tabKeys.forEach(function(key) {
@@ -260,6 +263,9 @@
                 e.stopPropagation();
                 self.toggleDrawer();
             });
+
+            // Resize handle
+            this.initResize();
 
             // Close button
             this.modal.querySelector('.launcher-close').addEventListener('click', function() {
@@ -563,6 +569,73 @@
                 book: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'
             };
             return icons[iconName] || '';
+        },
+
+        initResize: function() {
+            const self = this;
+            let isResizing = false;
+            let startX, startY, startWidth, startHeight;
+
+            // Load saved size from localStorage
+            const savedSize = localStorage.getItem('launcher-dialog-size');
+            if (savedSize) {
+                try {
+                    const size = JSON.parse(savedSize);
+                    self.dialog.style.width = size.width + 'px';
+                    self.dialog.style.height = size.height + 'px';
+                    self.dialog.style.maxWidth = 'none';
+                    self.dialog.style.maxHeight = 'none';
+                } catch (e) {
+                    // Invalid saved size, ignore
+                }
+            }
+
+            this.resizeHandle.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                isResizing = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startWidth = parseInt(window.getComputedStyle(self.dialog).width, 10);
+                startHeight = parseInt(window.getComputedStyle(self.dialog).height, 10);
+                document.body.style.cursor = 'nwse-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+                e.preventDefault();
+
+                const width = startWidth + (e.clientX - startX);
+                const height = startHeight + (e.clientY - startY);
+
+                // Apply min/max constraints
+                const minWidth = 400;
+                const minHeight = 300;
+                const maxWidth = window.innerWidth - 40;
+                const maxHeight = window.innerHeight - 40;
+
+                const constrainedWidth = Math.max(minWidth, Math.min(maxWidth, width));
+                const constrainedHeight = Math.max(minHeight, Math.min(maxHeight, height));
+
+                self.dialog.style.width = constrainedWidth + 'px';
+                self.dialog.style.height = constrainedHeight + 'px';
+                self.dialog.style.maxWidth = 'none';
+                self.dialog.style.maxHeight = 'none';
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+
+                    // Save size to localStorage
+                    const width = parseInt(self.dialog.style.width, 10);
+                    const height = parseInt(self.dialog.style.height, 10);
+                    localStorage.setItem('launcher-dialog-size', JSON.stringify({ width, height }));
+                }
+            });
         },
 
         showLoadingIndicator: function() {

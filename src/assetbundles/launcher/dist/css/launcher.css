@@ -30,6 +30,36 @@
     display: flex;
     flex-direction: column;
     border: 1px solid var(--hairline-color, #e3e5e8);
+    resize: both;
+    min-width: 400px;
+    min-height: 300px;
+}
+
+.launcher-resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    z-index: 1000;
+}
+
+.launcher-resize-handle::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border-right: 2px solid var(--light-text-color, #8b92a1);
+    border-bottom: 2px solid var(--light-text-color, #8b92a1);
+    opacity: 0.3;
+}
+
+.launcher-resize-handle:hover::after {
+    opacity: 0.6;
+    border-color: var(--ui-control-color, #0d78f2);
 }
 
 /* Tab Bar */
