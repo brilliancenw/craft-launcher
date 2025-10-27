@@ -37,7 +37,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 12px 16px 12px 16px;
+    padding: 12px 16px 12px 32px;
     border-bottom: 1px solid var(--hairline-color, #e3e5e8);
     background: var(--gray-050, #fafafa);
 }
@@ -618,7 +618,7 @@ body.rtl .launcher-results::-webkit-scrollbar-thumb:hover {
 
 .launcher-drawer-toggle {
     position: absolute;
-    left: 4px;
+    left: 8px;
     top: 4px;
     width: 18px;
     height: 18px;
