@@ -12,6 +12,8 @@
         </p>
 
         {% set addons = craft.launcher.addon.getRegisteredAddons() %}
+        {% set cpNavItems = craft.launcher.addon.getCpNavItems() %}
+        {% set hotkeys = craft.launcher.addon.getRegisteredHotkeys() %}
 
         {% if addons|length > 0 %}
             <hr>
@@ -22,26 +24,28 @@
                 {% for addon in addons %}
                     <div class="card">
                         <h3>{{ addon.name ?? addon.handle }}</h3>
-
-                        {% if addon.hotkey %}
-                            <p>
-                                <strong>Hotkey:</strong> <code>{{ addon.hotkey }}</code>
-                            </p>
-                        {% endif %}
-
-                        {% if addon.cpNavItems|length > 0 %}
-                            <p><strong>Settings:</strong></p>
-                            <ul>
-                                {% for key, item in addon.cpNavItems %}
-                                    <li>
-                                        <a href="{{ cpUrl(item.url) }}">{{ item.label }}</a>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
+                        <p class="light">
+                            <strong>Handle:</strong> <code>{{ addon.handle }}</code>
+                        </p>
                     </div>
                 {% endfor %}
             </div>
+
+            {% if cpNavItems|length > 0 %}
+                <hr>
+
+                <h2>Configuration</h2>
+
+                <p class="light">Manage your Launcher suite add-ons:</p>
+
+                <ul>
+                    {% for key, item in cpNavItems %}
+                        <li>
+                            <a href="{{ cpUrl(item.url) }}">{{ item.label }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         {% else %}
             <hr>
 

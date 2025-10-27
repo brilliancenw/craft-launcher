@@ -10,7 +10,8 @@
             selectResultModifier: 'cmd',
             searchableTypes: {},
             addons: [],
-            addonHotkeys: []
+            addonHotkeys: [],
+            modalTabs: {}
         },
         searchTimeout: null,
         currentResults: [],
@@ -56,6 +57,30 @@
         },
 
         createModal: function() {
+            const self = this;
+
+            // Build tab buttons HTML
+            const tabs = this.config.modalTabs || {};
+            const tabKeys = Object.keys(tabs).sort((a, b) => {
+                const priorityA = tabs[a].priority || 50;
+                const priorityB = tabs[b].priority || 50;
+                return priorityA - priorityB;
+            });
+
+            let tabButtonsHtml = '';
+            let tabContentsHtml = '';
+
+            // Add addon tabs (sorted by priority)
+            tabKeys.forEach(function(key) {
+                const tab = tabs[key];
+                tabButtonsHtml += `<button type="button" class="launcher-tab" data-tab="${key}" data-hotkey="${tab.hotkey || ''}">${tab.label}</button>`;
+                tabContentsHtml += `<div id="launcher-${key}-tab" class="launcher-tab-content" style="display: none;">${tab.html || ''}</div>`;
+                self.registeredTabs[key] = tab;
+            });
+
+            // Add search tab (always last/rightmost)
+            tabButtonsHtml += `<button type="button" class="launcher-tab launcher-tab-active" data-tab="search">Search</button>`;
+
             const modalHtml = `
                 <div id="launcher-modal" class="launcher-modal" style="display: none;">
                     <div id="launcher-game-header" style="position: fixed; top: 0; left: 0; right: 0; z-index: 100000; color: #00ffff; font-family: monospace; font-size: 20px; text-shadow: 0 0 10px #00ffff; display: none; background: rgba(0,0,0,0.9); padding: 15px 30px; border-bottom: 2px solid #00ffff;">
@@ -74,10 +99,14 @@
                     <canvas id="launcher-game-canvas" style="position: fixed; top: 60px; left: 0; width: 100%; height: calc(100% - 60px); z-index: 99999; pointer-events: none; opacity: 0; background: rgba(10, 10, 10, 0.02); transition: opacity 0.3s ease;"></canvas>
                     <div class="launcher-overlay"></div>
                     <div class="launcher-dialog">
-                        <div id="launcher-search-tab" class="launcher-tab-content">
+                        <div class="launcher-tabs-bar">
+                            ${tabButtonsHtml}
+                            <button type="button" class="launcher-close" aria-label="Close" title="ESC to close">×</button>
+                        </div>
+                        ${tabContentsHtml}
+                        <div id="launcher-search-tab" class="launcher-tab-content" style="display: block;">
                             <div class="launcher-search-wrapper">
                                 <input type="text" id="launcher-search" class="launcher-search" placeholder="Search for anything..." autocomplete="off">
-                                <button type="button" class="launcher-close" aria-label="Close" title="${this.config.hotkey.toUpperCase()} or ESC to close">×</button>
                             </div>
                             <div id="launcher-loading-bar" class="launcher-loading-bar" style="display: none;">
                                 <div class="launcher-loading-dots">
@@ -104,7 +133,15 @@
             this.gameLivesIconsElement = document.getElementById('launcher-game-lives-icons');
             this.gameLevelElement = document.getElementById('launcher-game-level');
 
-            // AI Assistant is now a separate plugin
+            // Store references to tab elements
+            tabKeys.forEach(function(key) {
+                self.tabContainers[key] = document.getElementById('launcher-' + key + '-tab');
+            });
+            self.tabContainers['search'] = document.getElementById('launcher-search-tab');
+
+            this.modal.querySelectorAll('.launcher-tab').forEach(function(button) {
+                self.tabButtons[button.getAttribute('data-tab')] = button;
+            });
 
             this.initGame();
         },
@@ -127,20 +164,12 @@
                     e.preventDefault();
                     e.stopImmediatePropagation();
 
-                    // Close assistant modal if it's open
-                    if (window.LauncherAI && window.LauncherAI.modal) {
-                        const aiModal = window.LauncherAI.modal;
-                        if (aiModal.style.display !== 'none') {
-                            window.LauncherAI.closeModal();
-                        }
-                    }
-
                     // If modal is open and we're already on search tab, close it
                     // Otherwise, open/switch to search tab
                     if (self.modal.style.display !== 'none' && self.currentTab === 'search') {
                         self.closeModal();
                     } else {
-                        self.toggleModal('search');
+                        self.openModal('search');
                     }
                     return false;
                 }
@@ -214,46 +243,34 @@
                 self.closeModal();
             });
 
-            // Tab switching (if AI is enabled)
-            if (this.config.enableAI) {
-                const tabs = this.modal.querySelectorAll('.launcher-tab');
-                tabs.forEach(function(tab) {
-                    tab.addEventListener('click', function() {
-                        const tabName = this.getAttribute('data-tab');
-                        self.switchTab(tabName);
-                    });
+            // Tab switching
+            const tabs = this.modal.querySelectorAll('.launcher-tab');
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    self.switchTab(tabName);
                 });
+            });
 
-                // AI Assistant events
-                // Send button
-                this.aiSendButton.addEventListener('click', function() {
-                    self.sendAIMessage();
-                });
-
-                // Suggestion buttons
-                this.modal.addEventListener('click', function(e) {
-                    if (e.target.classList.contains('launcher-ai-suggestion')) {
-                        const prompt = e.target.getAttribute('data-prompt');
-                        self.messageInput.value = prompt;
-                        self.messageInput.focus();
-                        self.sendAIMessage();
-                    }
-                });
-
-                // Auto-resize textarea
-                this.messageInput.addEventListener('input', function() {
-                    this.style.height = 'auto';
-                    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
-                });
-
-                // Enter to send (Shift+Enter for new line)
-                this.messageInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey && self.currentTab === 'ai') {
+            // Handle addon hotkeys
+            document.addEventListener('keydown', function(e) {
+                Object.keys(self.registeredTabs).forEach(function(tabKey) {
+                    const tab = self.registeredTabs[tabKey];
+                    if (tab.hotkey && self.isHotkeyMatch(e, tab.hotkey)) {
                         e.preventDefault();
-                        self.sendAIMessage();
+                        e.stopImmediatePropagation();
+
+                        // If modal is open and we're on this tab, close it
+                        // Otherwise, open modal and switch to this tab
+                        if (self.modal.style.display !== 'none' && self.currentTab === tabKey) {
+                            self.closeModal();
+                        } else {
+                            self.openModal(tabKey);
+                        }
+                        return false;
                     }
                 });
-            }
+            }, true);
         },
 
         isHotkeyPressed: function(e) {
@@ -346,8 +363,8 @@
 
         toggleModal: function(tab) {
             if (this.modal && this.modal.style.display !== 'none') {
-                // Modal is already open, switch to the requested tab
-                if (tab && this.config.enableAI) {
+                // Modal is already open, switch to the requested tab if different
+                if (tab && tab !== this.currentTab) {
                     this.switchTab(tab);
                 } else {
                     this.closeModal();
@@ -361,14 +378,10 @@
         openModal: function(tab) {
             this.modal.style.display = 'block';
 
-            // Switch to the specified tab or default appropriately
+            // Switch to the specified tab or default to search
             if (tab) {
                 this.switchTab(tab);
-            } else if (this.config.enableAI) {
-                // Default to AI tab when AI is enabled
-                this.switchTab('ai');
             } else {
-                // Default to search tab when AI is disabled
                 this.switchTab('search');
             }
         },
@@ -397,39 +410,61 @@
             this.currentTab = tabName;
 
             // Update tab buttons
-            if (this.config.enableAI) {
-                const tabs = this.modal.querySelectorAll('.launcher-tab');
-                tabs.forEach(function(tab) {
-                    if (tab.getAttribute('data-tab') === tabName) {
-                        tab.classList.add('launcher-tab-active');
-                    } else {
-                        tab.classList.remove('launcher-tab-active');
-                    }
-                });
-            }
+            Object.keys(this.tabButtons).forEach((key) => {
+                const button = this.tabButtons[key];
+                if (key === tabName) {
+                    button.classList.add('launcher-tab-active');
+                } else {
+                    button.classList.remove('launcher-tab-active');
+                }
+            });
 
             // Show/hide tab content
-            const searchTab = document.getElementById('launcher-search-tab');
-            const aiTab = document.getElementById('launcher-ai-tab');
+            Object.keys(this.tabContainers).forEach((key) => {
+                const container = this.tabContainers[key];
+                if (key === tabName) {
+                    container.style.display = key === 'search' ? 'flex' : 'block';
+                } else {
+                    container.style.display = 'none';
+                }
+            });
 
+            // Handle search tab specific logic
             if (tabName === 'search') {
-                if (searchTab) searchTab.style.display = 'flex';
-                if (aiTab) aiTab.style.display = 'none';
                 this.searchInput.value = '';
                 this.searchInput.focus();
                 this.hideLoadingIndicator();
                 this.resultsContainer.innerHTML = '<div class="launcher-loading">Type to search...</div>';
                 this.performSearch('');
-            } else if (tabName === 'ai') {
-                if (searchTab) searchTab.style.display = 'none';
-                if (aiTab) aiTab.style.display = 'flex';
-                this.messageInput.focus();
-
-                // Start conversation if not already started
-                if (!this.aiThreadId) {
-                    this.startAIConversation();
-                }
             }
+
+            // Dispatch custom event for tab change
+            const event = new CustomEvent('launcherTabChanged', {
+                detail: { tab: tabName }
+            });
+            document.dispatchEvent(event);
+        },
+
+        isHotkeyMatch: function(e, hotkey) {
+            const parts = hotkey.toLowerCase().split('+');
+            const key = parts[parts.length - 1];
+            const needsCmd = parts.includes('cmd') || parts.includes('meta');
+            const needsCtrl = parts.includes('ctrl');
+            const needsAlt = parts.includes('alt');
+            const needsShift = parts.includes('shift');
+
+            const keyMatch = e.key.toLowerCase() === key ||
+                           (key === 'k' && e.keyCode === 75) ||
+                           (key === 'j' && e.keyCode === 74);
+
+            if (!keyMatch) return false;
+
+            if (needsCmd && !(e.metaKey || e.ctrlKey)) return false;
+            if (needsCtrl && !e.ctrlKey) return false;
+            if (needsAlt && !e.altKey) return false;
+            if (needsShift && !e.shiftKey) return false;
+
+            return true;
         },
 
         // AI Assistant Methods

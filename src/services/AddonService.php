@@ -5,6 +5,7 @@ namespace brilliance\launcher\services;
 use brilliance\launcher\events\RegisterAddonPluginsEvent;
 use brilliance\launcher\events\RegisterCpNavItemsEvent;
 use brilliance\launcher\events\RegisterHotkeysEvent;
+use brilliance\launcher\events\RegisterModalTabsEvent;
 use Craft;
 use craft\base\Component;
 use yii\base\Event;
@@ -33,6 +34,11 @@ class AddonService extends Component
     public const EVENT_REGISTER_HOTKEYS = 'registerHotkeys';
 
     /**
+     * Event triggered when addon plugins should register modal tabs
+     */
+    public const EVENT_REGISTER_MODAL_TABS = 'registerModalTabs';
+
+    /**
      * @var array Cached registered addons
      */
     private ?array $_addons = null;
@@ -46,6 +52,11 @@ class AddonService extends Component
      * @var array Cached hotkeys
      */
     private ?array $_hotkeys = null;
+
+    /**
+     * @var array Cached modal tabs
+     */
+    private ?array $_modalTabs = null;
 
     /**
      * Get all registered addon plugins
@@ -148,6 +159,25 @@ class AddonService extends Component
     }
 
     /**
+     * Get registered modal tabs from all addon plugins
+     *
+     * @return array
+     */
+    public function getModalTabs(): array
+    {
+        if ($this->_modalTabs !== null) {
+            return $this->_modalTabs;
+        }
+
+        $event = new RegisterModalTabsEvent();
+        Event::trigger(static::class, self::EVENT_REGISTER_MODAL_TABS, $event);
+
+        $this->_modalTabs = $event->getTabs();
+
+        return $this->_modalTabs;
+    }
+
+    /**
      * Clear cached addon data (useful for testing)
      */
     public function clearCache(): void
@@ -155,5 +185,6 @@ class AddonService extends Component
         $this->_addons = null;
         $this->_cpNavItems = null;
         $this->_hotkeys = null;
+        $this->_modalTabs = null;
     }
 }

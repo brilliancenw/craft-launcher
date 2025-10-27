@@ -100,11 +100,13 @@ class Launcher extends Plugin
 
                         $searchableTypesJson = json_encode($settings->searchableTypes);
 
-                        // Get registered addons and their hotkeys
+                        // Get registered addons, hotkeys, and modal tabs
                         $addons = $this->addon->getRegisteredAddons();
                         $addonHotkeys = $this->addon->getRegisteredHotkeys();
+                        $modalTabs = $this->addon->getModalTabs();
                         $addonsJson = json_encode($addons);
                         $addonHotkeysJson = json_encode($addonHotkeys);
+                        $modalTabsJson = json_encode($modalTabs);
 
                         $js = <<<JS
                         // Ensure LauncherPlugin initialization happens after DOM and Craft are ready
@@ -121,7 +123,8 @@ class Launcher extends Plugin
                                             selectResultModifier: '{$settings->selectResultModifier}',
                                             searchableTypes: $searchableTypesJson,
                                             addons: $addonsJson,
-                                            addonHotkeys: $addonHotkeysJson
+                                            addonHotkeys: $addonHotkeysJson,
+                                            modalTabs: $modalTabsJson
                                         });
                                     }
                                 });
@@ -137,7 +140,8 @@ class Launcher extends Plugin
                                             selectResultModifier: '{$settings->selectResultModifier}',
                                             searchableTypes: $searchableTypesJson,
                                             addons: $addonsJson,
-                                            addonHotkeys: $addonHotkeysJson
+                                            addonHotkeys: $addonHotkeysJson,
+                                            modalTabs: $modalTabsJson
                                         });
                                     }
                                 });
