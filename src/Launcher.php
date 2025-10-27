@@ -10,6 +10,7 @@ use brilliance\launcher\services\HistoryService;
 use brilliance\launcher\services\UserPreferenceService;
 use brilliance\launcher\services\InterfaceService;
 use brilliance\launcher\services\IntegrationService;
+use brilliance\launcher\services\AddonService;
 use brilliance\launcher\utilities\LauncherTableUtility;
 use brilliance\launcher\variables\LauncherVariable;
 
@@ -40,7 +41,7 @@ class Launcher extends Plugin
     public static ?Launcher $plugin = null;
     public string $schemaVersion = '1.2.0';
     public bool $hasCpSettings = true;
-    public bool $hasCpSection = false;
+    public bool $hasCpSection = true;
 
     public static function config(): array
     {
@@ -52,6 +53,7 @@ class Launcher extends Plugin
                 'userPreference' => UserPreferenceService::class,
                 'interface' => InterfaceService::class,
                 'integration' => IntegrationService::class,
+                'addon' => AddonService::class,
             ],
         ];
     }
@@ -73,6 +75,7 @@ class Launcher extends Plugin
             'userPreference' => UserPreferenceService::class,
             'interface' => InterfaceService::class,
             'integration' => IntegrationService::class,
+            'addon' => AddonService::class,
         ]);
 
         // Handle project config changes
@@ -90,12 +93,18 @@ class Launcher extends Plugin
                 function () {
                     if (Craft::$app->getUser()->checkPermission('accessLauncher')) {
                         Craft::$app->getView()->registerAssetBundle(LauncherAsset::class);
-                        
+
                         $settings = $this->getSettings();
                         $hotkey = $settings->hotkey;
                         $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl('@brilliance/launcher/assetbundles/launcher/dist');
-                        
+
                         $searchableTypesJson = json_encode($settings->searchableTypes);
+
+                        // Get registered addons and their hotkeys
+                        $addons = $this->addon->getRegisteredAddons();
+                        $addonHotkeys = $this->addon->getRegisteredHotkeys();
+                        $addonsJson = json_encode($addons);
+                        $addonHotkeysJson = json_encode($addonHotkeys);
 
                         $js = <<<JS
                         // Ensure LauncherPlugin initialization happens after DOM and Craft are ready
@@ -110,7 +119,9 @@ class Launcher extends Plugin
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
                                             selectResultModifier: '{$settings->selectResultModifier}',
-                                            searchableTypes: $searchableTypesJson
+                                            searchableTypes: $searchableTypesJson,
+                                            addons: $addonsJson,
+                                            addonHotkeys: $addonHotkeysJson
                                         });
                                     }
                                 });
@@ -124,14 +135,16 @@ class Launcher extends Plugin
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
                                             selectResultModifier: '{$settings->selectResultModifier}',
-                                            searchableTypes: $searchableTypesJson
+                                            searchableTypes: $searchableTypesJson,
+                                            addons: $addonsJson,
+                                            addonHotkeys: $addonHotkeysJson
                                         });
                                     }
                                 });
                             }
                         }
                         JS;
-                        
+
                         Craft::$app->getView()->registerJs($js, View::POS_END);
                     }
                 }
@@ -192,12 +205,18 @@ class Launcher extends Plugin
             }
         );
 
-        // Register URL rules for user preferences and settings
+        // Register URL rules for user preferences, settings, and CP section
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
+                // CP section
+                $event->rules['launcher'] = 'launcher/admin/index';
+
+                // User preferences
                 $event->rules['myaccount/launcher'] = 'launcher/user-account/index';
+
+                // Settings
                 $event->rules['launcher/settings/complete-first-run'] = 'launcher/settings/complete-first-run';
             }
         );
@@ -587,7 +606,25 @@ class Launcher extends Plugin
 
     public function getCpNavItem(): ?array
     {
-        return null;
+        $item = parent::getCpNavItem();
+
+        if ($item === null) {
+            return null;
+        }
+
+        $item['label'] = 'Launcher';
+        $item['url'] = 'launcher';
+
+        // Start with core launcher subnav items
+        $item['subnav'] = [];
+
+        // Add addon plugin subnav items
+        $addonNavItems = $this->addon->getCpNavItems();
+        foreach ($addonNavItems as $key => $navItem) {
+            $item['subnav'][$key] = $navItem;
+        }
+
+        return $item;
     }
 
     public function getUserPermissions(): array

@@ -1,0 +1,64 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Launcher" %}
+
+{% block content %}
+    <div class="readable">
+        <h1>Launcher Suite</h1>
+
+        <p class="light">
+            The Launcher provides quick search and navigation throughout your Craft CMS control panel.
+            Press <code>{{ craft.launcher.getHotkey() ?? 'Cmd+K' }}</code> to open the launcher from anywhere.
+        </p>
+
+        {% set addons = craft.launcher.addon.getRegisteredAddons() %}
+
+        {% if addons|length > 0 %}
+            <hr>
+
+            <h2>Installed Add-ons</h2>
+
+            <div class="grid">
+                {% for addon in addons %}
+                    <div class="card">
+                        <h3>{{ addon.name ?? addon.handle }}</h3>
+
+                        {% if addon.hotkey %}
+                            <p>
+                                <strong>Hotkey:</strong> <code>{{ addon.hotkey }}</code>
+                            </p>
+                        {% endif %}
+
+                        {% if addon.cpNavItems|length > 0 %}
+                            <p><strong>Settings:</strong></p>
+                            <ul>
+                                {% for key, item in addon.cpNavItems %}
+                                    <li>
+                                        <a href="{{ cpUrl(item.url) }}">{{ item.label }}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <hr>
+
+            <p class="light">
+                No add-on plugins installed. Install Launcher Assistant or other suite plugins to extend functionality.
+            </p>
+        {% endif %}
+
+        <hr>
+
+        <h2>Getting Started</h2>
+
+        <ul>
+            <li>Press <code>{{ craft.launcher.getHotkey() ?? 'Cmd+K' }}</code> to open the launcher</li>
+            <li>Type to search across all your content</li>
+            <li>Type <code>*</code> to browse content types</li>
+            <li>Configure settings in <a href="{{ cpUrl('settings/plugins/launcher') }}">Settings → Launcher</a></li>
+        </ul>
+    </div>
+{% endblock %}
