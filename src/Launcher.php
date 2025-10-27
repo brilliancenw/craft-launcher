@@ -786,7 +786,7 @@ class Launcher extends Plugin
     {
         $this->drawer->registerProvider('brilliance', function($context) {
             $baseContent = [
-                'title' => $context === 'assistant' ? 'AI Assistant Tips' : 'Launcher Tips',
+                'title' => $context === 'assistant' ? 'Assistant Tips' : 'Launcher Tips',
                 'sections' => [
                     [
                         'title' => 'Quick Tips',

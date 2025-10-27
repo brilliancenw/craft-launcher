@@ -623,7 +623,7 @@ class MyPlugin extends Plugin
         ];
 
         return [
-            'title' => 'My Plugin Tips',  // Optional: drawer title
+            'title' => 'My Plugin Tips',  // Optional: drawer title (omit to use default)
             'sections' => [
                 [
                     'title' => 'Quick Tips',

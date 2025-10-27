@@ -481,7 +481,7 @@
 
         getDefaultDrawerContent: function(context) {
             const baseContent = {
-                title: context === 'assistant' ? 'AI Assistant Tips' : 'Launcher Tips',
+                title: context === 'assistant' ? 'Assistant Tips' : 'Launcher Tips',
                 sections: [
                     {
                         title: 'Quick Tips',
