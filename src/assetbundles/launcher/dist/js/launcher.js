@@ -101,9 +101,11 @@
                     <div class="launcher-dialog">
                         <div class="launcher-tabs-bar">
                             <button type="button" class="launcher-drawer-toggle" aria-label="Tips & Resources" title="Tips & Resources">
-                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                                    <line x1="6" y1="2" x2="6" y2="10" class="launcher-drawer-toggle-vertical"/>
-                                    <line x1="2" y1="6" x2="10" y2="6" class="launcher-drawer-toggle-horizontal"/>
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                                    <line x1="6" y1="2" x2="6" y2="10"/>
+                                    <line x1="2" y1="6" x2="10" y2="6"/>
+                                    <line x1="3.2" y1="3.2" x2="8.8" y2="8.8"/>
+                                    <line x1="8.8" y1="3.2" x2="3.2" y2="8.8"/>
                                 </svg>
                             </button>
                             ${tabButtonsHtml}

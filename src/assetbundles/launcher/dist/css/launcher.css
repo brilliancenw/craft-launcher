@@ -642,10 +642,6 @@ body.rtl .launcher-results::-webkit-scrollbar-thumb:hover {
     color: var(--ui-control-color, #0d78f2);
 }
 
-.launcher-drawer-toggle-active .launcher-drawer-toggle-vertical {
-    opacity: 0;
-}
-
 .launcher-drawer-toggle svg {
     width: 12px;
     height: 12px;
