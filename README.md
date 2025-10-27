@@ -573,6 +573,183 @@ $this->logError('Error message', ['context' => 'data']);
    - `danger` (red) - Error states
    - `default` (blue) - Information states
 
+#### Drawer Content Providers
+
+Third-party plugins can register custom drawer content that appears in the launcher's tips and resources drawer. This allows plugins to provide context-aware tips, links, and resources to users.
+
+**How It Works**
+
+The drawer system allows plugins to contribute content that appears alongside the default Brilliance content. Each provider can register content that adapts based on the current context (e.g., different content for the search tab vs. assistant tab).
+
+**Step 1: Register a Drawer Content Provider**
+
+In your plugin's `init()` method:
+
+```php
+use craft\base\Plugin;
+use brilliance\launcher\Launcher;
+
+class MyPlugin extends Plugin
+{
+    public function init()
+    {
+        parent::init();
+
+        // Register drawer content provider
+        if (class_exists(Launcher::class)) {
+            Launcher::getInstance()->drawer->registerProvider(
+                'my-plugin',  // Unique handle
+                [$this, 'getDrawerContent'],  // Callback function
+                50  // Priority (higher = appears earlier, default is 0)
+            );
+        }
+    }
+
+    /**
+     * Get drawer content for the specified context
+     *
+     * @param string $context The current tab context ('search', 'assistant', etc.)
+     * @return array Drawer content structure
+     */
+    public function getDrawerContent(string $context): array
+    {
+        // Return different content based on context
+        $tips = $context === 'assistant' ? [
+            'Use my plugin to enhance your AI responses',
+            'Configure settings in the plugin panel'
+        ] : [
+            'Press Cmd+Shift+P to open my plugin',
+            'Search supports my custom element types'
+        ];
+
+        return [
+            'title' => 'My Plugin Tips',  // Optional: drawer title
+            'sections' => [
+                [
+                    'title' => 'Quick Tips',
+                    'items' => $tips
+                ],
+                [
+                    'title' => 'Resources',
+                    'links' => [
+                        [
+                            'text' => 'Plugin Documentation',
+                            'url' => 'https://myplugin.com/docs',
+                            'icon' => 'book'  // star, message, or book
+                        ],
+                        [
+                            'text' => 'Report an Issue',
+                            'url' => 'https://github.com/myvendor/my-plugin/issues',
+                            'icon' => 'message'
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+}
+```
+
+**Content Structure**
+
+```php
+[
+    'title' => 'Section Title',  // Optional: appears at top of drawer
+    'sections' => [              // Array of content sections
+        [
+            'title' => 'Section Name',      // Section heading
+            'items' => [                    // Array of tip strings
+                'First tip or trick',
+                'Second helpful hint',
+                'Third suggestion'
+            ]
+        ],
+        [
+            'title' => 'Links Section',
+            'links' => [                    // Array of link objects
+                [
+                    'text' => 'Link Text',  // Display text
+                    'url' => 'https://...',  // Target URL
+                    'icon' => 'star'        // Icon: star, message, or book
+                ]
+            ]
+        ]
+    ]
+]
+```
+
+**Context Values**
+
+The `$context` parameter indicates which launcher tab is active:
+- `'search'` - Main search/launcher tab
+- `'assistant'` - AI assistant tab (if Launcher Assistant plugin is installed)
+- Custom tab handles from other plugins
+
+**Priority System**
+
+When multiple plugins register drawer providers, they're merged in priority order:
+- Higher priority numbers appear first
+- Default Brilliance content has priority `100`
+- Your plugin can use any priority value to control placement
+
+**Best Practices**
+
+1. **Check if Launcher exists**: Wrap registration in `class_exists()` check
+2. **Context-aware content**: Provide relevant tips for each context
+3. **Concise tips**: Keep tips short and actionable (1-2 lines)
+4. **Useful links**: Provide links to documentation, issues, or reviews
+5. **Error handling**: Wrap content generation in try/catch blocks
+6. **Performance**: Keep content generation lightweight (it's called on drawer open)
+
+**Example: Context-Aware Content**
+
+```php
+public function getDrawerContent(string $context): array
+{
+    $sections = [];
+
+    // Add context-specific tips
+    if ($context === 'assistant') {
+        $sections[] = [
+            'title' => 'AI Integration',
+            'items' => [
+                'Ask the AI to use my plugin features',
+                'Plugin data is automatically available to AI'
+            ]
+        ];
+    } else {
+        $sections[] = [
+            'title' => 'Search Tips',
+            'items' => [
+                'Search my custom element types',
+                'Use * to browse my plugin categories'
+            ]
+        ];
+    }
+
+    // Always include links section
+    $sections[] = [
+        'title' => 'Support',
+        'links' => [
+            [
+                'text' => 'Documentation',
+                'url' => 'https://myplugin.com/docs',
+                'icon' => 'book'
+            ]
+        ]
+    ];
+
+    return ['sections' => $sections];
+}
+```
+
+**Removing a Provider**
+
+```php
+// Remove provider (typically in plugin uninstall)
+Launcher::getInstance()->drawer->unregisterProvider('my-plugin');
+```
+
 ## Database Schema
 
 The plugin creates one additional table for launch history tracking:

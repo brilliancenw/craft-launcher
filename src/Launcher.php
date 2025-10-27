@@ -11,6 +11,7 @@ use brilliance\launcher\services\UserPreferenceService;
 use brilliance\launcher\services\InterfaceService;
 use brilliance\launcher\services\IntegrationService;
 use brilliance\launcher\services\AddonService;
+use brilliance\launcher\services\DrawerService;
 use brilliance\launcher\utilities\LauncherTableUtility;
 use brilliance\launcher\variables\LauncherVariable;
 
@@ -54,6 +55,7 @@ class Launcher extends Plugin
                 'interface' => InterfaceService::class,
                 'integration' => IntegrationService::class,
                 'addon' => AddonService::class,
+                'drawer' => DrawerService::class,
             ],
         ];
     }
@@ -76,10 +78,14 @@ class Launcher extends Plugin
             'interface' => InterfaceService::class,
             'integration' => IntegrationService::class,
             'addon' => AddonService::class,
+            'drawer' => DrawerService::class,
         ]);
 
         // Handle project config changes
         $this->attachProjectConfigEventListeners();
+
+        // Register default Brilliance drawer content provider
+        $this->registerDefaultDrawerProvider();
 
         // Register console commands
         if (Craft::$app instanceof ConsoleApplication) {
@@ -118,6 +124,7 @@ class Launcher extends Plugin
                                         window.LauncherPlugin.init({
                                             hotkey: '$hotkey',
                                             searchUrl: Craft.getActionUrl('launcher/search'),
+                                            drawerContentUrl: Craft.getActionUrl('launcher/search/drawer-content'),
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
                                             selectResultModifier: '{$settings->selectResultModifier}',
@@ -135,6 +142,7 @@ class Launcher extends Plugin
                                         window.LauncherPlugin.init({
                                             hotkey: '$hotkey',
                                             searchUrl: Craft.getActionUrl('launcher/search'),
+                                            drawerContentUrl: Craft.getActionUrl('launcher/search/drawer-content'),
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
                                             selectResultModifier: '{$settings->selectResultModifier}',
@@ -769,6 +777,81 @@ class Launcher extends Plugin
                 'Update Launcher plugin settings'
             );
         }
+    }
+
+    /**
+     * Register the default Brilliance drawer content provider
+     */
+    private function registerDefaultDrawerProvider(): void
+    {
+        $this->drawer->registerProvider('brilliance', function($context) {
+            $baseContent = [
+                'title' => $context === 'assistant' ? 'AI Assistant Tips' : 'Launcher Tips',
+                'sections' => [
+                    [
+                        'title' => 'Quick Tips',
+                        'items' => $context === 'assistant' ? [
+                            'Ask in natural language - the AI understands context',
+                            'Request drafts - content is created for review, never auto-published',
+                            'Use specific section names when creating content'
+                        ] : [
+                            'Press * to browse content types',
+                            'Use keyboard numbers (1-9) to quickly select results',
+                            'Search works across entries, categories, assets, and more'
+                        ]
+                    ],
+                    [
+                        'title' => 'Resources',
+                        'links' => [
+                            [
+                                'text' => 'Leave a Review',
+                                'url' => 'https://plugins.craftcms.com/launcher',
+                                'icon' => 'star'
+                            ],
+                            [
+                                'text' => 'Feedback & Suggestions',
+                                'url' => 'https://github.com/brilliancenw/craft-launcher/issues',
+                                'icon' => 'message'
+                            ],
+                            [
+                                'text' => 'Documentation',
+                                'url' => 'https://github.com/brilliancenw/craft-launcher',
+                                'icon' => 'book'
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+            // Try to fetch from Brilliance feed first
+            try {
+                $feedUrl = "https://brilliancenw.com/launcher-feed/{$context}.json";
+                $ch = curl_init($feedUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode === 200 && $response) {
+                    $feedData = json_decode($response, true);
+                    if (is_array($feedData) && !empty($feedData)) {
+                        // Merge feed data with base content
+                        if (isset($feedData['title'])) {
+                            $baseContent['title'] = $feedData['title'];
+                        }
+                        if (isset($feedData['sections']) && is_array($feedData['sections'])) {
+                            $baseContent['sections'] = array_merge($feedData['sections'], $baseContent['sections']);
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Craft::info("Could not fetch drawer feed: {$e->getMessage()}", __METHOD__);
+            }
+
+            return $baseContent;
+        }, 100);
     }
 
     /**

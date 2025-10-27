@@ -343,4 +343,33 @@ class SearchController extends Controller
         ];
     }
 
+    /**
+     * Get drawer content for the specified context
+     *
+     * @return Response
+     */
+    public function actionDrawerContent(): Response
+    {
+        $this->requireAcceptsJson();
+        $this->requireGetRequest();
+
+        $context = Craft::$app->getRequest()->getQueryParam('context', 'search');
+
+        try {
+            $content = Launcher::$plugin->drawer->getDrawerContent($context);
+
+            return $this->asJson([
+                'success' => true,
+                'content' => $content,
+            ]);
+        } catch (\Exception $e) {
+            Craft::error("Error getting drawer content: {$e->getMessage()}", __METHOD__);
+
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to load drawer content',
+            ]);
+        }
+    }
+
 }

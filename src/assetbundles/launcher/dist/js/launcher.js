@@ -100,8 +100,18 @@
                     <div class="launcher-overlay"></div>
                     <div class="launcher-dialog">
                         <div class="launcher-tabs-bar">
+                            <button type="button" class="launcher-drawer-toggle" aria-label="Tips & Resources" title="Tips & Resources">
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M8 2L4 6L8 10"/>
+                                </svg>
+                            </button>
                             ${tabButtonsHtml}
                             <button type="button" class="launcher-close" aria-label="Close" title="ESC to close">×</button>
+                        </div>
+                        <div class="launcher-drawer">
+                            <div class="launcher-drawer-content">
+                                <div class="launcher-drawer-loading">Loading...</div>
+                            </div>
                         </div>
                         ${tabContentsHtml}
                         <div id="launcher-search-tab" class="launcher-tab-content" style="display: block;">
@@ -132,6 +142,10 @@
             this.gameHighScoreElement = document.getElementById('launcher-game-high-score');
             this.gameLivesIconsElement = document.getElementById('launcher-game-lives-icons');
             this.gameLevelElement = document.getElementById('launcher-game-level');
+            this.drawer = this.modal.querySelector('.launcher-drawer');
+            this.drawerToggle = this.modal.querySelector('.launcher-drawer-toggle');
+            this.drawerContent = this.modal.querySelector('.launcher-drawer-content');
+            this.drawerOpen = false;
 
             // Store references to tab elements
             tabKeys.forEach(function(key) {
@@ -236,6 +250,12 @@
             // Click outside to close
             this.modal.querySelector('.launcher-overlay').addEventListener('click', function() {
                 self.closeModal();
+            });
+
+            // Drawer toggle
+            this.drawerToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                self.toggleDrawer();
             });
 
             // Close button
@@ -394,6 +414,152 @@
             this.currentResults = [];
             this.selectedIndex = 0;
             this.exitBrowseMode();
+            if (this.drawerOpen) {
+                this.closeDrawer();
+            }
+        },
+
+        toggleDrawer: function() {
+            if (this.drawerOpen) {
+                this.closeDrawer();
+            } else {
+                this.openDrawer();
+            }
+        },
+
+        openDrawer: function() {
+            this.drawer.classList.add('launcher-drawer-open');
+            this.drawerToggle.classList.add('launcher-drawer-toggle-active');
+            this.drawerOpen = true;
+            this.loadDrawerContent();
+        },
+
+        closeDrawer: function() {
+            this.drawer.classList.remove('launcher-drawer-open');
+            this.drawerToggle.classList.remove('launcher-drawer-toggle-active');
+            this.drawerOpen = false;
+        },
+
+        loadDrawerContent: function() {
+            const self = this;
+            const context = this.currentTab || 'search';
+
+            // Fetch drawer content from server (which handles feed fetching with fallback)
+            if (!this.config.drawerContentUrl) {
+                // If no URL configured, use client-side fallback
+                self.renderDrawerContent(self.getDefaultDrawerContent(context));
+                return;
+            }
+
+            const url = `${this.config.drawerContentUrl}?context=${encodeURIComponent(context)}`;
+
+            fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to load drawer content');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success && data.content) {
+                        self.renderDrawerContent(data.content);
+                    } else {
+                        self.renderDrawerContent(self.getDefaultDrawerContent(context));
+                    }
+                })
+                .catch(() => {
+                    // Fallback to default content
+                    self.renderDrawerContent(self.getDefaultDrawerContent(context));
+                });
+        },
+
+        getDefaultDrawerContent: function(context) {
+            const baseContent = {
+                title: context === 'assistant' ? 'AI Assistant Tips' : 'Launcher Tips',
+                sections: [
+                    {
+                        title: 'Quick Tips',
+                        items: context === 'assistant' ? [
+                            'Ask in natural language - the AI understands context',
+                            'Request drafts - content is created for review, never auto-published',
+                            'Use specific section names when creating content'
+                        ] : [
+                            'Press * to browse content types',
+                            'Use keyboard numbers (1-9) to quickly select results',
+                            'Search works across entries, categories, assets, and more'
+                        ]
+                    },
+                    {
+                        title: 'Resources',
+                        links: [
+                            {
+                                text: 'Leave a Review',
+                                url: 'https://plugins.craftcms.com/launcher',
+                                icon: 'star'
+                            },
+                            {
+                                text: 'Feedback & Suggestions',
+                                url: 'https://github.com/brilliancenw/craft-launcher/issues',
+                                icon: 'message'
+                            },
+                            {
+                                text: 'Documentation',
+                                url: 'https://github.com/brilliancenw/craft-launcher',
+                                icon: 'book'
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            return baseContent;
+        },
+
+        renderDrawerContent: function(data) {
+            let html = `<div class="launcher-drawer-header">
+                <h3>${data.title}</h3>
+            </div>`;
+
+            data.sections.forEach(section => {
+                html += `<div class="launcher-drawer-section">
+                    <h4>${section.title}</h4>`;
+
+                if (section.items) {
+                    html += '<ul class="launcher-drawer-list">';
+                    section.items.forEach(item => {
+                        html += `<li>${item}</li>`;
+                    });
+                    html += '</ul>';
+                }
+
+                if (section.links) {
+                    html += '<div class="launcher-drawer-links">';
+                    section.links.forEach(link => {
+                        const icon = this.getIcon(link.icon);
+                        html += `<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="launcher-drawer-link">
+                            ${icon}
+                            <span>${link.text}</span>
+                        </a>`;
+                    });
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            });
+
+            this.drawerContent.innerHTML = html;
+        },
+
+        getIcon: function(iconName) {
+            const icons = {
+                star: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+                message: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+                book: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'
+            };
+            return icons[iconName] || '';
         },
 
         showLoadingIndicator: function() {
