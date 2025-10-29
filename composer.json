@@ -33,7 +33,7 @@
         }
     },
     "extra": {
-        "name": "Launcher",
+        "name": "Rocket Launcher",
         "handle": "launcher",
         "class": "brilliance\\launcher\\Launcher"
     },

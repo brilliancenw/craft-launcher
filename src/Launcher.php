@@ -210,7 +210,7 @@ class Launcher extends Plugin
                 $user = Craft::$app->getUser()->getIdentity();
                 if ($user && Craft::$app->getUser()->checkPermission('accessLauncher')) {
                     $event->screens['launcher'] = [
-                        'label' => 'Launcher',
+                        'label' => 'Rocket Launcher',
                         'url' => 'myaccount/launcher',
                     ];
                 }
@@ -244,9 +244,9 @@ class Launcher extends Plugin
                     $request->getSegment(2) === 'preferences') {
 
                     $html = '<div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px; padding: 12px; margin-bottom: 20px;">
-                        <strong>🚀 Launcher Plugin:</strong>
+                        <strong>Rocket Launcher Plugin:</strong>
                         <a href="/admin/myaccount/launcher" style="color: #1976d2; text-decoration: underline;">
-                            Configure your Launcher preferences
+                            Configure your Rocket Launcher preferences
                         </a>
                         - Enable the front-end launcher and customize your settings.
                     </div>';
@@ -613,7 +613,7 @@ class Launcher extends Plugin
     {
         // This would handle plugin removal via project config
         // but typically plugins are managed separately from project config
-        Craft::warning('Launcher plugin removal via project config is not supported.', __METHOD__);
+        Craft::warning('Rocket Launcher plugin removal via project config is not supported.', __METHOD__);
     }
 
     public function getCpNavItem(): ?array
@@ -624,7 +624,7 @@ class Launcher extends Plugin
             return null;
         }
 
-        $item['label'] = 'Launcher';
+        $item['label'] = 'Rocket Launcher';
         $item['url'] = 'launcher';
 
         // Start with core launcher subnav items
@@ -642,7 +642,7 @@ class Launcher extends Plugin
     public function getUserPermissions(): array
     {
         return [
-            'accessLauncher' => ['label' => 'Access Launcher'],
+            'accessLauncher' => ['label' => 'Access Rocket Launcher'],
         ];
     }
 
@@ -657,7 +657,7 @@ class Launcher extends Plugin
         $tableStatus = $this->history->getTableStatus();
         if (!$tableStatus['exists']) {
             Craft::$app->getSession()->setFlash('launcher-table-missing',
-                'The Launcher user history table is missing. Launch history and popular items features will not work. ' .
+                'The Rocket Launcher user history table is missing. Launch history and popular items features will not work. ' .
                 'Try reinstalling the plugin or contact your developer.'
             );
         }
@@ -747,7 +747,7 @@ class Launcher extends Plugin
                 'CASCADE'
             )->execute();
 
-            Craft::info('Launcher user history table created successfully', __METHOD__);
+            Craft::info('Rocket Launcher user history table created successfully', __METHOD__);
             return true;
 
         } catch (\Exception $e) {
@@ -774,7 +774,7 @@ class Launcher extends Plugin
             $projectConfig->set(
                 "plugins.{$pluginHandle}.settings",
                 $this->getSettings()->toArray(),
-                'Update Launcher plugin settings'
+                'Update Rocket Launcher plugin settings'
             );
         }
     }
@@ -786,7 +786,7 @@ class Launcher extends Plugin
     {
         $this->drawer->registerProvider('brilliance', function($context) {
             $baseContent = [
-                'title' => $context === 'assistant' ? 'Assistant Tips' : 'Launcher Tips',
+                'title' => $context === 'assistant' ? 'Assistant Tips' : 'Rocket Launcher Tips',
                 'sections' => [
                     [
                         'title' => 'Quick Tips',
