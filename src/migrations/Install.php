@@ -16,6 +16,7 @@ class Install extends Migration
     public function safeUp(): bool
     {
         $this->createLauncherUserHistoryTable();
+        $this->createLauncherInterfaceSettingsTable();
         return true;
     }
 
@@ -24,6 +25,7 @@ class Install extends Migration
      */
     public function safeDown(): bool
     {
+        $this->dropTableIfExists('{{%launcher_interface_settings}}');
         $this->dropTableIfExists('{{%launcher_user_history}}');
         return true;
     }
@@ -74,6 +76,55 @@ class Install extends Migration
             $this->addForeignKey(
                 'fk_launcher_user_history_user',
                 '{{%launcher_user_history}}',
+                'userId',
+                '{{%users}}',
+                'id',
+                'CASCADE'
+            );
+        }
+    }
+
+    /**
+     * Creates the launcher_interface_settings table
+     */
+    private function createLauncherInterfaceSettingsTable(): void
+    {
+        if ($this->db->schema->getTableSchema('{{%launcher_interface_settings}}') === null) {
+            $this->createTable('{{%launcher_interface_settings}}', [
+                'id' => $this->primaryKey(),
+                'settingKey' => $this->string(255)->notNull()->comment('Setting identifier'),
+                'userId' => $this->integer()->null()->comment('User ID (null for global settings)'),
+                'interfaceData' => $this->json()->null()->comment('JSON data for interface preferences'),
+                'dateCreated' => $this->dateTime()->notNull(),
+                'dateUpdated' => $this->dateTime()->notNull(),
+            ]);
+
+            // Create indexes
+            $this->createIndex(
+                'idx_launcher_interface_settings_key',
+                '{{%launcher_interface_settings}}',
+                ['settingKey'],
+                false
+            );
+
+            $this->createIndex(
+                'idx_launcher_interface_settings_user',
+                '{{%launcher_interface_settings}}',
+                ['userId'],
+                false
+            );
+
+            $this->createIndex(
+                'idx_launcher_interface_settings_key_user',
+                '{{%launcher_interface_settings}}',
+                ['settingKey', 'userId'],
+                true
+            );
+
+            // Add foreign key for userId (allows null for global settings)
+            $this->addForeignKey(
+                'fk_launcher_interface_settings_user',
+                '{{%launcher_interface_settings}}',
                 'userId',
                 '{{%users}}',
                 'id',
