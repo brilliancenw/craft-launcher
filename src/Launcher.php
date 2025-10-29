@@ -786,12 +786,12 @@ class Launcher extends Plugin
     {
         $this->drawer->registerProvider('brilliance', function($context) {
             $baseContent = [
-                'title' => $context === 'assistant' ? 'Assistant Tips' : 'Rocket Launcher Tips',
+                'title' => $context === 'assistant' ? 'Astronaut Tips' : 'Rocket Launcher Tips',
                 'sections' => [
                     [
                         'title' => 'Quick Tips',
                         'items' => $context === 'assistant' ? [
-                            'Ask in natural language - the assistant understands your site',
+                            'Ask in natural language - Astronaut understands your site',
                             'Request content creation - drafts are created for review, never auto-published',
                             'Ask about your content - "What sections do I have?" or "Show me recent entries"',
                             'Manage your site - "Clear all caches" or "Run pending queue jobs"',
@@ -804,7 +804,23 @@ class Launcher extends Plugin
                     ],
                     [
                         'title' => 'Resources',
-                        'links' => [
+                        'links' => $context === 'assistant' ? [
+                            [
+                                'text' => 'Leave a Review',
+                                'url' => 'https://plugins.craftcms.com/astronaut',
+                                'icon' => 'star'
+                            ],
+                            [
+                                'text' => 'Feedback & Suggestions',
+                                'url' => 'https://github.com/brilliancenw/craft-astronaut/issues',
+                                'icon' => 'message'
+                            ],
+                            [
+                                'text' => 'Documentation',
+                                'url' => 'https://github.com/brilliancenw/craft-astronaut',
+                                'icon' => 'book'
+                            ]
+                        ] : [
                             [
                                 'text' => 'Leave a Review',
                                 'url' => 'https://plugins.craftcms.com/launcher',
