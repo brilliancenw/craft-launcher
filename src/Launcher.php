@@ -791,9 +791,11 @@ class Launcher extends Plugin
                     [
                         'title' => 'Quick Tips',
                         'items' => $context === 'assistant' ? [
-                            'Ask in natural language - the assistant understands context',
-                            'Request drafts - content is created for review, never auto-published',
-                            'Use specific section names when creating content'
+                            'Ask in natural language - the assistant understands your site',
+                            'Request content creation - drafts are created for review, never auto-published',
+                            'Ask about your content - "What sections do I have?" or "Show me recent entries"',
+                            'Manage your site - "Clear all caches" or "Run pending queue jobs"',
+                            'Get help - "How do I create a new field?" or "Explain entry types"'
                         ] : [
                             'Press * to browse content types',
                             'Use keyboard numbers (1-9) to quickly select results',
