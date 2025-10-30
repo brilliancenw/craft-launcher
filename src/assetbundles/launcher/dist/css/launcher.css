@@ -21,12 +21,12 @@
     position: relative;
     max-width: 700px;
     width: 90%;
-    margin: 10vh auto 0;
+    margin: 5vh auto 0;
     background: #fff;
     border-radius: var(--large-border-radius, 8px);
     box-shadow: var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.3));
     overflow: hidden;
-    max-height: 75vh;
+    max-height: 88vh;
     display: flex;
     flex-direction: column;
     border: 1px solid var(--hairline-color, #e3e5e8);

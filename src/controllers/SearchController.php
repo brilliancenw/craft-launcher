@@ -351,7 +351,6 @@ class SearchController extends Controller
     public function actionDrawerContent(): Response
     {
         $this->requireAcceptsJson();
-        $this->requireGetRequest();
 
         $context = Craft::$app->getRequest()->getQueryParam('context', 'search');
 

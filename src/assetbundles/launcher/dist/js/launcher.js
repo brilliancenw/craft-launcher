@@ -196,6 +196,23 @@
 
                 // AI hotkey (CMD-J) is now handled by the assistant plugin
 
+                // Drawer shortcuts (CMD+Right Arrow to open, CMD+Left Arrow to close)
+                if (self.modal && self.modal.style.display !== 'none') {
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        if (!self.drawerOpen) {
+                            self.openDrawer();
+                        }
+                        return false;
+                    } else if ((e.metaKey || e.ctrlKey) && e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        if (self.drawerOpen) {
+                            self.closeDrawer();
+                        }
+                        return false;
+                    }
+                }
+
                 if (self.modal && self.modal.style.display !== 'none') {
                     if (e.key === 'Escape') {
                         self.closeModal();
@@ -460,9 +477,13 @@
                 return;
             }
 
-            const url = `${this.config.drawerContentUrl}?context=${encodeURIComponent(context)}`;
+            // Check if URL already has query parameters
+            const separator = this.config.drawerContentUrl.includes('?') ? '&' : '?';
+            const url = `${this.config.drawerContentUrl}${separator}context=${encodeURIComponent(context)}`;
 
             fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
@@ -553,6 +574,11 @@
             data.sections.forEach(section => {
                 html += `<div class="launcher-drawer-section">
                     <h4>${section.title}</h4>`;
+
+                // Support raw HTML content
+                if (section.content) {
+                    html += section.content;
+                }
 
                 if (section.items) {
                     html += '<ul class="launcher-drawer-list">';

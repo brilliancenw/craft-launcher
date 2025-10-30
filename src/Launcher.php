@@ -785,18 +785,17 @@ class Launcher extends Plugin
     private function registerDefaultDrawerProvider(): void
     {
         $this->drawer->registerProvider('brilliance', function($context) {
+            // Don't provide default content for assistant context - let Astronaut handle it
+            if ($context === 'assistant') {
+                return null;
+            }
+
             $baseContent = [
-                'title' => $context === 'assistant' ? 'Astronaut Tips' : 'Rocket Launcher Tips',
+                'title' => 'Rocket Launcher Tips',
                 'sections' => [
                     [
                         'title' => 'Quick Tips',
-                        'items' => $context === 'assistant' ? [
-                            'Ask in natural language - Astronaut understands your site',
-                            'Request content creation - drafts are created for review, never auto-published',
-                            'Ask about your content - "What sections do I have?" or "Show me recent entries"',
-                            'Manage your site - "Clear all caches" or "Run pending queue jobs"',
-                            'Get help - "How do I create a new field?" or "Explain entry types"'
-                        ] : [
+                        'items' => [
                             'Press * to browse content types',
                             'Use keyboard numbers (1-9) to quickly select results',
                             'Search works across entries, categories, assets, and more'
@@ -804,23 +803,7 @@ class Launcher extends Plugin
                     ],
                     [
                         'title' => 'Resources',
-                        'links' => $context === 'assistant' ? [
-                            [
-                                'text' => 'Leave a Review',
-                                'url' => 'https://plugins.craftcms.com/astronaut',
-                                'icon' => 'star'
-                            ],
-                            [
-                                'text' => 'Feedback & Suggestions',
-                                'url' => 'https://github.com/brilliancenw/craft-astronaut/issues',
-                                'icon' => 'message'
-                            ],
-                            [
-                                'text' => 'Documentation',
-                                'url' => 'https://github.com/brilliancenw/craft-astronaut',
-                                'icon' => 'book'
-                            ]
-                        ] : [
+                        'links' => [
                             [
                                 'text' => 'Leave a Review',
                                 'url' => 'https://plugins.craftcms.com/launcher',
