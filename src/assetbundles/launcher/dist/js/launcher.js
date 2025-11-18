@@ -99,15 +99,15 @@
                     <canvas id="launcher-game-canvas" style="position: fixed; top: 60px; left: 0; width: 100%; height: calc(100% - 60px); z-index: 99999; pointer-events: none; opacity: 0; background: rgba(10, 10, 10, 0.02); transition: opacity 0.3s ease;"></canvas>
                     <div class="launcher-overlay"></div>
                     <div class="launcher-dialog">
-                        <div class="launcher-tabs-bar">
-                            <button type="button" class="launcher-drawer-toggle" aria-label="Tips & Resources" title="Tips & Resources">
-                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-                                    <line x1="6" y1="2" x2="6" y2="10"/>
-                                    <line x1="2" y1="6" x2="10" y2="6"/>
-                                    <line x1="3.2" y1="3.2" x2="8.8" y2="8.8"/>
-                                    <line x1="8.8" y1="3.2" x2="3.2" y2="8.8"/>
+                        <div class="launcher-drawer-tab" aria-label="Tips & Resources" title="Tips & Resources">
+                            <div class="launcher-drawer-tab-handle">
+                                <svg width="8" height="20" viewBox="0 0 8 20" fill="none">
+                                    <line x1="3" y1="6" x2="3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                                    <line x1="5" y1="6" x2="5" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
                                 </svg>
-                            </button>
+                            </div>
+                        </div>
+                        <div class="launcher-tabs-bar">
                             ${tabButtonsHtml}
                             <button type="button" class="launcher-close" aria-label="Close" title="ESC to close">×</button>
                         </div>
@@ -147,7 +147,7 @@
             this.gameLivesIconsElement = document.getElementById('launcher-game-lives-icons');
             this.gameLevelElement = document.getElementById('launcher-game-level');
             this.drawer = this.modal.querySelector('.launcher-drawer');
-            this.drawerToggle = this.modal.querySelector('.launcher-drawer-toggle');
+            this.drawerTab = this.modal.querySelector('.launcher-drawer-tab');
             this.drawerContent = this.modal.querySelector('.launcher-drawer-content');
             this.drawerOpen = false;
             this.resizeHandle = this.modal.querySelector('.launcher-resize-handle');
@@ -275,8 +275,8 @@
                 self.closeModal();
             });
 
-            // Drawer toggle
-            this.drawerToggle.addEventListener('click', function(e) {
+            // Drawer tab click to toggle
+            this.drawerTab.addEventListener('click', function(e) {
                 e.stopPropagation();
                 self.toggleDrawer();
             });
@@ -455,14 +455,14 @@
 
         openDrawer: function() {
             this.drawer.classList.add('launcher-drawer-open');
-            this.drawerToggle.classList.add('launcher-drawer-toggle-active');
+            this.drawerTab.classList.add('launcher-drawer-tab-active');
             this.drawerOpen = true;
             this.loadDrawerContent();
         },
 
         closeDrawer: function() {
             this.drawer.classList.remove('launcher-drawer-open');
-            this.drawerToggle.classList.remove('launcher-drawer-toggle-active');
+            this.drawerTab.classList.remove('launcher-drawer-tab-active');
             this.drawerOpen = false;
         },
 

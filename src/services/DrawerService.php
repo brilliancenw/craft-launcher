@@ -49,7 +49,7 @@ class DrawerService extends Component
         });
 
         $content = [
-            'title' => 'Tips & Resources',
+            'title' => '',
             'sections' => [],
         ];
 
