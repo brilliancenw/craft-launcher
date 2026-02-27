@@ -202,6 +202,18 @@ class Launcher extends Plugin
             }
         );
 
+        // Register user permissions
+        Event::on(
+            UserPermissions::class,
+            UserPermissions::EVENT_REGISTER_PERMISSIONS,
+            function (RegisterUserPermissionsEvent $event) {
+                $event->permissions[] = [
+                    'heading' => 'Rocket Launcher',
+                    'permissions' => $this->getUserPermissions(),
+                ];
+            }
+        );
+
         // Register our screen in the user edit screens
         Event::on(
             UsersController::class,
