@@ -243,6 +243,11 @@ class SearchService extends Component
             ->search($query)
             ->limit($settings->maxResults);
 
+        // Only return entries the current user can edit
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $entryQuery->editable(true);
+        }
+
         if (!$settings->searchDrafts) {
             $entryQuery->drafts(false);
         }
@@ -303,6 +308,11 @@ class SearchService extends Component
                 ->authorId($userIds)
                 ->limit($settings->maxResults);
 
+            // Only return entries the current user can edit
+            if (!Craft::$app->getUser()->getIsAdmin()) {
+                $authorQuery->editable(true);
+            }
+
             // Apply the same filters as content search
             if (!$settings->searchDrafts) {
                 $authorQuery->drafts(false);
@@ -357,6 +367,11 @@ class SearchService extends Component
             ->search($query)
             ->limit($settings->maxResults);
 
+        // Only return categories the current user can edit
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $categoryQuery->editable(true);
+        }
+
         if (!$settings->searchDisabled) {
             $categoryQuery->status(Category::STATUS_ENABLED);
         }
@@ -389,6 +404,11 @@ class SearchService extends Component
             ->search($query)
             ->limit($settings->maxResults);
 
+        // Only return assets the current user can view
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $assetQuery->editable(true);
+        }
+
         if (!empty($settings->searchableAssetVolumes)) {
             $assetQuery->volumeId($settings->searchableAssetVolumes);
         }
@@ -413,6 +433,11 @@ class SearchService extends Component
 
     private function searchUsers(string $query, $settings): array
     {
+        // Check if current user has permission to view users
+        if (!Craft::$app->getUser()->getIsAdmin() && !Craft::$app->getUser()->checkPermission('viewUsers')) {
+            return [];
+        }
+
         $userQuery = User::find()
             ->search($query)
             ->limit($settings->maxResults);
@@ -599,6 +624,11 @@ class SearchService extends Component
     {
         $entryQuery = Entry::find()->limit($settings->maxResults);
 
+        // Only return entries the current user can edit
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $entryQuery->editable(true);
+        }
+
         if (!$settings->searchDrafts) {
             $entryQuery->drafts(false);
         }
@@ -640,6 +670,11 @@ class SearchService extends Component
     {
         $categoryQuery = Category::find()->limit($settings->maxResults);
 
+        // Only return categories the current user can edit
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $categoryQuery->editable(true);
+        }
+
         if (!$settings->searchDisabled) {
             $categoryQuery->status(['enabled']);
         }
@@ -670,6 +705,11 @@ class SearchService extends Component
     {
         $assetQuery = Asset::find()->limit($settings->maxResults);
 
+        // Only return assets the current user can view
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $assetQuery->editable(true);
+        }
+
         if (!empty($settings->searchableAssetVolumes)) {
             $assetQuery->volumeId($settings->searchableAssetVolumes);
         }
@@ -694,6 +734,11 @@ class SearchService extends Component
 
     private function getAllUsers($settings): array
     {
+        // Check if current user has permission to view users
+        if (!Craft::$app->getUser()->getIsAdmin() && !Craft::$app->getUser()->checkPermission('viewUsers')) {
+            return [];
+        }
+
         $userQuery = User::find()->limit($settings->maxResults);
 
         if (!$settings->searchDisabled) {
