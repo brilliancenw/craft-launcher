@@ -24,13 +24,11 @@ use craft\events\DefineEditUserScreensEvent;
 use craft\events\RebuildConfigEvent;
 use craft\events\RegisterCpNavItemsEvent;
 use craft\events\RegisterTemplateRootsEvent;
-use craft\events\RegisterUserPermissionsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\console\Application as ConsoleApplication;
 use craft\services\Utilities;
 use craft\services\ProjectConfig;
-use craft\services\UserPermissions;
 use craft\web\twig\variables\Cp;
 use craft\web\UrlManager;
 use craft\web\View;
@@ -97,7 +95,7 @@ class Launcher extends Plugin
                 View::class,
                 View::EVENT_BEFORE_RENDER_TEMPLATE,
                 function () {
-                    if (Craft::$app->getUser()->checkPermission('accessLauncher')) {
+                    if (Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
                         Craft::$app->getView()->registerAssetBundle(LauncherAsset::class);
 
                         $settings = $this->getSettings();
@@ -202,17 +200,8 @@ class Launcher extends Plugin
             }
         );
 
-        // Register user permissions
-        Event::on(
-            UserPermissions::class,
-            UserPermissions::EVENT_REGISTER_PERMISSIONS,
-            function (RegisterUserPermissionsEvent $event) {
-                $event->permissions[] = [
-                    'heading' => 'Rocket Launcher',
-                    'permissions' => $this->getUserPermissions(),
-                ];
-            }
-        );
+        // Note: User permission 'accessPlugin-launcher' is automatically registered by Craft
+        // for plugins with hasCpSection = true. We use this permission for all access checks.
 
         // Register our screen in the user edit screens
         Event::on(
@@ -220,7 +209,7 @@ class Launcher extends Plugin
             UsersController::EVENT_DEFINE_EDIT_SCREENS,
             function (DefineEditUserScreensEvent $event) {
                 $user = Craft::$app->getUser()->getIdentity();
-                if ($user && Craft::$app->getUser()->checkPermission('accessLauncher')) {
+                if ($user && Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
                     $event->screens['launcher'] = [
                         'label' => 'Rocket Launcher',
                         'url' => 'myaccount/launcher',
@@ -289,7 +278,7 @@ class Launcher extends Plugin
         }
 
         // Security check: Verify user has launcher permissions
-        if (!Craft::$app->getUser()->checkPermission('accessLauncher')) {
+        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
             return;
         }
 
@@ -649,13 +638,6 @@ class Launcher extends Plugin
         }
 
         return $item;
-    }
-
-    public function getUserPermissions(): array
-    {
-        return [
-            'accessLauncher' => ['label' => 'Access Rocket Launcher'],
-        ];
     }
 
     protected function createSettingsModel(): ?Model

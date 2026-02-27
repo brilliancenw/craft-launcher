@@ -17,7 +17,7 @@ class UserPreferenceController extends Controller
             return false;
         }
 
-        if (!Craft::$app->getUser()->checkPermission('accessLauncher')) {
+        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
             throw new \yii\web\ForbiddenHttpException('User does not have permission to access launcher');
         }
 

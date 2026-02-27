@@ -22,7 +22,7 @@ class UserPreferenceService extends Component
         }
 
         // Check if user has launcher permissions
-        if (!Craft::$app->getUser()->checkPermission('accessLauncher')) {
+        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
             return false;
         }
 
@@ -43,7 +43,7 @@ class UserPreferenceService extends Component
         }
 
         // Check if user has launcher permissions
-        if (!Craft::$app->getUser()->checkPermission('accessLauncher')) {
+        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
             return false;
         }
 
@@ -71,7 +71,7 @@ class UserPreferenceService extends Component
         }
 
         // Check if user has launcher permissions
-        if (!Craft::$app->getUser()->checkPermission('accessLauncher')) {
+        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
             return false;
         }
 
@@ -92,7 +92,7 @@ class UserPreferenceService extends Component
         }
 
         // Check if user has launcher permissions
-        if (!Craft::$app->getUser()->checkPermission('accessLauncher')) {
+        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
             return false;
         }
 
