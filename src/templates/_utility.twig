@@ -120,6 +120,30 @@
         </div>
     </div>
     {% endif %}
+
+    <hr>
+
+    <h2>Troubleshooting</h2>
+
+    <div class="field">
+        <div class="heading">
+            <label>Generate Diagnostic Report</label>
+            <div class="instructions">
+                <p>Download a diagnostic report to help troubleshoot issues. This report contains system information, plugin settings, and content counts. <strong>No personal data is included.</strong></p>
+            </div>
+        </div>
+        <div class="input">
+            <form id="diagnostic-form" method="post" action="{{ actionUrl('launcher/utility/generate-diagnostic-report') }}">
+                {{ csrfInput() }}
+                <button type="submit" class="btn" id="download-diagnostic-btn">
+                    Download Diagnostic Report
+                </button>
+            </form>
+            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                The report includes: plugin version, Craft version, PHP version, database info, content counts, all plugin settings, and installed plugins list.
+            </p>
+        </div>
+    </div>
 </div>
 
 <script>
