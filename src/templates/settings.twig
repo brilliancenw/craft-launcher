@@ -504,6 +504,18 @@ document.addEventListener('DOMContentLoaded', function() {
             <td class="light">Search all entry content across sections</td>
         </tr>
         <tr>
+            <th class="light">Entry Types</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-entryTypes',
+                    name: 'searchableTypes[entryTypes]',
+                    on: settings.searchableTypes.entryTypes ?? true,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Navigate to entry type settings</td>
+        </tr>
+        <tr>
             <th class="light">Field Groups</th>
             <td>
                 {{ forms.lightswitchField({
