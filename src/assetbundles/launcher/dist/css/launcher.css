@@ -1,3 +1,12 @@
+/* Airstrike Font for title */
+@font-face {
+    font-family: 'Airstrike';
+    src: url('../fonts/airstrike/airstrike.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 .launcher-modal {
     position: fixed;
     top: 0;
@@ -101,6 +110,53 @@
     position: static;
     transform: none;
     margin-left: auto;
+}
+
+/* Single Tab Mode */
+.launcher-dialog-single .launcher-tabs-bar {
+    padding: 6px 12px 6px 20px;
+    min-height: 36px;
+}
+
+.launcher-dialog-single .launcher-drawer-tab {
+    top: 0;
+    height: 44px;
+}
+
+.launcher-dialog-single .launcher-drawer-tab-handle {
+    height: 24px;
+    width: 16px;
+}
+
+.launcher-dialog-single .launcher-drawer-tab-active {
+    transform: translateX(280px);
+}
+
+.launcher-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--light-text-color, #8b92a1);
+    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
+}
+
+.launcher-title-svg {
+    height: 22px;
+    width: auto;
+}
+
+.launcher-title-text {
+    font-family: 'Airstrike', Impact, 'Arial Black', sans-serif;
+    font-size: 30px;
+    letter-spacing: 0.08em;
+    background: linear-gradient(180deg, #a0a0a0 0%, #707070 35%, #505050 50%, #606060 65%, #808080 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+    transform: skewX(-8deg);
+    display: inline-block;
 }
 
 /* Tab Content */
@@ -713,6 +769,26 @@ body.rtl .launcher-results::-webkit-scrollbar-thumb:hover {
 .launcher-drawer-tab-handle svg {
     width: 8px;
     height: 20px;
+}
+
+/* First-time drawer highlight animation */
+.launcher-drawer-tab-highlight .launcher-drawer-tab-handle {
+    animation: drawer-pulse 1.5s ease-in-out 10;
+    opacity: 1;
+    background: #fff;
+    border-color: var(--ui-control-color, #0d78f2);
+    color: var(--ui-control-color, #0d78f2);
+}
+
+@keyframes drawer-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(13, 120, 242, 0.4);
+        transform: translateY(-50%) translateX(0);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(13, 120, 242, 0);
+        transform: translateY(-50%) translateX(4px);
+    }
 }
 
 .launcher-drawer {

@@ -78,8 +78,28 @@
                 self.registeredTabs[key] = tab;
             });
 
-            // Add search tab (always last/rightmost)
-            tabButtonsHtml += `<button type="button" class="launcher-tab launcher-tab-active" data-tab="search">Search</button>`;
+            // Determine if we're in single-tab mode (no addon tabs)
+            const isSingleTab = tabKeys.length === 0;
+            const dialogClass = isSingleTab ? 'launcher-dialog launcher-dialog-single' : 'launcher-dialog';
+
+            // Build header content based on mode
+            let headerHtml;
+            if (isSingleTab) {
+                // Single tab mode: show styled retro sci-fi title instead of tabs
+                headerHtml = `
+                    <div class="launcher-tabs-bar">
+                        <span class="launcher-title-text">ROCKET LAUNCHER</span>
+                        <button type="button" class="launcher-close" aria-label="Close" title="ESC to close">×</button>
+                    </div>`;
+            } else {
+                // Multi-tab mode: show tab buttons
+                tabButtonsHtml += `<button type="button" class="launcher-tab launcher-tab-active" data-tab="search">Search</button>`;
+                headerHtml = `
+                    <div class="launcher-tabs-bar">
+                        ${tabButtonsHtml}
+                        <button type="button" class="launcher-close" aria-label="Close" title="ESC to close">×</button>
+                    </div>`;
+            }
 
             const modalHtml = `
                 <div id="launcher-modal" class="launcher-modal" style="display: none;">
@@ -98,7 +118,7 @@
                     </div>
                     <canvas id="launcher-game-canvas" style="position: fixed; top: 60px; left: 0; width: 100%; height: calc(100% - 60px); z-index: 99999; pointer-events: none; opacity: 0; background: rgba(10, 10, 10, 0.02); transition: opacity 0.3s ease;"></canvas>
                     <div class="launcher-overlay"></div>
-                    <div class="launcher-dialog">
+                    <div class="${dialogClass}">
                         <div class="launcher-drawer-tab" aria-label="Tips & Resources" title="Tips & Resources">
                             <div class="launcher-drawer-tab-handle">
                                 <svg width="8" height="20" viewBox="0 0 8 20" fill="none">
@@ -107,10 +127,7 @@
                                 </svg>
                             </div>
                         </div>
-                        <div class="launcher-tabs-bar">
-                            ${tabButtonsHtml}
-                            <button type="button" class="launcher-close" aria-label="Close" title="ESC to close">×</button>
-                        </div>
+                        ${headerHtml}
                         <div class="launcher-drawer">
                             <div class="launcher-drawer-content">
                                 <div class="launcher-drawer-loading">Loading...</div>
@@ -281,6 +298,13 @@
                 self.toggleDrawer();
             });
 
+            // Click on dialog (outside drawer) to close drawer
+            this.modal.querySelector('.launcher-dialog').addEventListener('click', function(e) {
+                if (self.drawerOpen && !e.target.closest('.launcher-drawer') && !e.target.closest('.launcher-drawer-tab')) {
+                    self.closeDrawer();
+                }
+            });
+
             // Resize handle
             this.initResize();
 
@@ -424,6 +448,17 @@
         openModal: function(tab) {
             this.modal.style.display = 'block';
 
+            // First-time drawer highlight
+            if (!localStorage.getItem('launcher_drawer_seen')) {
+                this.drawerTab.classList.add('launcher-drawer-tab-highlight');
+                // Remove highlight after animation or when drawer is opened
+                const self = this;
+                setTimeout(function() {
+                    self.drawerTab.classList.remove('launcher-drawer-tab-highlight');
+                    localStorage.setItem('launcher_drawer_seen', '1');
+                }, 15000);
+            }
+
             // Switch to the specified tab or default to search
             if (tab) {
                 this.switchTab(tab);
@@ -458,6 +493,12 @@
             this.drawerTab.classList.add('launcher-drawer-tab-active');
             this.drawerOpen = true;
             this.loadDrawerContent();
+
+            // Mark drawer as seen and remove highlight
+            if (this.drawerTab.classList.contains('launcher-drawer-tab-highlight')) {
+                this.drawerTab.classList.remove('launcher-drawer-tab-highlight');
+                localStorage.setItem('launcher_drawer_seen', '1');
+            }
         },
 
         closeDrawer: function() {
