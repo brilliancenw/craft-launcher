@@ -35,7 +35,11 @@
     "extra": {
         "name": "Rocket Launcher",
         "handle": "launcher",
-        "class": "brilliance\\launcher\\Launcher"
+        "class": "brilliance\\launcher\\Launcher",
+        "developer": "Brilliance",
+        "developerUrl": "https://www.brilliancenw.com/",
+        "documentationUrl": "https://github.com/brilliancenw/craft-launcher/blob/main/README.md",
+        "changelogUrl": "https://raw.githubusercontent.com/brilliancenw/craft-launcher/main/CHANGELOG.md"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.4",
