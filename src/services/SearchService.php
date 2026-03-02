@@ -268,6 +268,11 @@ class SearchService extends Component
             $entryQuery->typeId($settings->searchableEntryTypes);
         }
 
+        // Filter out nested entries if the setting is enabled
+        if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
+            $entryQuery->owner(null);
+        }
+
         $entries = $entryQuery->all();
         $results = [];
         $foundEntryIds = [];
@@ -332,6 +337,11 @@ class SearchService extends Component
 
             if (!empty($settings->searchableEntryTypes)) {
                 $authorQuery->typeId($settings->searchableEntryTypes);
+            }
+
+            // Filter out nested entries if the setting is enabled
+            if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
+                $authorQuery->owner(null);
             }
 
             $authoredEntries = $authorQuery->all();
@@ -643,6 +653,11 @@ class SearchService extends Component
 
         if (!empty($settings->searchableSections)) {
             $entryQuery->sectionId($settings->searchableSections);
+        }
+
+        // Filter out nested entries if the setting is enabled
+        if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
+            $entryQuery->owner(null);
         }
 
         $entries = $entryQuery->all();

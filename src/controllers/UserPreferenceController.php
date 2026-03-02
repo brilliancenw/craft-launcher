@@ -34,15 +34,18 @@ class UserPreferenceController extends Controller
             // AJAX JSON request
             $enabled = (bool) $request->getBodyParam('enabled', false);
             $newTabEnabled = (bool) $request->getBodyParam('newTabEnabled', false);
+            $nestedEntriesPreference = $request->getBodyParam('nestedEntriesPreference', 'system');
         } else {
             // Standard form submission
             $enabled = (bool) $request->getBodyParam('enabled', false);
             $newTabEnabled = (bool) $request->getBodyParam('newTabEnabled', false);
+            $nestedEntriesPreference = $request->getBodyParam('nestedEntriesPreference', 'system');
         }
 
         $success1 = Launcher::$plugin->userPreference->setFrontEndEnabled($enabled);
         $success2 = Launcher::$plugin->userPreference->setFrontEndNewTabEnabled($newTabEnabled);
-        $success = $success1 && $success2;
+        $success3 = Launcher::$plugin->userPreference->setNestedEntriesPreference($nestedEntriesPreference);
+        $success = $success1 && $success2 && $success3;
 
         if ($request->getIsAjax()) {
             return $this->asJson([

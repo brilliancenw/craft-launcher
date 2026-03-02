@@ -30,6 +30,11 @@
 - **FIXED**: Entry Types toggle now appears in the Searchable Content Types settings as documented
 - **FIXED**: Entry Types are now properly searchable when enabled
 
+**Nested Entries (Fixes #10)**
+- **NEW**: Global setting to hide nested/child entries from search results (default: enabled)
+- **NEW**: Per-user preference override with options: "Use System Setting", "Always Show", "Always Hide"
+- **IMPROVED**: Nested entries no longer appear as "Unknown Section" in search results when hidden
+
 ### Security Improvements
 
 - **ENHANCED**: Search results now respect user permissions - non-admin users only see content they have permission to edit

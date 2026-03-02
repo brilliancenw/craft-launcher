@@ -1,5 +1,23 @@
 {% import "_includes/forms" as forms %}
 
+<h2>{{ "Search Preferences"|t('launcher') }}</h2>
+<p>{{ "Configure how the launcher displays search results."|t('launcher') }}</p>
+
+{{ forms.selectField({
+    label: 'Nested Entries'|t('launcher'),
+    instructions: 'Control whether nested/child entries appear in search results. The system default is currently set to ' ~ (globalHideNestedEntries ? '"Hide"' : '"Show"') ~ '.'|t('launcher'),
+    id: 'nestedEntriesPreference',
+    name: 'nestedEntriesPreference',
+    value: nestedEntriesPreference,
+    options: [
+        { label: 'Use System Setting'|t('launcher'), value: 'system' },
+        { label: 'Always Show Nested Entries'|t('launcher'), value: 'show' },
+        { label: 'Always Hide Nested Entries'|t('launcher'), value: 'hide' }
+    ]
+}) }}
+
+<hr>
+
 <h2>{{ "Front-end Launcher"|t('launcher') }}</h2>
 <p>{{ "Enable the launcher on the front-end of your website, similar to how the debug toolbar works."|t('launcher') }}</p>
 

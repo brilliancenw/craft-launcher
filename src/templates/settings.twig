@@ -702,6 +702,18 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td class="light">When searching for usernames, also show entries authored by those users</td>
         </tr>
+        <tr>
+            <th class="light">Hide Nested Entries</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'hideNestedEntries',
+                    name: 'hideNestedEntries',
+                    on: settings.hideNestedEntries,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Hide nested/child entries from search results (Craft 5 feature). Users can override this in their personal preferences.</td>
+        </tr>
     </tbody>
 </table>
 

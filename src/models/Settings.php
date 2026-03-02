@@ -46,6 +46,9 @@ class Settings extends Model
     public bool $enableLaunchHistory = true;
     public int $maxHistoryItems = 10;
 
+    // Nested entries setting (Craft CMS 5 feature)
+    public bool $hideNestedEntries = true;
+
     // Integration settings
     public array $enabledIntegrations = [];
 
@@ -75,7 +78,7 @@ class Settings extends Model
             [['maxHistoryItems'], 'default', 'value' => 10],
             [['selectResultModifier'], 'default', 'value' => 'cmd'],
             [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes', 'resultShortcuts', 'enabledIntegrations'], 'safe'],
-            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory'], 'boolean'],
+            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory', 'hideNestedEntries'], 'boolean'],
         ];
     }
 
@@ -99,6 +102,7 @@ class Settings extends Model
             'searchCommerceOrders' => 'Search Commerce Orders',
             'enableLaunchHistory' => 'Track Launch History',
             'maxHistoryItems' => 'Max Popular Items to Show',
+            'hideNestedEntries' => 'Hide Nested Entries',
             'selectResultModifier' => 'Result Selection Modifier Key',
             'resultShortcuts' => 'Result Navigation Shortcuts',
             'enabledIntegrations' => 'Enabled Integrations',

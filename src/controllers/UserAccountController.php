@@ -41,6 +41,8 @@ class UserAccountController extends Controller
 
         $isEnabled = Launcher::$plugin->userPreference->isFrontEndEnabled();
         $isNewTabEnabled = Launcher::$plugin->userPreference->isFrontEndNewTabEnabled();
+        $nestedEntriesPreference = Launcher::$plugin->userPreference->getNestedEntriesPreference();
+        $globalHideNestedEntries = Launcher::$plugin->getSettings()->hideNestedEntries;
 
         // Set up the form action and save buttons
         $response->action('launcher/user-preference/set-front-end-enabled');
@@ -51,6 +53,8 @@ class UserAccountController extends Controller
             'user' => $user,
             'isEnabled' => $isEnabled,
             'isNewTabEnabled' => $isNewTabEnabled,
+            'nestedEntriesPreference' => $nestedEntriesPreference,
+            'globalHideNestedEntries' => $globalHideNestedEntries,
         ]);
 
         return $response;
