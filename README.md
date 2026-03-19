@@ -10,10 +10,11 @@ A universal search launcher for the Craft CMS admin panel that provides quick ac
 ### Core Search & Navigation
 - **Universal Search**: Quickly search across entries, users, categories, assets, globals, sections, entry types, and more
 - **Browse Mode**: Type `*` to explore all content types and drill down into specific areas
-- **Smart Navigation**: Jump to any section of the Craft control panel instantly  
+- **Gmail-Style Search Filters**: Filter icon opens dropdown panel with toggles for drafts, disabled items, nested entries, and section/entry type filtering
+- **Smart Navigation**: Jump to any section of the Craft control panel instantly
 - **Keyboard Shortcuts**: Navigate entirely with your keyboard for maximum efficiency
 - **Theme Integration**: Seamlessly matches your Craft admin panel theme and styling
-- **Permission-Aware**: Only shows content you have permission to access
+- **Permission-Aware**: Only shows content you have permission to access - comprehensive checks for all content types
 
 ### Intelligent Usage Tracking
 - **Launch History**: Tracks which items you actually navigate to (not just search for)
@@ -168,6 +169,31 @@ If Craft Commerce is installed, the launcher provides enhanced e-commerce search
 
 **Note**: Result navigation uses modifier keys (default: `Cmd+1` through `Cmd+9`) to avoid conflicts when typing numbers in search queries. The modifier key can be customized in Settings → Launcher.
 
+### Search Filters
+
+Click the filter icon in the search box to open a dropdown panel with powerful filtering options:
+
+#### Toggle Filters
+- **Include Drafts**: Show draft entries in search results
+- **Include Disabled**: Show disabled entries in search results
+- **Include Nested Entries**: Show nested/child entries in search results
+
+#### Content Filters
+- **Sections**: Filter results to specific sections (collapsible checkbox list)
+- **Entry Types**: Filter results to specific entry types (collapsible checkbox list)
+
+#### How It Works
+- **Immediate Apply**: Filters apply instantly when toggled - no submit button needed
+- **Per-User Persistence**: Your filter preferences are saved automatically via Craft's user preferences
+- **Admin Control**: Administrators can control which filter options are visible to users in plugin settings
+- **Smart Defaults**: All content is included by default; filters are additive restrictions
+
+#### Nested Entries
+Nested entries (entries that belong to Matrix, Neo, or other nested entry fields) have special handling:
+- They appear in search results when "Include Nested Entries" is enabled
+- Section filters do not affect nested entries (since they don't belong to sections directly)
+- Status filtering (Include Disabled) applies correctly to nested entries
+
 ## Front-end Launcher
 
 The launcher can also be enabled on the front-end of your website, providing quick access to admin functions while browsing your live site.
@@ -208,6 +234,16 @@ The front-end launcher includes several security measures:
 - **Bot detection**: Automatically disabled for bots and suspicious requests
 - **Permission validation**: Context validation ensures you can only edit entries you have permission for
 - **Selective loading**: Only loads on legitimate user requests, not for crawlers or automated tools
+
+### Full Page Caching Compatibility
+
+**Important**: The front-end launcher has not been tested with full page caching solutions such as:
+- Blitz
+- Cloudflare CDN
+- Varnish
+- Similar full-page caching systems
+
+If you use full page caching, the launcher may not function correctly on cached pages. Consider excluding authenticated users from caching or testing thoroughly in your environment.
 
 ### Link Behavior Options
 
@@ -305,13 +341,75 @@ Fine-tune which content appears in results:
 
 ### Permissions
 
-The launcher respects all existing Craft permissions:
+The launcher respects all existing Craft permissions with comprehensive checks:
+
+#### General Permissions
 - Users only see content they can access
 - The "Access Launcher" permission controls who can use the plugin
 - All element-level permissions are automatically enforced
 - Launch history is stored per-user and private
 
+#### Admin-Only Content
+Non-admin users will not see these content types in search results:
+- Sections and Entry Types (configuration)
+- Fields and Field Groups
+- Plugins and Plugin Settings
+- Asset Volumes (configuration)
+- Category Groups (configuration)
+- Static Settings pages
+
+#### Permission-Checked Content
+These content types check specific permissions:
+- **Utilities**: Checks `utility:<handle>` permission for each utility
+- **Globals**: Checks `editGlobalSet:<uid>` permission for each global set
+- **Users**: Requires `viewUsers` permission to search users
+
+#### Commerce Permissions (if installed)
+- **Customers**: Requires `commerce-manageCustomers` permission
+- **Products**: Requires `commerce-manageProducts` permission
+- **Orders**: Requires `commerce-manageOrders` permission
+
+### Admin User Management
+
+Administrators can view and edit other users' launcher preferences:
+
+1. Navigate to a user's profile page in the admin panel
+2. Click the **Rocket Launcher** tab (visible for users with launcher permission)
+3. View or modify the user's front-end launcher settings
+4. Click **Save** to apply changes
+
+This is useful for:
+- Enabling front-end launcher for content editors
+- Troubleshooting user-specific settings
+- Standardizing preferences across team members
+
 ## Recent Improvements
+
+### Version 1.3.0 Features
+
+#### **Gmail-Style Search Filters**
+- **Filter Dropdown**: Click the filter icon in the search box to open a filtering panel
+- **Toggle Filters**: Include/exclude drafts, disabled entries, and nested entries
+- **Content Filters**: Filter by specific sections and entry types with collapsible checkbox lists
+- **Instant Apply**: Filters take effect immediately without needing to click a button
+- **Persistent Preferences**: Filter settings are saved per-user and restored on next visit
+- **Admin Control**: Plugin settings control which filter options users can see
+
+#### **Comprehensive Permission System**
+- **Admin-Only Content**: Sections, entry types, fields, plugins, and other configuration items hidden from non-admins
+- **Utility Permissions**: Each utility checks its specific permission before appearing
+- **Global Permissions**: Global sets check `editGlobalSet:<uid>` permission
+- **Commerce Permissions**: Products, orders, and customers check their respective Commerce permissions
+
+#### **Admin User Management**
+- **User Profile Tab**: Rocket Launcher tab appears on user profile pages
+- **Edit Other Users**: Admins can view and modify other users' launcher preferences
+- **Save Functionality**: Full form submission with proper save button
+
+#### **Nested Entries Improvements**
+- **Proper Search**: Nested entries now appear correctly when enabled
+- **Section Filter Compatibility**: Nested entries (which have no section) work with section filters
+- **Status Filtering**: Include Disabled toggle properly applies to nested entries
 
 ### Version 1.1.0 Features
 
