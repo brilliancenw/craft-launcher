@@ -46,6 +46,16 @@ class Settings extends Model
     public bool $enableLaunchHistory = true;
     public int $maxHistoryItems = 10;
 
+    // Nested entries setting (Craft CMS 5 feature)
+    public bool $hideNestedEntries = true;
+
+    // User-controllable filter visibility (admin can disable any of these)
+    public bool $allowUserFilterDrafts = true;
+    public bool $allowUserFilterDisabled = true;
+    public bool $allowUserFilterSections = true;
+    public bool $allowUserFilterEntryTypes = true;
+    public bool $allowUserFilterNestedEntries = true;
+
     // Integration settings
     public array $enabledIntegrations = [];
 
@@ -75,7 +85,7 @@ class Settings extends Model
             [['maxHistoryItems'], 'default', 'value' => 10],
             [['selectResultModifier'], 'default', 'value' => 'cmd'],
             [['searchableTypes', 'searchableEntryTypes', 'searchableSections', 'searchableCategoryGroups', 'searchableAssetVolumes', 'resultShortcuts', 'enabledIntegrations'], 'safe'],
-            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory'], 'boolean'],
+            [['searchDrafts', 'searchRevisions', 'searchDisabled', 'searchEntriesByAuthor', 'searchCommerceCustomers', 'searchCommerceProducts', 'searchCommerceOrders', 'enableLaunchHistory', 'hideNestedEntries', 'allowUserFilterDrafts', 'allowUserFilterDisabled', 'allowUserFilterSections', 'allowUserFilterEntryTypes', 'allowUserFilterNestedEntries'], 'boolean'],
         ];
     }
 
@@ -99,6 +109,12 @@ class Settings extends Model
             'searchCommerceOrders' => 'Search Commerce Orders',
             'enableLaunchHistory' => 'Track Launch History',
             'maxHistoryItems' => 'Max Popular Items to Show',
+            'hideNestedEntries' => 'Hide Nested Entries',
+            'allowUserFilterDrafts' => 'Allow Users to Filter Drafts',
+            'allowUserFilterDisabled' => 'Allow Users to Filter Disabled',
+            'allowUserFilterSections' => 'Allow Users to Filter by Section',
+            'allowUserFilterEntryTypes' => 'Allow Users to Filter by Entry Type',
+            'allowUserFilterNestedEntries' => 'Allow Users to Filter Nested Entries',
             'selectResultModifier' => 'Result Selection Modifier Key',
             'resultShortcuts' => 'Result Navigation Shortcuts',
             'enabledIntegrations' => 'Enabled Integrations',

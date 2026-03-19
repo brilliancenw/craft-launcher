@@ -17,7 +17,7 @@ class UserPreferenceController extends Controller
             return false;
         }
 
-        if (!Craft::$app->getUser()->checkPermission('accessLauncher')) {
+        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
             throw new \yii\web\ForbiddenHttpException('User does not have permission to access launcher');
         }
 
@@ -34,15 +34,18 @@ class UserPreferenceController extends Controller
             // AJAX JSON request
             $enabled = (bool) $request->getBodyParam('enabled', false);
             $newTabEnabled = (bool) $request->getBodyParam('newTabEnabled', false);
+            $nestedEntriesPreference = $request->getBodyParam('nestedEntriesPreference', 'system');
         } else {
             // Standard form submission
             $enabled = (bool) $request->getBodyParam('enabled', false);
             $newTabEnabled = (bool) $request->getBodyParam('newTabEnabled', false);
+            $nestedEntriesPreference = $request->getBodyParam('nestedEntriesPreference', 'system');
         }
 
         $success1 = Launcher::$plugin->userPreference->setFrontEndEnabled($enabled);
         $success2 = Launcher::$plugin->userPreference->setFrontEndNewTabEnabled($newTabEnabled);
-        $success = $success1 && $success2;
+        $success3 = Launcher::$plugin->userPreference->setNestedEntriesPreference($nestedEntriesPreference);
+        $success = $success1 && $success2 && $success3;
 
         if ($request->getIsAjax()) {
             return $this->asJson([
@@ -73,6 +76,124 @@ class UserPreferenceController extends Controller
             'success' => true,
             'enabled' => $enabled,
             'newTabEnabled' => $newTabEnabled
+        ]);
+    }
+
+    /**
+     * Set front-end preferences for another user (admin only)
+     */
+    public function actionSetFrontEndEnabledForUser(): Response
+    {
+        $this->requirePostRequest();
+
+        // Only admins can edit other users' preferences
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            throw new \yii\web\ForbiddenHttpException('Only admins can edit other users\' launcher preferences');
+        }
+
+        $request = Craft::$app->getRequest();
+        $targetUserId = $request->getBodyParam('targetUserId');
+
+        if (!$targetUserId) {
+            Craft::$app->getSession()->setError('Target user ID is required');
+            return $this->redirectToPostedUrl();
+        }
+
+        $targetUser = Craft::$app->getUsers()->getUserById($targetUserId);
+        if (!$targetUser) {
+            Craft::$app->getSession()->setError('User not found');
+            return $this->redirectToPostedUrl();
+        }
+
+        $enabled = (bool) $request->getBodyParam('enabled', false);
+        $newTabEnabled = (bool) $request->getBodyParam('newTabEnabled', false);
+
+        // Save preferences for the target user
+        $preferences = [
+            'launcher_frontend_enabled' => $enabled,
+            'launcher_frontend_new_tab' => $newTabEnabled,
+        ];
+
+        try {
+            Craft::$app->getUsers()->saveUserPreferences($targetUser, $preferences);
+            Craft::$app->getSession()->setNotice('Launcher preferences updated for ' . $targetUser->getFriendlyName());
+        } catch (\Exception $e) {
+            Craft::error('Failed to save launcher preferences for user: ' . $e->getMessage(), 'launcher');
+            Craft::$app->getSession()->setError('Failed to update preferences');
+        }
+
+        return $this->redirectToPostedUrl();
+    }
+
+    /**
+     * Set search filter preferences
+     */
+    public function actionSetSearchFilters(): Response
+    {
+        $this->requirePostRequest();
+
+        $request = Craft::$app->getRequest();
+
+        // Get filters from request body
+        $filters = [];
+
+        if ($request->getIsAjax() && $request->getContentType() === 'application/json') {
+            $filters = [
+                'includeDrafts' => $request->getBodyParam('includeDrafts'),
+                'includeDisabled' => $request->getBodyParam('includeDisabled'),
+                'includeNested' => $request->getBodyParam('includeNested'),
+                'sections' => $request->getBodyParam('sections', []),
+                'entryTypes' => $request->getBodyParam('entryTypes', []),
+            ];
+        } else {
+            $filters = [
+                'includeDrafts' => $request->getBodyParam('includeDrafts'),
+                'includeDisabled' => $request->getBodyParam('includeDisabled'),
+                'includeNested' => $request->getBodyParam('includeNested'),
+                'sections' => $request->getBodyParam('sections', []),
+                'entryTypes' => $request->getBodyParam('entryTypes', []),
+            ];
+        }
+
+        // Filter out null values (only update what was sent)
+        $filters = array_filter($filters, function($value) {
+            return $value !== null;
+        });
+
+        $success = Launcher::$plugin->userPreference->setSearchFilters($filters);
+
+        if ($request->getIsAjax()) {
+            return $this->asJson([
+                'success' => $success,
+                'message' => $success
+                    ? 'Search filters updated successfully'
+                    : 'Failed to update search filters',
+                'filters' => Launcher::$plugin->userPreference->getSearchFilters()
+            ]);
+        } else {
+            if ($success) {
+                Craft::$app->getSession()->setNotice('Search filters updated successfully');
+            } else {
+                Craft::$app->getSession()->setError('Failed to update search filters');
+            }
+            return $this->redirectToPostedUrl();
+        }
+    }
+
+    /**
+     * Get current search filter preferences
+     */
+    public function actionGetSearchFilters(): Response
+    {
+        $this->requireAcceptsJson();
+
+        $filters = Launcher::$plugin->userPreference->getSearchFilters();
+        $availableOptions = Launcher::$plugin->userPreference->getAvailableFilterOptions();
+
+        return $this->asJson([
+            'success' => true,
+            'filters' => $filters,
+            'availableOptions' => $availableOptions
         ]);
     }
 }

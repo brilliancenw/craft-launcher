@@ -1,5 +1,97 @@
 # Changelog
 
+## [v1.3.0] - 2026-03-19
+
+### New Features
+
+**Gmail-Style Search Filters**
+- **NEW**: Filter icon in search box opens dropdown panel for refining results
+- **NEW**: Toggle filters: Include Drafts, Include Disabled, Include Nested Entries
+- **NEW**: Section and Entry Type filtering with collapsible checkbox lists
+- **NEW**: Filters persist per-user via Craft's user preferences
+- **NEW**: Admin settings control which filter options are visible to users
+- **NEW**: Filters apply immediately when toggled (no submit button needed)
+
+**Admin User Management**
+- **NEW**: Admins can view and edit other users' launcher preferences
+- **NEW**: Rocket Launcher tab appears on user profile pages for users with launcher permission
+- **IMPROVED**: Proper URL routing for viewing other users' launcher settings
+
+### Security Enhancements
+
+**Comprehensive Permission Checks**
+- **FIXED**: Non-admin users no longer see admin-only items in search results
+- **ADDED**: Sections, Entry Types, Fields, Plugins, Asset Volumes - admin only
+- **ADDED**: Category Groups - admin only
+- **ADDED**: Static Settings pages - admin only
+- **ADDED**: Utilities - checks specific `utility:<handle>` permissions
+- **ADDED**: Globals - checks `editGlobalSet:<uid>` permission per global
+- **ADDED**: Commerce Customers - checks `commerce-manageCustomers` permission
+- **ADDED**: Commerce Products - checks `commerce-manageProducts` permission
+- **ADDED**: Commerce Orders - checks `commerce-manageOrders` permission
+
+### Bug Fixes
+
+**Nested Entries Search**
+- **FIXED**: Nested entries now appear in search results when "Include Nested Entries" is enabled
+- **FIXED**: Nested entries have `sectionId=null` so section filters no longer exclude them
+- **FIXED**: Proper status filtering for nested entries (respects Include Disabled toggle)
+
+### Documentation
+
+- **ADDED**: Warning about full page caching compatibility (Blitz, Cloudflare CDN, Varnish) for front-end launcher
+
+> **Major Update**: This release adds powerful Gmail-style search filters, comprehensive permission checks for all searchable content types, and the ability for admins to manage other users' launcher preferences.
+
+## [v1.2.0] - 2025-03-02
+
+### New Features
+
+**Launcher Suite Extensibility**
+- **NEW**: Unified tabbed modal interface allowing addon plugins (like Astronaut) to integrate seamlessly
+- **NEW**: AddonService for registering addon plugins, hotkeys, and modal tabs
+- **NEW**: DrawerService for extensible tips and resources panel with addon content support
+- **NEW**: Event system for addon registration (RegisterAddonPluginsEvent, RegisterHotkeysEvent, RegisterModalTabsEvent)
+
+**Diagnostic Tools**
+- **NEW**: Diagnostic Report Generator utility to download troubleshooting reports with system info, content counts, and plugin settings (no personal data included)
+
+**UI Enhancements**
+- **NEW**: Airstrike font for "ROCKET LAUNCHER" title in the popup
+- **NEW**: Resizable dialog with drag handle
+- **IMPROVED**: Extended drawer highlight animation to 15 seconds
+- **IMPROVED**: Click-outside-drawer-to-close behavior
+
+### Bug Fixes
+
+**Permission System (Fixes #11)**
+- **FIXED**: Non-admin users can now use Rocket Launcher when granted the "Access Rocket Launcher" permission
+- **FIXED**: Removed duplicate permission registration that caused the permission to appear in multiple locations
+- **IMPROVED**: Now uses Craft's auto-generated `accessPlugin-launcher` permission consistently
+
+**Entry Types Search (Fixes #13)**
+- **FIXED**: Entry Types toggle now appears in the Searchable Content Types settings as documented
+- **FIXED**: Entry Types are now properly searchable when enabled
+
+**Nested Entries (Fixes #10)**
+- **NEW**: Global setting to hide nested/child entries from search results (default: enabled)
+- **NEW**: Per-user preference override with options: "Use System Setting", "Always Show", "Always Hide"
+- **IMPROVED**: Nested entries no longer appear as "Unknown Section" in search results when hidden
+
+### Security Improvements
+
+- **ENHANCED**: Search results now respect user permissions - non-admin users only see content they have permission to edit
+- **IMPROVED**: Entries, Categories, and Assets use `editable(true)` filter for non-admin users
+- **IMPROVED**: Users only shown in results if the current user has `viewUsers` permission
+
+### Technical Improvements
+
+- **ADDED**: Admin index page for Rocket Launcher CP section
+- **ADDED**: Support for CP nav items from addon plugins
+- **IMPROVED**: Better separation of core launcher functionality and addon extensions
+
+> **Major Update**: This release introduces the Launcher Suite extensibility system, enabling addon plugins like Astronaut to integrate seamlessly. It also fixes critical permission issues for non-admin users and restores Entry Types search functionality.
+
 ## [v1.1.2] - 2025-10-21
 
 ### Critical Fixes

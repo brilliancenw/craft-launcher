@@ -15,6 +15,11 @@ use craft\helpers\UrlHelper;
 class SearchService extends Component
 {
     /**
+     * Current filters being applied to the search
+     */
+    private array $currentFilters = [];
+
+    /**
      * Check if Craft Commerce is installed
      */
     private function isCommerceInstalled(): bool
@@ -95,7 +100,7 @@ class SearchService extends Component
         return [];
     }
 
-    public function search(string $query, array $context = []): array
+    public function search(string $query, array $context = [], array $filters = []): array
     {
 
         if (empty($query)) {
@@ -104,6 +109,9 @@ class SearchService extends Component
 
         $settings = Launcher::$plugin->getSettings();
         $results = [];
+
+        // Store filters for use in search methods
+        $this->currentFilters = $filters;
 
         // Add front-end context actions first (if applicable)
         if (!empty($context)) {
@@ -238,36 +246,62 @@ class SearchService extends Component
 
     private function searchEntries(string $query, $settings): array
     {
-        // Search entries by content (existing functionality)
+        $results = [];
+        $foundEntryIds = [];
+
+        // Get user filters
+        $filters = $this->currentFilters;
+
+        // Search regular entries using the search index
         $entryQuery = Entry::find()
             ->search($query)
             ->limit($settings->maxResults);
 
-        if (!$settings->searchDrafts) {
-            $entryQuery->drafts(false);
+        // Only return entries the current user can edit
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $entryQuery->editable(true);
         }
+
+        // For regular search, explicitly exclude drafts (search index query)
+        // Unless user filter overrides it
+        $includeDrafts = $filters['includeDrafts'] ?? $settings->searchDrafts;
+        $entryQuery->drafts(false);
 
         if (!$settings->searchRevisions) {
             $entryQuery->revisions(false);
         }
 
-        if (!$settings->searchDisabled) {
-            $entryQuery->status(Entry::STATUS_ENABLED);
+        // Handle status filtering for regular entries
+        // Use user filter for disabled elements if provided, otherwise use settings
+        $includeDisabled = $filters['includeDisabled'] ?? $settings->searchDisabled;
+        if (!$includeDisabled) {
+            $entryQuery->status(Entry::STATUS_LIVE);
+        } else {
+            $entryQuery->status(null);
         }
 
-        if (!empty($settings->searchableSections)) {
-            $entryQuery->sectionId($settings->searchableSections);
+        // Apply section filters: user filters take precedence, then fall back to admin settings
+        $sectionFilter = !empty($filters['sections']) ? $filters['sections'] : $settings->searchableSections;
+        if (!empty($sectionFilter)) {
+            $entryQuery->sectionId($sectionFilter);
         }
 
-        if (!empty($settings->searchableEntryTypes)) {
-            $entryQuery->typeId($settings->searchableEntryTypes);
+        // Apply entry type filters: user filters take precedence, then fall back to admin settings
+        $entryTypeFilter = !empty($filters['entryTypes']) ? $filters['entryTypes'] : $settings->searchableEntryTypes;
+        if (!empty($entryTypeFilter)) {
+            $entryQuery->typeId($entryTypeFilter);
+        }
+
+        // Filter out nested entries based on user filter or global setting
+        // Note: shouldHideNestedEntries returns true when we should HIDE, so invert for includeNested
+        $includeNested = $filters['includeNested'] ?? !Launcher::$plugin->userPreference->shouldHideNestedEntries();
+        if (!$includeNested) {
+            $entryQuery->andWhere(['entries.primaryOwnerId' => null]);
         }
 
         $entries = $entryQuery->all();
-        $results = [];
-        $foundEntryIds = [];
 
-        // Add entries found by content search
+        // Add regular entries to results
         foreach ($entries as $entry) {
             $section = $entry->getSection();
             $sectionName = $section ? $section->name : 'Unknown Section';
@@ -282,6 +316,125 @@ class SearchService extends Component
                 'status' => $entry->getStatus(),
                 'icon' => 'newspaper',
             ];
+        }
+
+        // If searching drafts is enabled (either by settings or user filter), do a separate query for drafts by title
+        // (Craft's search index may not include draft content)
+        if ($includeDrafts) {
+            $draftQuery = Entry::find()
+                ->drafts(true)
+                ->title('*' . $query . '*')
+                ->limit($settings->maxResults);
+
+            // Only return drafts the current user can edit
+            if (!Craft::$app->getUser()->getIsAdmin()) {
+                $draftQuery->editable(true);
+            }
+
+            // Apply same section/entry type filters as main query
+            if (!empty($sectionFilter)) {
+                $draftQuery->sectionId($sectionFilter);
+            }
+
+            if (!empty($entryTypeFilter)) {
+                $draftQuery->typeId($entryTypeFilter);
+            }
+
+            // Filter out nested entries if not including them
+            if (!$includeNested) {
+                $draftQuery->andWhere(['entries.primaryOwnerId' => null]);
+            }
+
+            // Status is not applicable for drafts, so we don't filter by it
+            $draftQuery->status(null);
+
+            $drafts = $draftQuery->all();
+
+            foreach ($drafts as $draft) {
+                // Avoid duplicates (in case a draft's canonical entry was already found)
+                if (!in_array($draft->id, $foundEntryIds) && !in_array($draft->canonicalId, $foundEntryIds)) {
+                    $section = $draft->getSection();
+                    $sectionName = $section ? $section->name : 'Unknown Section';
+
+                    $foundEntryIds[] = $draft->id;
+                    $results[] = [
+                        'id' => $draft->id,
+                        'title' => $draft->title . ' (Draft)',
+                        'url' => $draft->getCpEditUrl(),
+                        'type' => 'Entry',
+                        'section' => $sectionName,
+                        'status' => 'draft',
+                        'icon' => 'newspaper',
+                    ];
+                }
+            }
+        }
+
+        // If showing nested entries, do a separate title-based query for them
+        // (Craft's search index may not include nested entries)
+        if ($includeNested) {
+            $nestedQuery = Entry::find()
+                ->title('*' . $query . '*')
+                ->limit($settings->maxResults);
+
+            // Don't filter by editable for nested entries - they inherit permissions from parent
+            // The parent entry was already checked for editability in the main search
+
+            // Only get entries that ARE nested (have a primaryOwnerId)
+            $nestedQuery->andWhere(['not', ['entries.primaryOwnerId' => null]]);
+
+            // NOTE: Do NOT apply section filters to nested entries
+            // Nested entries have sectionId=null because they belong to a field, not a section
+            // We only apply entry type filters if specified
+            if (!empty($entryTypeFilter)) {
+                $nestedQuery->typeId($entryTypeFilter);
+            }
+
+            // Handle status filtering for nested entries
+            if (!$includeDisabled) {
+                $nestedQuery->status(Entry::STATUS_LIVE);
+            } else {
+                $nestedQuery->status(null);
+            }
+
+            // Exclude drafts unless including them
+            if (!$includeDrafts) {
+                $nestedQuery->drafts(false);
+            }
+
+            // Allow owner drafts/revisions to be queried
+            $nestedQuery->allowOwnerDrafts(true);
+            $nestedQuery->allowOwnerRevisions(true);
+
+            $nestedEntries = $nestedQuery->all();
+
+            foreach ($nestedEntries as $nested) {
+                // Avoid duplicates
+                if (!in_array($nested->id, $foundEntryIds)) {
+                    $section = $nested->getSection();
+                    $sectionName = $section ? $section->name : 'Unknown Section';
+
+                    // Get the owner entry for context
+                    $ownerTitle = '';
+                    if ($nested->primaryOwnerId) {
+                        $owner = Entry::find()->id($nested->primaryOwnerId)->one();
+                        if ($owner) {
+                            $ownerTitle = $owner->title;
+                        }
+                    }
+
+                    $foundEntryIds[] = $nested->id;
+                    $results[] = [
+                        'id' => $nested->id,
+                        'title' => $nested->title,
+                        'url' => $nested->getCpEditUrl(),
+                        'type' => 'Entry',
+                        'section' => $sectionName . ($ownerTitle ? ' (in ' . $ownerTitle . ')' : ' (Nested)'),
+                        'status' => $nested->getStatus(),
+                        'icon' => 'newspaper',
+                    ];
+                }
+            }
         }
 
         // Also search for entries by author name (if enabled)
@@ -303,8 +456,15 @@ class SearchService extends Component
                 ->authorId($userIds)
                 ->limit($settings->maxResults);
 
-            // Apply the same filters as content search
-            if (!$settings->searchDrafts) {
+            // Only return entries the current user can edit
+            if (!Craft::$app->getUser()->getIsAdmin()) {
+                $authorQuery->editable(true);
+            }
+
+            // Apply the same filters as content search (using user filters)
+            if ($includeDrafts) {
+                $authorQuery->drafts(null);
+            } else {
                 $authorQuery->drafts(false);
             }
 
@@ -312,16 +472,28 @@ class SearchService extends Component
                 $authorQuery->revisions(false);
             }
 
-            if (!$settings->searchDisabled) {
-                $authorQuery->status(Entry::STATUS_ENABLED);
+            if (!$includeDisabled) {
+                if ($includeDrafts) {
+                    $authorQuery->status([Entry::STATUS_LIVE, Entry::STATUS_PENDING, Entry::STATUS_EXPIRED, 'draft']);
+                } else {
+                    $authorQuery->status(Entry::STATUS_LIVE);
+                }
+            } else {
+                $authorQuery->status(null);
             }
 
-            if (!empty($settings->searchableSections)) {
-                $authorQuery->sectionId($settings->searchableSections);
+            // Apply same section/entry type filters
+            if (!empty($sectionFilter)) {
+                $authorQuery->sectionId($sectionFilter);
             }
 
-            if (!empty($settings->searchableEntryTypes)) {
-                $authorQuery->typeId($settings->searchableEntryTypes);
+            if (!empty($entryTypeFilter)) {
+                $authorQuery->typeId($entryTypeFilter);
+            }
+
+            // Filter out nested entries if not including them
+            if (!$includeNested) {
+                $authorQuery->andWhere(['entries.primaryOwnerId' => null]);
             }
 
             $authoredEntries = $authorQuery->all();
@@ -357,6 +529,11 @@ class SearchService extends Component
             ->search($query)
             ->limit($settings->maxResults);
 
+        // Only return categories the current user can edit
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $categoryQuery->editable(true);
+        }
+
         if (!$settings->searchDisabled) {
             $categoryQuery->status(Category::STATUS_ENABLED);
         }
@@ -389,6 +566,11 @@ class SearchService extends Component
             ->search($query)
             ->limit($settings->maxResults);
 
+        // Only return assets the current user can view
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $assetQuery->editable(true);
+        }
+
         if (!empty($settings->searchableAssetVolumes)) {
             $assetQuery->volumeId($settings->searchableAssetVolumes);
         }
@@ -413,6 +595,11 @@ class SearchService extends Component
 
     private function searchUsers(string $query, $settings): array
     {
+        // Check if current user has permission to view users
+        if (!Craft::$app->getUser()->getIsAdmin() && !Craft::$app->getUser()->checkPermission('viewUsers')) {
+            return [];
+        }
+
         $userQuery = User::find()
             ->search($query)
             ->limit($settings->maxResults);
@@ -444,8 +631,14 @@ class SearchService extends Component
         $globals = GlobalSet::find()->all();
         $results = [];
         $queryLower = strtolower($query);
+        $currentUser = Craft::$app->getUser();
 
         foreach ($globals as $global) {
+            // Check if user can edit this global set
+            if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('editGlobalSet:' . $global->uid)) {
+                continue;
+            }
+
             if (stripos($global->name, $query) !== false || stripos($global->handle, $query) !== false) {
                 $results[] = [
                     'id' => $global->id,
@@ -463,6 +656,11 @@ class SearchService extends Component
 
     private function searchSections(string $query): array
     {
+        // Only admins can access section settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $sections = Craft::$app->getEntries()->getAllSections();
         $results = [];
         $queryLower = strtolower($query);
@@ -485,6 +683,11 @@ class SearchService extends Component
 
     private function searchEntryTypes(string $query): array
     {
+        // Only admins can access entry type settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $sections = Craft::$app->getEntries()->getAllSections();
         $results = [];
 
@@ -510,6 +713,11 @@ class SearchService extends Component
 
     private function searchCategoryGroups(string $query): array
     {
+        // Only admins can access category group settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $groups = Craft::$app->getCategories()->getAllGroups();
         $results = [];
 
@@ -531,6 +739,11 @@ class SearchService extends Component
 
     private function searchFields(string $query): array
     {
+        // Only admins can access field settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $fields = Craft::$app->getFields()->getAllFields();
         $results = [];
 
@@ -553,6 +766,11 @@ class SearchService extends Component
 
     private function searchPlugins(string $query): array
     {
+        // Only admins can access plugin settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $plugins = Craft::$app->getPlugins()->getAllPlugins();
         $results = [];
 
@@ -575,6 +793,11 @@ class SearchService extends Component
 
     private function searchAssetVolumes(string $query): array
     {
+        // Only admins can access asset volume settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         // In Craft 5, use getVolumes() instead of getAssets()
         $volumes = Craft::$app->getVolumes()->getAllVolumes();
         $results = [];
@@ -597,9 +820,21 @@ class SearchService extends Component
 
     private function getAllEntries($settings): array
     {
+        // Get user filters
+        $filters = $this->currentFilters;
+
         $entryQuery = Entry::find()->limit($settings->maxResults);
 
-        if (!$settings->searchDrafts) {
+        // Only return entries the current user can edit
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $entryQuery->editable(true);
+        }
+
+        // Handle drafts: use user filter or fall back to settings
+        $includeDrafts = $filters['includeDrafts'] ?? $settings->searchDrafts;
+        if ($includeDrafts) {
+            $entryQuery->drafts(null); // Include both drafts and non-drafts
+        } else {
             $entryQuery->drafts(false);
         }
 
@@ -607,12 +842,37 @@ class SearchService extends Component
             $entryQuery->revisions(false);
         }
 
-        if (!$settings->searchDisabled) {
-            $entryQuery->status(['live']);
+        // Handle status filtering - use user filter or fall back to settings
+        $includeDisabled = $filters['includeDisabled'] ?? $settings->searchDisabled;
+        if (!$includeDisabled) {
+            if ($includeDrafts) {
+                // Include both enabled entries AND drafts
+                $entryQuery->status([Entry::STATUS_LIVE, Entry::STATUS_PENDING, Entry::STATUS_EXPIRED, 'draft']);
+            } else {
+                $entryQuery->status(Entry::STATUS_LIVE);
+            }
+        } else {
+            // Include all statuses including disabled
+            $entryQuery->status(null);
         }
 
-        if (!empty($settings->searchableSections)) {
-            $entryQuery->sectionId($settings->searchableSections);
+        // Apply section filters: user filters take precedence, then fall back to admin settings
+        $sectionFilter = !empty($filters['sections']) ? $filters['sections'] : $settings->searchableSections;
+        if (!empty($sectionFilter)) {
+            $entryQuery->sectionId($sectionFilter);
+        }
+
+        // Apply entry type filters: user filters take precedence, then fall back to admin settings
+        $entryTypeFilter = !empty($filters['entryTypes']) ? $filters['entryTypes'] : $settings->searchableEntryTypes;
+        if (!empty($entryTypeFilter)) {
+            $entryQuery->typeId($entryTypeFilter);
+        }
+
+        // Filter out nested entries based on user filter or global setting
+        // Note: shouldHideNestedEntries returns true when we should HIDE, so invert for includeNested
+        $includeNested = $filters['includeNested'] ?? !Launcher::$plugin->userPreference->shouldHideNestedEntries();
+        if (!$includeNested) {
+            $entryQuery->andWhere(['entries.primaryOwnerId' => null]);
         }
 
         $entries = $entryQuery->all();
@@ -639,6 +899,11 @@ class SearchService extends Component
     private function getAllCategories($settings): array
     {
         $categoryQuery = Category::find()->limit($settings->maxResults);
+
+        // Only return categories the current user can edit
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $categoryQuery->editable(true);
+        }
 
         if (!$settings->searchDisabled) {
             $categoryQuery->status(['enabled']);
@@ -670,6 +935,11 @@ class SearchService extends Component
     {
         $assetQuery = Asset::find()->limit($settings->maxResults);
 
+        // Only return assets the current user can view
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            $assetQuery->editable(true);
+        }
+
         if (!empty($settings->searchableAssetVolumes)) {
             $assetQuery->volumeId($settings->searchableAssetVolumes);
         }
@@ -694,6 +964,11 @@ class SearchService extends Component
 
     private function getAllUsers($settings): array
     {
+        // Check if current user has permission to view users
+        if (!Craft::$app->getUser()->getIsAdmin() && !Craft::$app->getUser()->checkPermission('viewUsers')) {
+            return [];
+        }
+
         $userQuery = User::find()->limit($settings->maxResults);
 
         if (!$settings->searchDisabled) {
@@ -722,8 +997,14 @@ class SearchService extends Component
     {
         $globals = GlobalSet::find()->limit($settings->maxResults)->all();
         $results = [];
+        $currentUser = Craft::$app->getUser();
 
         foreach ($globals as $global) {
+            // Check if user can edit this global set
+            if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('editGlobalSet:' . $global->uid)) {
+                continue;
+            }
+
             $results[] = [
                 'id' => $global->id,
                 'title' => $global->name,
@@ -739,6 +1020,11 @@ class SearchService extends Component
 
     private function searchStaticSettings(string $query): array
     {
+        // Only admins can access settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $queryLower = strtolower($query);
         $results = [];
 
@@ -868,6 +1154,11 @@ class SearchService extends Component
      */
     private function getAllStaticSettings(): array
     {
+        // Only admins can access settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $results = [];
 
         // Define static settings destinations with their search terms
@@ -986,7 +1277,13 @@ class SearchService extends Component
         if (!$this->isCommerceInstalled()) {
             return [];
         }
-        
+
+        // Check Commerce customer permission
+        $currentUser = Craft::$app->getUser();
+        if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('commerce-manageCustomers')) {
+            return [];
+        }
+
         try {
             if (!class_exists('craft\commerce\elements\Customer')) {
                 return [];
@@ -1027,7 +1324,13 @@ class SearchService extends Component
         if (!$this->isCommerceInstalled()) {
             return [];
         }
-        
+
+        // Check Commerce product permission
+        $currentUser = Craft::$app->getUser();
+        if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('commerce-manageProducts')) {
+            return [];
+        }
+
         try {
             if (!class_exists('craft\commerce\elements\Product') || !class_exists('craft\commerce\elements\Variant')) {
                 return [];
@@ -1083,7 +1386,13 @@ class SearchService extends Component
         if (!$this->isCommerceInstalled()) {
             return [];
         }
-        
+
+        // Check Commerce order permission
+        $currentUser = Craft::$app->getUser();
+        if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('commerce-manageOrders')) {
+            return [];
+        }
+
         try {
             // Import the Commerce classes directly
             if (!class_exists('craft\commerce\elements\Order')) {
@@ -1333,6 +1642,13 @@ class SearchService extends Component
             return [];
         }
 
+        $currentUser = Craft::$app->getUser();
+
+        // Non-admins need utility permissions
+        if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('accessCp')) {
+            return [];
+        }
+
         $queryLower = strtolower($query);
         $results = [];
 
@@ -1439,6 +1755,14 @@ class SearchService extends Component
 
         // Search through utilities
         foreach ($utilities as $utility) {
+            // Check if user has permission to access this utility
+            if (!$currentUser->getIsAdmin()) {
+                $utilityPermission = 'utility:' . $utility['handle'];
+                if (!$currentUser->checkPermission($utilityPermission)) {
+                    continue;
+                }
+            }
+
             $found = false;
 
             // Check if query matches any search term
@@ -1469,6 +1793,7 @@ class SearchService extends Component
      */
     private function getAllUtilities(): array
     {
+        $currentUser = Craft::$app->getUser();
         $results = [];
 
         // Define available utilities
@@ -1557,8 +1882,16 @@ class SearchService extends Component
             ];
         }
 
-        // Add all utilities to results
+        // Add all utilities to results (with permission check)
         foreach ($utilities as $utility) {
+            // Check if user has permission to access this utility
+            if (!$currentUser->getIsAdmin()) {
+                $utilityPermission = 'utility:' . $utility['handle'];
+                if (!$currentUser->checkPermission($utilityPermission)) {
+                    continue;
+                }
+            }
+
             $results[] = [
                 'id' => $utility['handle'],
                 'title' => $utility['title'],

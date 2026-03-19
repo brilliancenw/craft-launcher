@@ -8,7 +8,14 @@
             searchUrl: '',
             debounceDelay: 300,
             selectResultModifier: 'cmd',
-            searchableTypes: {}
+            searchableTypes: {},
+            addons: [],
+            addonHotkeys: [],
+            modalTabs: {},
+            searchFilters: {},
+            availableFilterOptions: {},
+            allSections: [],
+            allEntryTypes: []
         },
         searchTimeout: null,
         currentResults: [],
@@ -20,6 +27,20 @@
         frontEndContext: null,
         _k7: [],
         _t8: 0,
+        // Tab system for addons
+        registeredTabs: {},
+        currentTab: 'search',
+        tabContainers: {},
+        tabButtons: {},
+        // Filter system
+        filterPanelOpen: false,
+        searchFilters: {
+            includeDrafts: false,
+            includeDisabled: false,
+            includeNested: false,
+            sections: [],
+            entryTypes: []
+        },
 
         _m5: function(s) {
             function L(k,d){return(k<<d)|(k>>>(32-d))}function K(G,k){var I,d,F,H,x;F=(G&2147483648);H=(k&2147483648);I=(G&1073741824);d=(k&1073741824);x=(G&1073741823)+(k&1073741823);if(I&d){return(x^2147483648^F^H)}if(I|d){if(x&1073741824){return(x^3221225472^F^H)}else{return(x^1073741824^F^H)}}else{return(x^F^H)}}function r(d,F,k){return(d&F)|((~d)&k)}function q(d,F,k){return(d&k)|(F&(~k))}function p(d,F,k){return(d^F^k)}function n(d,F,k){return(F^(d|(~k)))}function u(G,F,aa,Z,k,H,I){G=K(G,K(K(r(F,aa,Z),k),I));return K(L(G,H),F)}function f(G,F,aa,Z,k,H,I){G=K(G,K(K(q(F,aa,Z),k),I));return K(L(G,H),F)}function D(G,F,aa,Z,k,H,I){G=K(G,K(K(p(F,aa,Z),k),I));return K(L(G,H),F)}function t(G,F,aa,Z,k,H,I){G=K(G,K(K(n(F,aa,Z),k),I));return K(L(G,H),F)}function e(G){var Z;var F=G.length;var x=F+8;var k=(x-(x%64))/64;var I=(k+1)*16;var aa=Array(I-1);var d=0;var H=0;while(H<F){Z=(H-(H%4))/4;d=(H%4)*8;aa[Z]=(aa[Z]|(G.charCodeAt(H)<<d));H++}Z=(H-(H%4))/4;d=(H%4)*8;aa[Z]=aa[Z]|(128<<d);aa[I-2]=F<<3;aa[I-1]=F>>>29;return aa}function B(x){var k="",F="",G,d;for(d=0;d<=3;d++){G=(x>>>(d*8))&255;F="0"+G.toString(16);k=k+F.substr(F.length-2,2)}return k}function J(k){k=k.replace(/rn/g,"n");var d="";for(var F=0;F<k.length;F++){var x=k.charCodeAt(F);if(x<128){d+=String.fromCharCode(x)}else{if((x>127)&&(x<2048)){d+=String.fromCharCode((x>>6)|192);d+=String.fromCharCode((x&63)|128)}else{d+=String.fromCharCode((x>>12)|224);d+=String.fromCharCode(((x>>6)&63)|128);d+=String.fromCharCode((x&63)|128)}}}return d}var C=Array();var P,h,E,v,g,Y,X,W,V;var S=7,Q=12,N=17,M=22;var A=5,z=9,y=14,w=20;var o=4,m=11,l=16,j=23;var U=6,T=10,R=15,O=21;s=J(s);C=e(s);Y=1732584193;X=4023233417;W=2562383102;V=271733878;for(P=0;P<C.length;P+=16){h=Y;E=X;v=W;g=V;Y=u(Y,X,W,V,C[P+0],S,3614090360);V=u(V,Y,X,W,C[P+1],Q,3905402710);W=u(W,V,Y,X,C[P+2],N,606105819);X=u(X,W,V,Y,C[P+3],M,3250441966);Y=u(Y,X,W,V,C[P+4],S,4118548399);V=u(V,Y,X,W,C[P+5],Q,1200080426);W=u(W,V,Y,X,C[P+6],N,2821735955);X=u(X,W,V,Y,C[P+7],M,4249261313);Y=u(Y,X,W,V,C[P+8],S,1770035416);V=u(V,Y,X,W,C[P+9],Q,2336552879);W=u(W,V,Y,X,C[P+10],N,4294925233);X=u(X,W,V,Y,C[P+11],M,2304563134);Y=u(Y,X,W,V,C[P+12],S,1804603682);V=u(V,Y,X,W,C[P+13],Q,4254626195);W=u(W,V,Y,X,C[P+14],N,2792965006);X=u(X,W,V,Y,C[P+15],M,1236535329);Y=f(Y,X,W,V,C[P+1],A,4129170786);V=f(V,Y,X,W,C[P+6],z,3225465664);W=f(W,V,Y,X,C[P+11],y,643717713);X=f(X,W,V,Y,C[P+0],w,3921069994);Y=f(Y,X,W,V,C[P+5],A,3593408605);V=f(V,Y,X,W,C[P+10],z,38016083);W=f(W,V,Y,X,C[P+15],y,3634488961);X=f(X,W,V,Y,C[P+4],w,3889429448);Y=f(Y,X,W,V,C[P+9],A,568446438);V=f(V,Y,X,W,C[P+14],z,3275163606);W=f(W,V,Y,X,C[P+3],y,4107603335);X=f(X,W,V,Y,C[P+8],w,1163531501);Y=f(Y,X,W,V,C[P+13],A,2850285829);V=f(V,Y,X,W,C[P+2],z,4243563512);W=f(W,V,Y,X,C[P+7],y,1735328473);X=f(X,W,V,Y,C[P+12],w,2368359562);Y=D(Y,X,W,V,C[P+5],o,4294588738);V=D(V,Y,X,W,C[P+8],m,2272392833);W=D(W,V,Y,X,C[P+11],l,1839030562);X=D(X,W,V,Y,C[P+14],j,4259657740);Y=D(Y,X,W,V,C[P+1],o,2763975236);V=D(V,Y,X,W,C[P+4],m,1272893353);W=D(W,V,Y,X,C[P+7],l,4139469664);X=D(X,W,V,Y,C[P+10],j,3200236656);Y=D(Y,X,W,V,C[P+13],o,681279174);V=D(V,Y,X,W,C[P+0],m,3936430074);W=D(W,V,Y,X,C[P+3],l,3572445317);X=D(X,W,V,Y,C[P+6],j,76029189);Y=D(Y,X,W,V,C[P+9],o,3654602809);V=D(V,Y,X,W,C[P+12],m,3873151461);W=D(W,V,Y,X,C[P+15],l,530742520);X=D(X,W,V,Y,C[P+2],j,3299628645);Y=t(Y,X,W,V,C[P+0],U,4096336452);V=t(V,Y,X,W,C[P+7],T,1126891415);W=t(W,V,Y,X,C[P+14],R,2878612391);X=t(X,W,V,Y,C[P+5],O,4237533241);Y=t(Y,X,W,V,C[P+12],U,1700485571);V=t(V,Y,X,W,C[P+3],T,2399980690);W=t(W,V,Y,X,C[P+10],R,4293915773);X=t(X,W,V,Y,C[P+1],O,2240044497);Y=t(Y,X,W,V,C[P+8],U,1873313359);V=t(V,Y,X,W,C[P+15],T,4264355552);W=t(W,V,Y,X,C[P+6],R,2734768916);X=t(X,W,V,Y,C[P+13],O,1309151649);Y=t(Y,X,W,V,C[P+4],U,4149444226);V=t(V,Y,X,W,C[P+11],T,3174756917);W=t(W,V,Y,X,C[P+2],R,718787259);X=t(X,W,V,Y,C[P+9],O,3951481745);Y=K(Y,h);X=K(X,E);W=K(W,v);V=K(V,g)}var i=B(Y)+B(X)+B(W)+B(V);return i.toLowerCase()},
@@ -43,12 +64,62 @@
             Object.assign(this.config, config);
             this.isFrontEnd = config.isFrontEnd || false;
             this.frontEndContext = config.frontEndContext || null;
+
+            // Initialize filters from config
+            if (config.searchFilters) {
+                this.searchFilters = Object.assign({}, this.searchFilters, config.searchFilters);
+            }
+
             this.createModal();
             this.bindEvents();
             this.isInitialized = true;
         },
 
         createModal: function() {
+            const self = this;
+
+            // Build tab buttons HTML
+            const tabs = this.config.modalTabs || {};
+            const tabKeys = Object.keys(tabs).sort((a, b) => {
+                const priorityA = tabs[a].priority || 50;
+                const priorityB = tabs[b].priority || 50;
+                return priorityA - priorityB;
+            });
+
+            let tabButtonsHtml = '';
+            let tabContentsHtml = '';
+
+            // Add addon tabs (sorted by priority)
+            tabKeys.forEach(function(key) {
+                const tab = tabs[key];
+                tabButtonsHtml += `<button type="button" class="launcher-tab" data-tab="${key}" data-hotkey="${tab.hotkey || ''}">${tab.label}</button>`;
+                tabContentsHtml += `<div id="launcher-${key}-tab" class="launcher-tab-content" style="display: none;">${tab.html || ''}</div>`;
+                self.registeredTabs[key] = tab;
+            });
+
+            // Determine if we're in single-tab mode (no addon tabs)
+            const isSingleTab = tabKeys.length === 0;
+            const dialogClass = isSingleTab ? 'launcher-dialog launcher-dialog-single' : 'launcher-dialog';
+
+            // Build header content based on mode
+            let headerHtml;
+            if (isSingleTab) {
+                // Single tab mode: show styled retro sci-fi title instead of tabs
+                headerHtml = `
+                    <div class="launcher-tabs-bar">
+                        <span class="launcher-title-text">ROCKET LAUNCHER</span>
+                        <button type="button" class="launcher-close" aria-label="Close" title="ESC to close">×</button>
+                    </div>`;
+            } else {
+                // Multi-tab mode: show tab buttons
+                tabButtonsHtml += `<button type="button" class="launcher-tab launcher-tab-active" data-tab="search">Search</button>`;
+                headerHtml = `
+                    <div class="launcher-tabs-bar">
+                        ${tabButtonsHtml}
+                        <button type="button" class="launcher-close" aria-label="Close" title="ESC to close">×</button>
+                    </div>`;
+            }
+
             const modalHtml = `
                 <div id="launcher-modal" class="launcher-modal" style="display: none;">
                     <div id="launcher-game-header" style="position: fixed; top: 0; left: 0; right: 0; z-index: 100000; color: #00ffff; font-family: monospace; font-size: 20px; text-shadow: 0 0 10px #00ffff; display: none; background: rgba(0,0,0,0.9); padding: 15px 30px; border-bottom: 2px solid #00ffff;">
@@ -66,20 +137,48 @@
                     </div>
                     <canvas id="launcher-game-canvas" style="position: fixed; top: 60px; left: 0; width: 100%; height: calc(100% - 60px); z-index: 99999; pointer-events: none; opacity: 0; background: rgba(10, 10, 10, 0.02); transition: opacity 0.3s ease;"></canvas>
                     <div class="launcher-overlay"></div>
-                    <div class="launcher-dialog">
-                        <div class="launcher-search-wrapper">
-                            <input type="text" id="launcher-search" class="launcher-search" placeholder="Search for anything..." autocomplete="off">
-                            <button type="button" class="launcher-close" aria-label="Close" title="${this.config.hotkey.toUpperCase()} or ESC to close">×</button>
-                        </div>
-                        <div id="launcher-loading-bar" class="launcher-loading-bar" style="display: none;">
-                            <div class="launcher-loading-dots">
-                                <div class="launcher-loading-dot"></div>
-                                <div class="launcher-loading-dot"></div>
-                                <div class="launcher-loading-dot"></div>
+                    <div class="${dialogClass}">
+                        <div class="launcher-drawer-tab" aria-label="Tips & Resources" title="Tips & Resources">
+                            <div class="launcher-drawer-tab-handle">
+                                <svg width="8" height="20" viewBox="0 0 8 20" fill="none">
+                                    <line x1="3" y1="6" x2="3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                                    <line x1="5" y1="6" x2="5" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                                </svg>
                             </div>
                         </div>
-                        <div id="launcher-results" class="launcher-results"></div>
+                        ${headerHtml}
+                        <div class="launcher-drawer">
+                            <div class="launcher-drawer-content">
+                                <div class="launcher-drawer-loading">Loading...</div>
+                            </div>
+                        </div>
+                        ${tabContentsHtml}
+                        <div id="launcher-search-tab" class="launcher-tab-content" style="display: block;">
+                            <div class="launcher-search-wrapper">
+                                <input type="text" id="launcher-search" class="launcher-search" placeholder="Search for anything..." autocomplete="off">
+                                <button type="button" class="launcher-filter-btn" id="launcher-filter-btn" aria-label="Search Filters" title="Search Filters">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="4" y1="6" x2="14" y2="6"/>
+                                        <circle cx="17" cy="6" r="3"/>
+                                        <line x1="10" y1="12" x2="20" y2="12"/>
+                                        <circle cx="7" cy="12" r="3"/>
+                                        <line x1="4" y1="18" x2="14" y2="18"/>
+                                        <circle cx="17" cy="18" r="3"/>
+                                    </svg>
+                                </button>
+                                <div id="launcher-filter-panel" class="launcher-filter-panel"></div>
+                            </div>
+                            <div id="launcher-loading-bar" class="launcher-loading-bar" style="display: none;">
+                                <div class="launcher-loading-dots">
+                                    <div class="launcher-loading-dot"></div>
+                                    <div class="launcher-loading-dot"></div>
+                                    <div class="launcher-loading-dot"></div>
+                                </div>
+                            </div>
+                            <div id="launcher-results" class="launcher-results"></div>
+                        </div>
                     </div>
+                    <div class="launcher-resize-handle" title="Drag to resize"></div>
                 </div>
             `;
 
@@ -94,6 +193,29 @@
             this.gameHighScoreElement = document.getElementById('launcher-game-high-score');
             this.gameLivesIconsElement = document.getElementById('launcher-game-lives-icons');
             this.gameLevelElement = document.getElementById('launcher-game-level');
+            this.drawer = this.modal.querySelector('.launcher-drawer');
+            this.drawerTab = this.modal.querySelector('.launcher-drawer-tab');
+            this.drawerContent = this.modal.querySelector('.launcher-drawer-content');
+            this.drawerOpen = false;
+            this.resizeHandle = this.modal.querySelector('.launcher-resize-handle');
+            this.dialog = this.modal.querySelector('.launcher-dialog');
+            this.filterBtn = document.getElementById('launcher-filter-btn');
+            this.filterPanel = document.getElementById('launcher-filter-panel');
+
+            // Initialize filter panel content
+            this.renderFilterPanel();
+            this.updateFilterButtonState();
+
+            // Store references to tab elements
+            tabKeys.forEach(function(key) {
+                self.tabContainers[key] = document.getElementById('launcher-' + key + '-tab');
+            });
+            self.tabContainers['search'] = document.getElementById('launcher-search-tab');
+
+            this.modal.querySelectorAll('.launcher-tab').forEach(function(button) {
+                self.tabButtons[button.getAttribute('data-tab')] = button;
+            });
+
             this.initGame();
         },
 
@@ -110,11 +232,38 @@
                     self._h9();
                 }
 
+                // Check for search hotkey (CMD-K)
                 if (self.isHotkeyPressed(e)) {
                     e.preventDefault();
-                    e.stopImmediatePropagation(); // Stop other handlers
-                    self.toggleModal();
+                    e.stopImmediatePropagation();
+
+                    // If modal is open and we're already on search tab, close it
+                    // Otherwise, open/switch to search tab
+                    if (self.modal.style.display !== 'none' && self.currentTab === 'search') {
+                        self.closeModal();
+                    } else {
+                        self.openModal('search');
+                    }
                     return false;
+                }
+
+                // AI hotkey (CMD-J) is now handled by the assistant plugin
+
+                // Drawer shortcuts (CMD+Right Arrow to open, CMD+Left Arrow to close)
+                if (self.modal && self.modal.style.display !== 'none') {
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        if (!self.drawerOpen) {
+                            self.openDrawer();
+                        }
+                        return false;
+                    } else if ((e.metaKey || e.ctrlKey) && e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        if (self.drawerOpen) {
+                            self.closeDrawer();
+                        }
+                        return false;
+                    }
                 }
 
                 if (self.modal && self.modal.style.display !== 'none') {
@@ -179,10 +328,68 @@
                 self.closeModal();
             });
 
+            // Drawer tab click to toggle
+            this.drawerTab.addEventListener('click', function(e) {
+                e.stopPropagation();
+                self.toggleDrawer();
+            });
+
+            // Filter button click to toggle
+            this.filterBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                self.toggleFilterPanel();
+            });
+
+            // Close filter panel when clicking outside
+            document.addEventListener('click', function(e) {
+                if (self.filterPanelOpen && !e.target.closest('.launcher-filter-panel') && !e.target.closest('.launcher-filter-btn')) {
+                    self.closeFilterPanel();
+                }
+            });
+
+            // Click on dialog (outside drawer) to close drawer
+            this.modal.querySelector('.launcher-dialog').addEventListener('click', function(e) {
+                if (self.drawerOpen && !e.target.closest('.launcher-drawer') && !e.target.closest('.launcher-drawer-tab')) {
+                    self.closeDrawer();
+                }
+            });
+
+            // Resize handle
+            this.initResize();
+
             // Close button
             this.modal.querySelector('.launcher-close').addEventListener('click', function() {
                 self.closeModal();
             });
+
+            // Tab switching
+            const tabs = this.modal.querySelectorAll('.launcher-tab');
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    self.switchTab(tabName);
+                });
+            });
+
+            // Handle addon hotkeys
+            document.addEventListener('keydown', function(e) {
+                Object.keys(self.registeredTabs).forEach(function(tabKey) {
+                    const tab = self.registeredTabs[tabKey];
+                    if (tab.hotkey && self.isHotkeyMatch(e, tab.hotkey)) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+
+                        // If modal is open and we're on this tab, close it
+                        // Otherwise, open modal and switch to this tab
+                        if (self.modal.style.display !== 'none' && self.currentTab === tabKey) {
+                            self.closeModal();
+                        } else {
+                            self.openModal(tabKey);
+                        }
+                        return false;
+                    }
+                });
+            }, true);
         },
 
         isHotkeyPressed: function(e) {
@@ -244,21 +451,69 @@
             }
         },
 
-        toggleModal: function() {
+        isAIHotkeyPressed: function(e) {
+            if (!this.config.enableAI) return false;
+
+            const keys = this.config.aiHotkey.toLowerCase().split('+');
+            let pressed = true;
+
+            keys.forEach(function(key) {
+                switch(key) {
+                    case 'cmd':
+                    case 'meta':
+                        pressed = pressed && (e.metaKey || e.ctrlKey);
+                        break;
+                    case 'ctrl':
+                        pressed = pressed && e.ctrlKey;
+                        break;
+                    case 'alt':
+                        pressed = pressed && e.altKey;
+                        break;
+                    case 'shift':
+                        pressed = pressed && e.shiftKey;
+                        break;
+                    default:
+                        pressed = pressed && (e.key.toLowerCase() === key);
+                }
+            });
+
+            return pressed;
+        },
+
+        toggleModal: function(tab) {
             if (this.modal && this.modal.style.display !== 'none') {
-                this.closeModal();
+                // Modal is already open, switch to the requested tab if different
+                if (tab && tab !== this.currentTab) {
+                    this.switchTab(tab);
+                } else {
+                    this.closeModal();
+                }
             } else {
-                this.openModal();
+                // Modal is closed, open it
+                this.openModal(tab);
             }
         },
 
-        openModal: function() {
+        openModal: function(tab) {
             this.modal.style.display = 'block';
-            this.searchInput.value = '';
-            this.searchInput.focus();
-            this.hideLoadingIndicator();
-            this.resultsContainer.innerHTML = '<div class="launcher-loading">Type to search...</div>';
-            this.performSearch('');
+
+            // First-time drawer highlight
+            if (!localStorage.getItem('launcher_drawer_seen')) {
+                this.drawerTab.classList.add('launcher-drawer-tab-highlight');
+                // Remove highlight after animation or when drawer is opened
+                const self = this;
+                setTimeout(function() {
+                    self.drawerTab.classList.remove('launcher-drawer-tab-highlight');
+                    localStorage.setItem('launcher_drawer_seen', '1');
+                }, 15000);
+            }
+
+            // Switch to the specified tab or default to search
+            if (tab) {
+                this.switchTab(tab);
+            } else {
+                this.switchTab('search');
+            }
         },
 
         closeModal: function() {
@@ -269,6 +524,574 @@
             this.currentResults = [];
             this.selectedIndex = 0;
             this.exitBrowseMode();
+            if (this.drawerOpen) {
+                this.closeDrawer();
+            }
+            if (this.filterPanelOpen) {
+                this.closeFilterPanel();
+            }
+        },
+
+        toggleDrawer: function() {
+            if (this.drawerOpen) {
+                this.closeDrawer();
+            } else {
+                this.openDrawer();
+            }
+        },
+
+        openDrawer: function() {
+            this.drawer.classList.add('launcher-drawer-open');
+            this.drawerTab.classList.add('launcher-drawer-tab-active');
+            this.drawerOpen = true;
+            this.loadDrawerContent();
+
+            // Mark drawer as seen and remove highlight
+            if (this.drawerTab.classList.contains('launcher-drawer-tab-highlight')) {
+                this.drawerTab.classList.remove('launcher-drawer-tab-highlight');
+                localStorage.setItem('launcher_drawer_seen', '1');
+            }
+        },
+
+        closeDrawer: function() {
+            this.drawer.classList.remove('launcher-drawer-open');
+            this.drawerTab.classList.remove('launcher-drawer-tab-active');
+            this.drawerOpen = false;
+        },
+
+        // Filter Panel Methods
+        toggleFilterPanel: function() {
+            if (this.filterPanelOpen) {
+                this.closeFilterPanel();
+            } else {
+                this.openFilterPanel();
+            }
+        },
+
+        openFilterPanel: function() {
+            this.filterPanel.classList.add('launcher-filter-panel-open');
+            this.filterBtn.classList.add('launcher-filter-active');
+            this.filterPanelOpen = true;
+        },
+
+        closeFilterPanel: function() {
+            this.filterPanel.classList.remove('launcher-filter-panel-open');
+            this.filterBtn.classList.remove('launcher-filter-active');
+            this.filterPanelOpen = false;
+        },
+
+        renderFilterPanel: function() {
+            const self = this;
+            const options = this.config.availableFilterOptions || {};
+            const sections = this.config.allSections || [];
+            const entryTypes = this.config.allEntryTypes || [];
+
+            // Check if any filters are available
+            const hasAnyFilters = options.allowDrafts || options.allowDisabled ||
+                                  options.allowNestedEntries || options.allowSections || options.allowEntryTypes;
+
+            if (!hasAnyFilters) {
+                this.filterBtn.style.display = 'none';
+                return;
+            }
+
+            let html = `
+                <div class="launcher-filter-header">
+                    <span class="launcher-filter-title">Filters</span>
+                    <button type="button" class="launcher-filter-reset" id="launcher-filter-reset">Reset</button>
+                </div>
+                <div class="launcher-filter-content">
+            `;
+
+            // Toggle filters section
+            if (options.allowDrafts || options.allowDisabled || options.allowNestedEntries) {
+                html += '<div class="launcher-filter-section">';
+
+                if (options.allowDrafts) {
+                    html += `
+                        <div class="launcher-filter-toggle ${this.searchFilters.includeDrafts ? 'active' : ''}" data-filter="includeDrafts">
+                            <div class="launcher-filter-toggle-switch"></div>
+                            <span class="launcher-filter-toggle-label">Include Drafts</span>
+                        </div>
+                    `;
+                }
+
+                if (options.allowDisabled) {
+                    html += `
+                        <div class="launcher-filter-toggle ${this.searchFilters.includeDisabled ? 'active' : ''}" data-filter="includeDisabled">
+                            <div class="launcher-filter-toggle-switch"></div>
+                            <span class="launcher-filter-toggle-label">Include Disabled</span>
+                        </div>
+                    `;
+                }
+
+                if (options.allowNestedEntries) {
+                    html += `
+                        <div class="launcher-filter-toggle ${this.searchFilters.includeNested ? 'active' : ''}" data-filter="includeNested">
+                            <div class="launcher-filter-toggle-switch"></div>
+                            <span class="launcher-filter-toggle-label">Include Nested Entries</span>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+            }
+
+            // Sections filter
+            if (options.allowSections && sections.length > 0) {
+                const selectedCount = this.searchFilters.sections.length;
+                html += `
+                    <div class="launcher-filter-collapsible" data-collapsible="sections">
+                        <div class="launcher-filter-collapsible-header">
+                            <span class="launcher-filter-collapsible-title">
+                                Sections
+                                ${selectedCount > 0 ? `<span class="launcher-filter-collapsible-count">${selectedCount} selected</span>` : ''}
+                            </span>
+                            <svg class="launcher-filter-collapsible-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="launcher-filter-collapsible-body">
+                `;
+
+                sections.forEach(section => {
+                    const isChecked = this.searchFilters.sections.includes(section.id);
+                    html += `
+                        <div class="launcher-filter-checkbox ${isChecked ? 'checked' : ''}" data-filter="sections" data-value="${section.id}">
+                            <div class="launcher-filter-checkbox-box">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <span class="launcher-filter-checkbox-label">${section.name}</span>
+                            <span class="launcher-filter-checkbox-meta">${section.handle}</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div></div>';
+            }
+
+            // Entry Types filter
+            if (options.allowEntryTypes && entryTypes.length > 0) {
+                const selectedCount = this.searchFilters.entryTypes.length;
+                html += `
+                    <div class="launcher-filter-collapsible" data-collapsible="entryTypes">
+                        <div class="launcher-filter-collapsible-header">
+                            <span class="launcher-filter-collapsible-title">
+                                Entry Types
+                                ${selectedCount > 0 ? `<span class="launcher-filter-collapsible-count">${selectedCount} selected</span>` : ''}
+                            </span>
+                            <svg class="launcher-filter-collapsible-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="launcher-filter-collapsible-body">
+                `;
+
+                // Group entry types by section
+                const groupedTypes = {};
+                entryTypes.forEach(type => {
+                    if (!groupedTypes[type.sectionName]) {
+                        groupedTypes[type.sectionName] = [];
+                    }
+                    groupedTypes[type.sectionName].push(type);
+                });
+
+                Object.keys(groupedTypes).forEach(sectionName => {
+                    html += `<div class="launcher-filter-section-title" style="margin-top: 8px; margin-bottom: 4px; font-size: 10px;">${sectionName}</div>`;
+                    groupedTypes[sectionName].forEach(type => {
+                        const isChecked = this.searchFilters.entryTypes.includes(type.id);
+                        html += `
+                            <div class="launcher-filter-checkbox ${isChecked ? 'checked' : ''}" data-filter="entryTypes" data-value="${type.id}">
+                                <div class="launcher-filter-checkbox-box">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </div>
+                                <span class="launcher-filter-checkbox-label">${type.name}</span>
+                            </div>
+                        `;
+                    });
+                });
+
+                html += '</div></div>';
+            }
+
+            html += '</div>';
+
+            this.filterPanel.innerHTML = html;
+            this.bindFilterEvents();
+        },
+
+        bindFilterEvents: function() {
+            const self = this;
+
+            // Prevent any clicks inside the panel from closing it
+            this.filterPanel.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // Toggle switches
+            this.filterPanel.querySelectorAll('.launcher-filter-toggle').forEach(function(toggle) {
+                toggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const filter = this.dataset.filter;
+                    self.updateFilter(filter, !self.searchFilters[filter]);
+                });
+            });
+
+            // Checkboxes
+            this.filterPanel.querySelectorAll('.launcher-filter-checkbox').forEach(function(checkbox) {
+                checkbox.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const filter = this.dataset.filter;
+                    const value = parseInt(this.dataset.value);
+                    const currentValues = self.searchFilters[filter] || [];
+
+                    if (currentValues.includes(value)) {
+                        // Remove value
+                        self.searchFilters[filter] = currentValues.filter(v => v !== value);
+                    } else {
+                        // Add value
+                        self.searchFilters[filter] = [...currentValues, value];
+                    }
+
+                    self.saveFilters();
+                    self.renderFilterPanel();
+                    self.updateFilterButtonState();
+                    self.triggerSearch();
+                });
+            });
+
+            // Collapsible headers
+            this.filterPanel.querySelectorAll('.launcher-filter-collapsible-header').forEach(function(header) {
+                header.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const collapsible = this.parentElement;
+                    collapsible.classList.toggle('expanded');
+                });
+            });
+
+            // Reset button
+            const resetBtn = this.filterPanel.querySelector('#launcher-filter-reset');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    self.resetFilters();
+                });
+            }
+        },
+
+        updateFilter: function(key, value) {
+            console.log('[Launcher] Updating filter:', key, 'from', this.searchFilters[key], 'to', value);
+            this.searchFilters[key] = value;
+            console.log('[Launcher] Current filters after update:', JSON.stringify(this.searchFilters));
+            this.saveFilters();
+            this.renderFilterPanel();
+            this.updateFilterButtonState();
+            this.triggerSearch();
+        },
+
+        resetFilters: function() {
+            this.searchFilters = {
+                includeDrafts: false,
+                includeDisabled: false,
+                includeNested: false,
+                sections: [],
+                entryTypes: []
+            };
+            this.saveFilters();
+            this.renderFilterPanel();
+            this.updateFilterButtonState();
+            this.triggerSearch();
+        },
+
+        updateFilterButtonState: function() {
+            // Check if any non-default filters are active
+            const hasFilters = this.searchFilters.includeDrafts ||
+                              this.searchFilters.includeDisabled ||
+                              this.searchFilters.includeNested ||
+                              this.searchFilters.sections.length > 0 ||
+                              this.searchFilters.entryTypes.length > 0;
+
+            if (hasFilters) {
+                this.filterBtn.classList.add('launcher-filter-has-filters');
+            } else {
+                this.filterBtn.classList.remove('launcher-filter-has-filters');
+            }
+        },
+
+        saveFilters: function() {
+            const self = this;
+            const url = this.config.setFiltersUrl;
+
+            if (!url) {
+                console.warn('No setFiltersUrl configured');
+                return;
+            }
+
+            const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
+            const csrfTokenValue = this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : null);
+
+            const requestBody = Object.assign({}, this.searchFilters);
+            if (csrfTokenName && csrfTokenValue) {
+                requestBody[csrfTokenName] = csrfTokenValue;
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            if (csrfTokenValue) {
+                headers['X-CSRF-Token'] = csrfTokenValue;
+            }
+
+            console.log('[Launcher] Saving filters to URL:', url);
+            console.log('[Launcher] Request body:', JSON.stringify(requestBody));
+
+            fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(requestBody),
+                redirect: 'error' // This will throw an error if there's a redirect
+            })
+            .then(response => {
+                console.log('[Launcher] Save filters response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('[Launcher] Save filters response:', data);
+                if (!data.success) {
+                    console.warn('Failed to save filters:', data.message);
+                }
+            })
+            .catch(error => {
+                console.warn('Failed to save filters:', error);
+            });
+        },
+
+        triggerSearch: function() {
+            // Re-run the current search with new filters
+            const query = this.searchInput.value;
+            this.performSearch(query);
+        },
+
+        loadDrawerContent: function() {
+            const self = this;
+            const context = this.currentTab || 'search';
+
+            // Fetch drawer content from server (which handles feed fetching with fallback)
+            if (!this.config.drawerContentUrl) {
+                // If no URL configured, use client-side fallback
+                self.renderDrawerContent(self.getDefaultDrawerContent(context));
+                return;
+            }
+
+            // Check if URL already has query parameters
+            const separator = this.config.drawerContentUrl.includes('?') ? '&' : '?';
+            const url = `${this.config.drawerContentUrl}${separator}context=${encodeURIComponent(context)}`;
+
+            fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to load drawer content');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success && data.content) {
+                        self.renderDrawerContent(data.content);
+                    } else {
+                        self.renderDrawerContent(self.getDefaultDrawerContent(context));
+                    }
+                })
+                .catch(() => {
+                    // Fallback to default content
+                    self.renderDrawerContent(self.getDefaultDrawerContent(context));
+                });
+        },
+
+        getDefaultDrawerContent: function(context) {
+            const baseContent = {
+                title: context === 'assistant' ? 'Astronaut Tips' : 'Rocket Launcher Tips',
+                sections: [
+                    {
+                        title: 'Quick Tips',
+                        items: context === 'assistant' ? [
+                            'Ask in natural language - Astronaut understands your site',
+                            'Request content creation - drafts are created for review, never auto-published',
+                            'Ask about your content - "What sections do I have?" or "Show me recent entries"',
+                            'Manage your site - "Clear all caches" or "Run pending queue jobs"',
+                            'Get help - "How do I create a new field?" or "Explain entry types"'
+                        ] : [
+                            'Press * to browse content types',
+                            'Use keyboard numbers (1-9) to quickly select results',
+                            'Search works across entries, categories, assets, and more'
+                        ]
+                    },
+                    {
+                        title: 'Resources',
+                        links: context === 'assistant' ? [
+                            {
+                                text: 'Leave a Review',
+                                url: 'https://plugins.craftcms.com/astronaut',
+                                icon: 'star'
+                            },
+                            {
+                                text: 'Feedback & Suggestions',
+                                url: 'https://github.com/brilliancenw/craft-astronaut/issues',
+                                icon: 'message'
+                            },
+                            {
+                                text: 'Documentation',
+                                url: 'https://github.com/brilliancenw/craft-astronaut',
+                                icon: 'book'
+                            }
+                        ] : [
+                            {
+                                text: 'Leave a Review',
+                                url: 'https://plugins.craftcms.com/launcher',
+                                icon: 'star'
+                            },
+                            {
+                                text: 'Feedback & Suggestions',
+                                url: 'https://github.com/brilliancenw/craft-launcher/issues',
+                                icon: 'message'
+                            },
+                            {
+                                text: 'Documentation',
+                                url: 'https://github.com/brilliancenw/craft-launcher',
+                                icon: 'book'
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            return baseContent;
+        },
+
+        renderDrawerContent: function(data) {
+            let html = `<div class="launcher-drawer-header">
+                <h3>${data.title}</h3>
+            </div>`;
+
+            data.sections.forEach(section => {
+                html += `<div class="launcher-drawer-section">
+                    <h4>${section.title}</h4>`;
+
+                // Support raw HTML content
+                if (section.content) {
+                    html += section.content;
+                }
+
+                if (section.items) {
+                    html += '<ul class="launcher-drawer-list">';
+                    section.items.forEach(item => {
+                        html += `<li>${item}</li>`;
+                    });
+                    html += '</ul>';
+                }
+
+                if (section.links) {
+                    html += '<div class="launcher-drawer-links">';
+                    section.links.forEach(link => {
+                        const icon = this.getIcon(link.icon);
+                        html += `<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="launcher-drawer-link">
+                            ${icon}
+                            <span>${link.text}</span>
+                        </a>`;
+                    });
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            });
+
+            this.drawerContent.innerHTML = html;
+        },
+
+        getIcon: function(iconName) {
+            const icons = {
+                star: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+                message: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+                book: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'
+            };
+            return icons[iconName] || '';
+        },
+
+        initResize: function() {
+            const self = this;
+            let isResizing = false;
+            let startX, startY, startWidth, startHeight;
+
+            // Load saved size from localStorage
+            const savedSize = localStorage.getItem('launcher-dialog-size');
+            if (savedSize) {
+                try {
+                    const size = JSON.parse(savedSize);
+                    self.dialog.style.width = size.width + 'px';
+                    self.dialog.style.height = size.height + 'px';
+                    self.dialog.style.maxWidth = 'none';
+                    self.dialog.style.maxHeight = 'none';
+                } catch (e) {
+                    // Invalid saved size, ignore
+                }
+            }
+
+            this.resizeHandle.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                isResizing = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startWidth = parseInt(window.getComputedStyle(self.dialog).width, 10);
+                startHeight = parseInt(window.getComputedStyle(self.dialog).height, 10);
+                document.body.style.cursor = 'nwse-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+                e.preventDefault();
+
+                const width = startWidth + (e.clientX - startX);
+                const height = startHeight + (e.clientY - startY);
+
+                // Apply min/max constraints
+                const minWidth = 400;
+                const minHeight = 300;
+                const maxWidth = window.innerWidth - 40;
+                const maxHeight = window.innerHeight - 40;
+
+                const constrainedWidth = Math.max(minWidth, Math.min(maxWidth, width));
+                const constrainedHeight = Math.max(minHeight, Math.min(maxHeight, height));
+
+                self.dialog.style.width = constrainedWidth + 'px';
+                self.dialog.style.height = constrainedHeight + 'px';
+                self.dialog.style.maxWidth = 'none';
+                self.dialog.style.maxHeight = 'none';
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+
+                    // Save size to localStorage
+                    const width = parseInt(self.dialog.style.width, 10);
+                    const height = parseInt(self.dialog.style.height, 10);
+                    localStorage.setItem('launcher-dialog-size', JSON.stringify({ width, height }));
+                }
+            });
         },
 
         showLoadingIndicator: function() {
@@ -281,6 +1104,242 @@
             this.resultsContainer.style.display = 'block';
         },
 
+        switchTab: function(tabName) {
+            this.currentTab = tabName;
+
+            // Update tab buttons
+            Object.keys(this.tabButtons).forEach((key) => {
+                const button = this.tabButtons[key];
+                if (key === tabName) {
+                    button.classList.add('launcher-tab-active');
+                } else {
+                    button.classList.remove('launcher-tab-active');
+                }
+            });
+
+            // Show/hide tab content
+            Object.keys(this.tabContainers).forEach((key) => {
+                const container = this.tabContainers[key];
+                if (key === tabName) {
+                    container.style.display = key === 'search' ? 'flex' : 'block';
+                } else {
+                    container.style.display = 'none';
+                }
+            });
+
+            // Handle search tab specific logic
+            if (tabName === 'search') {
+                this.searchInput.value = '';
+                this.searchInput.focus();
+                this.hideLoadingIndicator();
+                this.resultsContainer.innerHTML = '<div class="launcher-loading">Type to search...</div>';
+                this.performSearch('');
+            }
+
+            // Dispatch custom event for tab change
+            const event = new CustomEvent('launcherTabChanged', {
+                detail: { tab: tabName }
+            });
+            document.dispatchEvent(event);
+        },
+
+        isHotkeyMatch: function(e, hotkey) {
+            const parts = hotkey.toLowerCase().split('+');
+            const key = parts[parts.length - 1];
+            const needsCmd = parts.includes('cmd') || parts.includes('meta');
+            const needsCtrl = parts.includes('ctrl');
+            const needsAlt = parts.includes('alt');
+            const needsShift = parts.includes('shift');
+
+            const keyMatch = e.key.toLowerCase() === key ||
+                           (key === 'k' && e.keyCode === 75) ||
+                           (key === 'j' && e.keyCode === 74);
+
+            if (!keyMatch) return false;
+
+            if (needsCmd && !(e.metaKey || e.ctrlKey)) return false;
+            if (needsCtrl && !e.ctrlKey) return false;
+            if (needsAlt && !e.altKey) return false;
+            if (needsShift && !e.shiftKey) return false;
+
+            return true;
+        },
+
+        // AI Assistant Methods
+        startAIConversation: function() {
+            const self = this;
+
+            fetch(this.config.aiStartConversationUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.Craft.csrfTokenValue || '',
+                }
+            })
+            .then(response => {
+                console.log('AI Start Response Status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('AI Start Response Data:', data);
+                if (data.success) {
+                    self.aiThreadId = data.conversation.threadId;
+
+                    // Load existing messages if any
+                    if (data.messages && data.messages.length > 0) {
+                        self.clearAIWelcome();
+                        data.messages.forEach(msg => {
+                            self.addAIMessage(msg.role, msg.content);
+                        });
+                    }
+                } else {
+                    const errorMsg = data.error || data.message || 'Unknown error';
+                    console.error('AI Start Error:', errorMsg, data);
+                    self.showAIError('Failed to start conversation: ' + errorMsg);
+                }
+            })
+            .catch(error => {
+                console.error('Launcher AI: Start conversation error:', error);
+                self.showAIError('Failed to connect to AI assistant');
+            });
+        },
+
+        sendAIMessage: function() {
+            if (this.aiIsSending) return;
+
+            const message = this.messageInput.value.trim();
+            if (!message) return;
+
+            if (!this.aiThreadId) {
+                this.showAIError('No active conversation. Please wait...');
+                return;
+            }
+
+            this.aiIsSending = true;
+            this.clearAIWelcome();
+            this.addAIMessage('user', message);
+            this.messageInput.value = '';
+            this.messageInput.style.height = 'auto';
+
+            // Show typing indicator
+            const typingId = this.showAITyping();
+
+            const self = this;
+            fetch(this.config.aiSendMessageUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.Craft.csrfTokenValue || '',
+                },
+                body: JSON.stringify({
+                    threadId: this.aiThreadId,
+                    message: message,
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                self.aiIsSending = false;
+                self.removeAITyping(typingId);
+
+                if (data.success && data.message) {
+                    self.addAIMessage('assistant', data.message.content);
+                } else {
+                    self.showAIError(data.error || 'Failed to send message');
+                }
+            })
+            .catch(error => {
+                self.aiIsSending = false;
+                self.removeAITyping(typingId);
+                console.error('Launcher AI: Send message error:', error);
+                self.showAIError('Failed to send message. Please try again.');
+            });
+        },
+
+        clearAIWelcome: function() {
+            const welcome = this.messagesContainer.querySelector('.launcher-ai-welcome');
+            if (welcome) {
+                welcome.remove();
+            }
+        },
+
+        addAIMessage: function(role, content) {
+            const messageEl = document.createElement('div');
+            messageEl.className = `launcher-ai-message launcher-ai-message-${role}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'launcher-ai-avatar';
+            avatar.innerHTML = role === 'user'
+                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'
+                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'launcher-ai-bubble';
+
+            // Format content with markdown support for assistant messages
+            if (role === 'assistant') {
+                bubble.innerHTML = this.formatAIMarkdown(content);
+            } else {
+                bubble.textContent = content;
+            }
+
+            messageEl.appendChild(avatar);
+            messageEl.appendChild(bubble);
+            this.messagesContainer.appendChild(messageEl);
+
+            // Scroll to bottom
+            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+        },
+
+        formatAIMarkdown: function(html) {
+            if (!html) return '';
+
+            // Simply return the HTML - Claude is already sending formatted HTML
+            // The HTML is sanitized on the server side
+            return html;
+        },
+
+        showAITyping: function() {
+            const typingId = 'typing-' + Date.now();
+            const typingEl = document.createElement('div');
+            typingEl.id = typingId;
+            typingEl.className = 'launcher-ai-message launcher-ai-message-assistant';
+            typingEl.innerHTML = `
+                <div class="launcher-ai-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                </div>
+                <div class="launcher-ai-bubble launcher-ai-typing">
+                    <span></span><span></span><span></span>
+                </div>
+            `;
+            this.messagesContainer.appendChild(typingEl);
+            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            return typingId;
+        },
+
+        removeAITyping: function(typingId) {
+            const el = document.getElementById(typingId);
+            if (el) {
+                el.remove();
+            }
+        },
+
+        showAIError: function(message) {
+            const errorEl = document.createElement('div');
+            errorEl.className = 'launcher-ai-error';
+            errorEl.textContent = message;
+            this.messagesContainer.appendChild(errorEl);
+            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+
+            // Auto-remove after 5 seconds
+            setTimeout(function() {
+                errorEl.remove();
+            }, 5000);
+        },
+
         performSearch: function(query) {
             const self = this;
 
@@ -291,8 +1350,12 @@
 
             // Prepare request body
             const requestBody = {
-                query: query
+                query: query,
+                filters: this.searchFilters
             };
+
+            // Debug: Log filter values being sent
+            console.log('[Launcher] Sending search with filters:', JSON.stringify(this.searchFilters));
 
             // Add CSRF token - use config values if available (front-end), otherwise fall back to Craft object (CP)
             const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
@@ -977,7 +2040,7 @@
                 'users': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2 14c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
                 'globals': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2 8h12M8 2c2.21 0 4 2.69 4 6s-1.79 6-4 6-4-2.69-4-6 1.79-6 4-6z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
                 'sections': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2 6h12M6 2v12" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="4" r=".5" fill="currentColor"/></svg>',
-                'fields': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4 6h8M4 8h8M4 10h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 1v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+                'fields': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 8h1M8 6v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="2" r="1.5" fill="currentColor"/></svg>',
                 'plugins': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6.5 1v4.5H2v3h4.5V14l3-3h4.5V2H6.5z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/><circle cx="8" cy="6" r="1" fill="currentColor"/><circle cx="11" cy="6" r="1" fill="currentColor"/></svg>',
                 'routes': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h4l2-4h4l2 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="8" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="13" cy="8" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
                 'volumes': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4 4V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6 7v2M8 7v2M10 7v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',

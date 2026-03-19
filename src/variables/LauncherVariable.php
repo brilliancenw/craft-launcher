@@ -44,4 +44,12 @@ class LauncherVariable
     {
         return Launcher::$plugin->integration;
     }
+
+    /**
+     * Get the addon service
+     */
+    public function getAddon()
+    {
+        return Launcher::$plugin->addon;
+    }
 }

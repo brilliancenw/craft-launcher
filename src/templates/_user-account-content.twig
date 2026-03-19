@@ -1,7 +1,39 @@
 {% import "_includes/forms" as forms %}
 
+{% if targetUserId is defined and targetUserId %}
+    <input type="hidden" name="targetUserId" value="{{ targetUserId }}">
+{% endif %}
+
+<h2>{{ "Search Filters"|t('launcher') }}</h2>
+<p>{{ "Customize search results using the filter icon in the launcher search box. Your filter preferences are saved automatically."|t('launcher') }}</p>
+
+<div class="field">
+    <div class="heading">
+        <label>{{ "Available Filters"|t('launcher') }}</label>
+    </div>
+    <div class="input">
+        <ul>
+            <li><strong>{{ "Include Drafts"|t('launcher') }}:</strong> {{ "Show draft entries in search results"|t('launcher') }}</li>
+            <li><strong>{{ "Include Disabled"|t('launcher') }}:</strong> {{ "Show disabled entries in search results"|t('launcher') }}</li>
+            <li><strong>{{ "Hide Nested Entries"|t('launcher') }}:</strong> {{ "Filter out nested/child entries from results"|t('launcher') }}</li>
+            <li><strong>{{ "Sections"|t('launcher') }}:</strong> {{ "Filter by specific sections"|t('launcher') }}</li>
+            <li><strong>{{ "Entry Types"|t('launcher') }}:</strong> {{ "Filter by specific entry types"|t('launcher') }}</li>
+        </ul>
+        <p class="light">{{ "Note: Available filters depend on your administrator's settings."|t('launcher') }}</p>
+    </div>
+</div>
+
+<hr>
+
 <h2>{{ "Front-end Launcher"|t('launcher') }}</h2>
 <p>{{ "Enable the launcher on the front-end of your website, similar to how the debug toolbar works."|t('launcher') }}</p>
+
+<div class="readable">
+    <blockquote class="note warning">
+        <p><strong>{{ "Full Page Caching"|t('launcher') }}</strong></p>
+        <p>{{ "The front-end launcher has not been tested with full page caching solutions such as Blitz, Cloudflare CDN, Varnish, or similar. If you use full page caching, the launcher may not function correctly on cached pages."|t('launcher') }}</p>
+    </blockquote>
+</div>
 
 {{ forms.lightswitchField({
     label: 'Enable Front-end Launcher'|t('launcher'),

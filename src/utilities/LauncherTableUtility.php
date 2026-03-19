@@ -17,7 +17,7 @@ class LauncherTableUtility extends Utility
 {
     public static function displayName(): string
     {
-        return 'Launcher';
+        return 'Rocket Launcher';
     }
 
     public static function id(): string
@@ -25,14 +25,14 @@ class LauncherTableUtility extends Utility
         return 'launcher-table-manager';
     }
 
-    public static function iconPath(): ?string
+    public static function icon(): ?string
     {
-        return '@brilliance/launcher/resources/icon-mask.svg';
+        return dirname(__DIR__) . '/resources/icon-mask.svg';
     }
 
     public static function description(): string
     {
-        return 'Manage the Launcher user history database table. Check status and create the table if needed.';
+        return 'Manage the Rocket Launcher user history database table. Check status and create the table if needed.';
     }
 
     public static function contentHtml(): string

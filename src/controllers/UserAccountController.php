@@ -41,6 +41,8 @@ class UserAccountController extends Controller
 
         $isEnabled = Launcher::$plugin->userPreference->isFrontEndEnabled();
         $isNewTabEnabled = Launcher::$plugin->userPreference->isFrontEndNewTabEnabled();
+        $nestedEntriesPreference = Launcher::$plugin->userPreference->getNestedEntriesPreference();
+        $globalHideNestedEntries = Launcher::$plugin->getSettings()->hideNestedEntries;
 
         // Set up the form action and save buttons
         $response->action('launcher/user-preference/set-front-end-enabled');
@@ -51,6 +53,50 @@ class UserAccountController extends Controller
             'user' => $user,
             'isEnabled' => $isEnabled,
             'isNewTabEnabled' => $isNewTabEnabled,
+            'nestedEntriesPreference' => $nestedEntriesPreference,
+            'globalHideNestedEntries' => $globalHideNestedEntries,
+        ]);
+
+        return $response;
+    }
+
+    /**
+     * View/edit another user's launcher settings (admin only)
+     */
+    public function actionViewUser(int $userId): Response
+    {
+        // Only admins can view other users' settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            throw new \yii\web\ForbiddenHttpException('Only admins can view other users\' launcher settings');
+        }
+
+        // Get the user being viewed
+        $user = Craft::$app->getUsers()->getUserById($userId);
+        if (!$user) {
+            throw new \yii\web\NotFoundHttpException('User not found');
+        }
+
+        /** @var Response|CpScreenResponseBehavior $response */
+        $response = $this->asEditUserScreen($user, self::SCREEN_LAUNCHER);
+
+        // Get the user's preferences
+        $preferences = $user->getPreferences();
+        $isEnabled = $preferences['launcher_frontend_enabled'] ?? false;
+        $isNewTabEnabled = $preferences['launcher_frontend_new_tab'] ?? false;
+        $nestedEntriesPreference = $preferences['launcher_nested_entries'] ?? 'system';
+        $globalHideNestedEntries = Launcher::$plugin->getSettings()->hideNestedEntries;
+
+        // Set up the form action and save button for admins
+        $response->action('launcher/user-preference/set-front-end-enabled-for-user');
+        $response->submitButtonLabel('Save');
+
+        $response->contentTemplate('launcher/_user-account-content', [
+            'user' => $user,
+            'isEnabled' => $isEnabled,
+            'isNewTabEnabled' => $isNewTabEnabled,
+            'nestedEntriesPreference' => $nestedEntriesPreference,
+            'globalHideNestedEntries' => $globalHideNestedEntries,
+            'targetUserId' => $userId,
         ]);
 
         return $response;

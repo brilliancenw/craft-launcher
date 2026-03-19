@@ -18,7 +18,7 @@ class SearchController extends Controller
             return false;
         }
 
-        if (!Craft::$app->getUser()->checkPermission('accessLauncher')) {
+        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
             throw new \yii\web\ForbiddenHttpException('User does not have permission to access launcher');
         }
 
@@ -115,7 +115,18 @@ class SearchController extends Controller
         // Validate context for security
         $context = $this->validateContext($context);
 
-        $searchResults = Launcher::$plugin->search->search($query, $context);
+        // Get user's effective filters (respects admin settings)
+        $userFilters = Launcher::$plugin->userPreference->getEffectiveFilters();
+
+        // Get any filter overrides from the request
+        $requestFilters = Craft::$app->getRequest()->getBodyParam('filters', []);
+
+        if (!empty($requestFilters)) {
+            // Merge request filters with user filters (request takes precedence)
+            $userFilters = array_merge($userFilters, $requestFilters);
+        }
+
+        $searchResults = Launcher::$plugin->search->search($query, $context, $userFilters);
         $formattedResults = Launcher::$plugin->launcher->formatResults($searchResults);
 
         return $this->asJson([
@@ -341,6 +352,34 @@ class SearchController extends Controller
             'typeHandle' => $entry->getType() ? $entry->getType()->handle : 'unknown',
             'editUrl' => $entry->getCpEditUrl()
         ];
+    }
+
+    /**
+     * Get drawer content for the specified context
+     *
+     * @return Response
+     */
+    public function actionDrawerContent(): Response
+    {
+        $this->requireAcceptsJson();
+
+        $context = Craft::$app->getRequest()->getQueryParam('context', 'search');
+
+        try {
+            $content = Launcher::$plugin->drawer->getDrawerContent($context);
+
+            return $this->asJson([
+                'success' => true,
+                'content' => $content,
+            ]);
+        } catch (\Exception $e) {
+            Craft::error("Error getting drawer content: {$e->getMessage()}", __METHOD__);
+
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to load drawer content',
+            ]);
+        }
     }
 
 }

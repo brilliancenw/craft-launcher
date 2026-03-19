@@ -7,7 +7,7 @@
 <div id="launcher-welcome-overlay" class="launcher-welcome-overlay">
     <div class="launcher-welcome-content">
         <div class="launcher-welcome-header">
-            <h1>Welcome to Launcher!</h1>
+            <h1>Welcome to Rocket Launcher!</h1>
         </div>
 
         <div class="launcher-welcome-message">
@@ -504,6 +504,18 @@ document.addEventListener('DOMContentLoaded', function() {
             <td class="light">Search all entry content across sections</td>
         </tr>
         <tr>
+            <th class="light">Entry Types</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'searchableTypes-entryTypes',
+                    name: 'searchableTypes[entryTypes]',
+                    on: settings.searchableTypes.entryTypes ?? true,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Navigate to entry type settings</td>
+        </tr>
+        <tr>
             <th class="light">Field Groups</th>
             <td>
                 {{ forms.lightswitchField({
@@ -689,6 +701,93 @@ document.addEventListener('DOMContentLoaded', function() {
                 }) }}
             </td>
             <td class="light">When searching for usernames, also show entries authored by those users</td>
+        </tr>
+        <tr>
+            <th class="light">Hide Nested Entries</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'hideNestedEntries',
+                    name: 'hideNestedEntries',
+                    on: settings.hideNestedEntries,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Hide nested/child entries from search results (Craft 5 feature). Users can override this in their personal preferences.</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h1>User Search Filter Options</h1>
+<p>Control which filter options users can see in the search filter dropdown. Disabled options will not appear for users.</p>
+
+<table class="data fullwidth fixed-layout" dir="ltr">
+    <tbody>
+        <tr>
+            <th style="width: 25%;">Filter Option</th>
+            <th style="width: 25%;">Allow Users</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <th class="light">Include Drafts Filter</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'allowUserFilterDrafts',
+                    name: 'allowUserFilterDrafts',
+                    on: settings.allowUserFilterDrafts,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Allow users to toggle draft inclusion in their search filter panel</td>
+        </tr>
+        <tr>
+            <th class="light">Include Disabled Filter</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'allowUserFilterDisabled',
+                    name: 'allowUserFilterDisabled',
+                    on: settings.allowUserFilterDisabled,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Allow users to toggle disabled element inclusion in their search filter panel</td>
+        </tr>
+        <tr>
+            <th class="light">Section Filter</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'allowUserFilterSections',
+                    name: 'allowUserFilterSections',
+                    on: settings.allowUserFilterSections,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Allow users to filter by specific sections in their search filter panel</td>
+        </tr>
+        <tr>
+            <th class="light">Entry Type Filter</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'allowUserFilterEntryTypes',
+                    name: 'allowUserFilterEntryTypes',
+                    on: settings.allowUserFilterEntryTypes,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Allow users to filter by specific entry types in their search filter panel</td>
+        </tr>
+        <tr>
+            <th class="light">Nested Entries Filter</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'allowUserFilterNestedEntries',
+                    name: 'allowUserFilterNestedEntries',
+                    on: settings.allowUserFilterNestedEntries,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Allow users to toggle nested entry visibility in their search filter panel</td>
         </tr>
     </tbody>
 </table>

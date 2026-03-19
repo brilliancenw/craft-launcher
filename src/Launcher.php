@@ -10,6 +10,8 @@ use brilliance\launcher\services\HistoryService;
 use brilliance\launcher\services\UserPreferenceService;
 use brilliance\launcher\services\InterfaceService;
 use brilliance\launcher\services\IntegrationService;
+use brilliance\launcher\services\AddonService;
+use brilliance\launcher\services\DrawerService;
 use brilliance\launcher\utilities\LauncherTableUtility;
 use brilliance\launcher\variables\LauncherVariable;
 
@@ -22,13 +24,11 @@ use craft\events\DefineEditUserScreensEvent;
 use craft\events\RebuildConfigEvent;
 use craft\events\RegisterCpNavItemsEvent;
 use craft\events\RegisterTemplateRootsEvent;
-use craft\events\RegisterUserPermissionsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\console\Application as ConsoleApplication;
 use craft\services\Utilities;
 use craft\services\ProjectConfig;
-use craft\services\UserPermissions;
 use craft\web\twig\variables\Cp;
 use craft\web\UrlManager;
 use craft\web\View;
@@ -40,7 +40,7 @@ class Launcher extends Plugin
     public static ?Launcher $plugin = null;
     public string $schemaVersion = '1.2.0';
     public bool $hasCpSettings = true;
-    public bool $hasCpSection = false;
+    public bool $hasCpSection = true;
 
     public static function config(): array
     {
@@ -52,6 +52,8 @@ class Launcher extends Plugin
                 'userPreference' => UserPreferenceService::class,
                 'interface' => InterfaceService::class,
                 'integration' => IntegrationService::class,
+                'addon' => AddonService::class,
+                'drawer' => DrawerService::class,
             ],
         ];
     }
@@ -73,10 +75,15 @@ class Launcher extends Plugin
             'userPreference' => UserPreferenceService::class,
             'interface' => InterfaceService::class,
             'integration' => IntegrationService::class,
+            'addon' => AddonService::class,
+            'drawer' => DrawerService::class,
         ]);
 
         // Handle project config changes
         $this->attachProjectConfigEventListeners();
+
+        // Register default Brilliance drawer content provider
+        $this->registerDefaultDrawerProvider();
 
         // Register console commands
         if (Craft::$app instanceof ConsoleApplication) {
@@ -88,14 +95,33 @@ class Launcher extends Plugin
                 View::class,
                 View::EVENT_BEFORE_RENDER_TEMPLATE,
                 function () {
-                    if (Craft::$app->getUser()->checkPermission('accessLauncher')) {
+                    if (Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
                         Craft::$app->getView()->registerAssetBundle(LauncherAsset::class);
-                        
+
                         $settings = $this->getSettings();
                         $hotkey = $settings->hotkey;
                         $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl('@brilliance/launcher/assetbundles/launcher/dist');
-                        
+
                         $searchableTypesJson = json_encode($settings->searchableTypes);
+
+                        // Get registered addons, hotkeys, and modal tabs
+                        $addons = $this->addon->getRegisteredAddons();
+                        $addonHotkeys = $this->addon->getRegisteredHotkeys();
+                        $modalTabs = $this->addon->getModalTabs();
+                        $addonsJson = json_encode($addons);
+                        $addonHotkeysJson = json_encode($addonHotkeys);
+                        $modalTabsJson = json_encode($modalTabs);
+
+                        // Get filter configuration for frontend
+                        $userFilters = $this->userPreference->getSearchFilters();
+                        $availableFilterOptions = $this->userPreference->getAvailableFilterOptions();
+                        $allSections = $this->getAllSectionsForFilter();
+                        $allEntryTypes = $this->getAllEntryTypesForFilter();
+
+                        $userFiltersJson = json_encode($userFilters);
+                        $availableFilterOptionsJson = json_encode($availableFilterOptions);
+                        $allSectionsJson = json_encode($allSections);
+                        $allEntryTypesJson = json_encode($allEntryTypes);
 
                         $js = <<<JS
                         // Ensure LauncherPlugin initialization happens after DOM and Craft are ready
@@ -107,10 +133,19 @@ class Launcher extends Plugin
                                         window.LauncherPlugin.init({
                                             hotkey: '$hotkey',
                                             searchUrl: Craft.getActionUrl('launcher/search'),
+                                            drawerContentUrl: Craft.getActionUrl('launcher/search/drawer-content'),
+                                            setFiltersUrl: Craft.getActionUrl('launcher/user-preference/set-search-filters'),
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
                                             selectResultModifier: '{$settings->selectResultModifier}',
-                                            searchableTypes: $searchableTypesJson
+                                            searchableTypes: $searchableTypesJson,
+                                            addons: $addonsJson,
+                                            addonHotkeys: $addonHotkeysJson,
+                                            modalTabs: $modalTabsJson,
+                                            searchFilters: $userFiltersJson,
+                                            availableFilterOptions: $availableFilterOptionsJson,
+                                            allSections: $allSectionsJson,
+                                            allEntryTypes: $allEntryTypesJson
                                         });
                                     }
                                 });
@@ -121,17 +156,26 @@ class Launcher extends Plugin
                                         window.LauncherPlugin.init({
                                             hotkey: '$hotkey',
                                             searchUrl: Craft.getActionUrl('launcher/search'),
+                                            drawerContentUrl: Craft.getActionUrl('launcher/search/drawer-content'),
+                                            setFiltersUrl: Craft.getActionUrl('launcher/user-preference/set-search-filters'),
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
                                             selectResultModifier: '{$settings->selectResultModifier}',
-                                            searchableTypes: $searchableTypesJson
+                                            searchableTypes: $searchableTypesJson,
+                                            addons: $addonsJson,
+                                            addonHotkeys: $addonHotkeysJson,
+                                            modalTabs: $modalTabsJson,
+                                            searchFilters: $userFiltersJson,
+                                            availableFilterOptions: $availableFilterOptionsJson,
+                                            allSections: $allSectionsJson,
+                                            allEntryTypes: $allEntryTypesJson
                                         });
                                     }
                                 });
                             }
                         }
                         JS;
-                        
+
                         Craft::$app->getView()->registerJs($js, View::POS_END);
                     }
                 }
@@ -177,27 +221,57 @@ class Launcher extends Plugin
             }
         );
 
+        // Note: User permission 'accessPlugin-launcher' is automatically registered by Craft
+        // for plugins with hasCpSection = true. We use this permission for all access checks.
+
         // Register our screen in the user edit screens
         Event::on(
             UsersController::class,
             UsersController::EVENT_DEFINE_EDIT_SCREENS,
             function (DefineEditUserScreensEvent $event) {
-                $user = Craft::$app->getUser()->getIdentity();
-                if ($user && Craft::$app->getUser()->checkPermission('accessLauncher')) {
+                $currentUser = $event->currentUser;
+                $editedUser = $event->editedUser;
+
+                // Show the screen if:
+                // 1. Viewing your own account AND you have launcher permission, OR
+                // 2. You're an admin viewing any user who has launcher permission
+                $isOwnAccount = $currentUser->id === $editedUser->id;
+                $currentUserHasPermission = Craft::$app->getUser()->checkPermission('accessPlugin-launcher');
+                $editedUserHasPermission = Craft::$app->getUserPermissions()->doesUserHavePermission($editedUser->id, 'accessPlugin-launcher');
+
+                $shouldShowScreen = false;
+                if ($isOwnAccount && $currentUserHasPermission) {
+                    $shouldShowScreen = true;
+                } elseif ($currentUser->admin && $editedUserHasPermission) {
+                    $shouldShowScreen = true;
+                }
+
+                if ($shouldShowScreen) {
+                    $url = $isOwnAccount ? 'myaccount/launcher' : 'users/' . $editedUser->id . '/launcher';
+
                     $event->screens['launcher'] = [
-                        'label' => 'Launcher',
-                        'url' => 'myaccount/launcher',
+                        'label' => 'Rocket Launcher',
+                        'url' => $url,
                     ];
                 }
             }
         );
 
-        // Register URL rules for user preferences and settings
+        // Register URL rules for user preferences, settings, and CP section
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
+                // CP section
+                $event->rules['launcher'] = 'launcher/admin/index';
+
+                // User preferences (own account)
                 $event->rules['myaccount/launcher'] = 'launcher/user-account/index';
+
+                // User preferences (viewing another user - admins only)
+                $event->rules['users/<userId:\\d+>/launcher'] = 'launcher/user-account/view-user';
+
+                // Settings
                 $event->rules['launcher/settings/complete-first-run'] = 'launcher/settings/complete-first-run';
             }
         );
@@ -213,9 +287,9 @@ class Launcher extends Plugin
                     $request->getSegment(2) === 'preferences') {
 
                     $html = '<div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px; padding: 12px; margin-bottom: 20px;">
-                        <strong>🚀 Launcher Plugin:</strong>
+                        <strong>Rocket Launcher Plugin:</strong>
                         <a href="/admin/myaccount/launcher" style="color: #1976d2; text-decoration: underline;">
-                            Configure your Launcher preferences
+                            Configure your Rocket Launcher preferences
                         </a>
                         - Enable the front-end launcher and customize your settings.
                     </div>';
@@ -246,7 +320,7 @@ class Launcher extends Plugin
         }
 
         // Security check: Verify user has launcher permissions
-        if (!Craft::$app->getUser()->checkPermission('accessLauncher')) {
+        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
             return;
         }
 
@@ -294,6 +368,19 @@ class Launcher extends Plugin
         $openInNewTabJs = $openInNewTab ? 'true' : 'false';
         $searchableTypesJson = json_encode($settings->searchableTypes);
 
+        // Get filter configuration for frontend
+        $userFilters = $this->userPreference->getSearchFilters();
+        $availableFilterOptions = $this->userPreference->getAvailableFilterOptions();
+        $allSections = $this->getAllSectionsForFilter();
+        $allEntryTypes = $this->getAllEntryTypesForFilter();
+
+        $userFiltersJson = json_encode($userFilters);
+        $availableFilterOptionsJson = json_encode($availableFilterOptions);
+        $allSectionsJson = json_encode($allSections);
+        $allEntryTypesJson = json_encode($allEntryTypes);
+
+        $setFiltersUrl = Craft::$app->getUrlManager()->createUrl(['launcher/user-preference/set-search-filters']);
+
         $js = <<<JS
         // Front-end Launcher initialization
         document.addEventListener('DOMContentLoaded', function() {
@@ -304,6 +391,7 @@ class Launcher extends Plugin
                     navigateUrl: '$navigateUrl',
                     removeHistoryUrl: '$removeHistoryUrl',
                     executeIntegrationUrl: '$executeIntegrationUrl',
+                    setFiltersUrl: '$setFiltersUrl',
                     csrfTokenName: '$csrfTokenName',
                     csrfTokenValue: '$csrfTokenValue',
                     debounceDelay: {$settings->debounceDelay},
@@ -312,7 +400,11 @@ class Launcher extends Plugin
                     searchableTypes: $searchableTypesJson,
                     isFrontEnd: true,
                     openInNewTab: $openInNewTabJs,
-                    frontEndContext: $contextJson
+                    frontEndContext: $contextJson,
+                    searchFilters: $userFiltersJson,
+                    availableFilterOptions: $availableFilterOptionsJson,
+                    allSections: $allSectionsJson,
+                    allEntryTypes: $allEntryTypesJson
                 });
             }
         });
@@ -582,19 +674,30 @@ class Launcher extends Plugin
     {
         // This would handle plugin removal via project config
         // but typically plugins are managed separately from project config
-        Craft::warning('Launcher plugin removal via project config is not supported.', __METHOD__);
+        Craft::warning('Rocket Launcher plugin removal via project config is not supported.', __METHOD__);
     }
 
     public function getCpNavItem(): ?array
     {
-        return null;
-    }
+        $item = parent::getCpNavItem();
 
-    public function getUserPermissions(): array
-    {
-        return [
-            'accessLauncher' => ['label' => 'Access Launcher'],
-        ];
+        if ($item === null) {
+            return null;
+        }
+
+        $item['label'] = 'Rocket Launcher';
+        $item['url'] = 'launcher';
+
+        // Start with core launcher subnav items
+        $item['subnav'] = [];
+
+        // Add addon plugin subnav items
+        $addonNavItems = $this->addon->getCpNavItems();
+        foreach ($addonNavItems as $key => $navItem) {
+            $item['subnav'][$key] = $navItem;
+        }
+
+        return $item;
     }
 
     protected function createSettingsModel(): ?Model
@@ -608,7 +711,7 @@ class Launcher extends Plugin
         $tableStatus = $this->history->getTableStatus();
         if (!$tableStatus['exists']) {
             Craft::$app->getSession()->setFlash('launcher-table-missing',
-                'The Launcher user history table is missing. Launch history and popular items features will not work. ' .
+                'The Rocket Launcher user history table is missing. Launch history and popular items features will not work. ' .
                 'Try reinstalling the plugin or contact your developer.'
             );
         }
@@ -698,7 +801,7 @@ class Launcher extends Plugin
                 'CASCADE'
             )->execute();
 
-            Craft::info('Launcher user history table created successfully', __METHOD__);
+            Craft::info('Rocket Launcher user history table created successfully', __METHOD__);
             return true;
 
         } catch (\Exception $e) {
@@ -725,9 +828,141 @@ class Launcher extends Plugin
             $projectConfig->set(
                 "plugins.{$pluginHandle}.settings",
                 $this->getSettings()->toArray(),
-                'Update Launcher plugin settings'
+                'Update Rocket Launcher plugin settings'
             );
         }
+    }
+
+    /**
+     * Get all sections for the filter panel
+     */
+    public function getAllSectionsForFilter(): array
+    {
+        $sections = Craft::$app->getEntries()->getAllSections();
+        $result = [];
+
+        foreach ($sections as $section) {
+            // Check if user can view entries in this section
+            if (!Craft::$app->getUser()->getIsAdmin()) {
+                if (!Craft::$app->getUser()->checkPermission('viewEntries:' . $section->uid)) {
+                    continue;
+                }
+            }
+
+            $result[] = [
+                'id' => $section->id,
+                'name' => $section->name,
+                'handle' => $section->handle,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get all entry types for the filter panel
+     */
+    public function getAllEntryTypesForFilter(): array
+    {
+        $sections = Craft::$app->getEntries()->getAllSections();
+        $result = [];
+
+        foreach ($sections as $section) {
+            // Check if user can view entries in this section
+            if (!Craft::$app->getUser()->getIsAdmin()) {
+                if (!Craft::$app->getUser()->checkPermission('viewEntries:' . $section->uid)) {
+                    continue;
+                }
+            }
+
+            foreach ($section->getEntryTypes() as $entryType) {
+                $result[] = [
+                    'id' => $entryType->id,
+                    'name' => $entryType->name,
+                    'handle' => $entryType->handle,
+                    'sectionId' => $section->id,
+                    'sectionName' => $section->name,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Register the default Brilliance drawer content provider
+     */
+    private function registerDefaultDrawerProvider(): void
+    {
+        $this->drawer->registerProvider('brilliance', function($context) {
+            // Don't provide default content for assistant context - let Astronaut handle it
+            if ($context === 'assistant') {
+                return null;
+            }
+
+            $baseContent = [
+                'title' => 'Rocket Launcher Tips',
+                'sections' => [
+                    [
+                        'title' => 'Quick Tips',
+                        'items' => [
+                            'Press * to browse content types',
+                            'Use keyboard numbers (1-9) to quickly select results',
+                            'Search works across entries, categories, assets, and more'
+                        ]
+                    ],
+                    [
+                        'title' => 'Resources',
+                        'links' => [
+                            [
+                                'text' => 'Leave a Review',
+                                'url' => 'https://plugins.craftcms.com/launcher',
+                                'icon' => 'star'
+                            ],
+                            [
+                                'text' => 'Feedback & Suggestions',
+                                'url' => 'https://github.com/brilliancenw/craft-launcher/issues',
+                                'icon' => 'message'
+                            ],
+                            [
+                                'text' => 'Documentation',
+                                'url' => 'https://github.com/brilliancenw/craft-launcher',
+                                'icon' => 'book'
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+            // Try to fetch from Brilliance feed first
+            try {
+                $feedUrl = "https://brilliancenw.com/launcher-feed/{$context}.json";
+                $ch = curl_init($feedUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode === 200 && $response) {
+                    $feedData = json_decode($response, true);
+                    if (is_array($feedData) && !empty($feedData)) {
+                        // Merge feed data with base content
+                        if (isset($feedData['title'])) {
+                            $baseContent['title'] = $feedData['title'];
+                        }
+                        if (isset($feedData['sections']) && is_array($feedData['sections'])) {
+                            $baseContent['sections'] = array_merge($feedData['sections'], $baseContent['sections']);
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Craft::info("Could not fetch drawer feed: {$e->getMessage()}", __METHOD__);
+            }
+
+            return $baseContent;
+        }, 100);
     }
 
     /**
