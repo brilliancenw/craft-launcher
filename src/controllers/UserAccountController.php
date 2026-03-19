@@ -59,4 +59,43 @@ class UserAccountController extends Controller
 
         return $response;
     }
+
+    /**
+     * View another user's launcher settings (admin only)
+     */
+    public function actionViewUser(int $userId): Response
+    {
+        // Only admins can view other users' settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            throw new \yii\web\ForbiddenHttpException('Only admins can view other users\' launcher settings');
+        }
+
+        // Get the user being viewed
+        $user = Craft::$app->getUsers()->getUserById($userId);
+        if (!$user) {
+            throw new \yii\web\NotFoundHttpException('User not found');
+        }
+
+        /** @var Response|CpScreenResponseBehavior $response */
+        $response = $this->asEditUserScreen($user, self::SCREEN_LAUNCHER);
+
+        // Get the user's preferences
+        $preferences = $user->getPreferences();
+        $isEnabled = $preferences['launcher_frontend_enabled'] ?? false;
+        $isNewTabEnabled = $preferences['launcher_frontend_new_tab'] ?? false;
+        $nestedEntriesPreference = $preferences['launcher_nested_entries'] ?? 'system';
+        $globalHideNestedEntries = Launcher::$plugin->getSettings()->hideNestedEntries;
+
+        // Use contentTemplate to render the template (read-only view)
+        $response->contentTemplate('launcher/_user-account-content', [
+            'user' => $user,
+            'isEnabled' => $isEnabled,
+            'isNewTabEnabled' => $isNewTabEnabled,
+            'nestedEntriesPreference' => $nestedEntriesPreference,
+            'globalHideNestedEntries' => $globalHideNestedEntries,
+            'readOnly' => true, // Indicate this is a read-only view
+        ]);
+
+        return $response;
+    }
 }

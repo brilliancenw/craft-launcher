@@ -229,11 +229,29 @@ class Launcher extends Plugin
             UsersController::class,
             UsersController::EVENT_DEFINE_EDIT_SCREENS,
             function (DefineEditUserScreensEvent $event) {
-                $user = Craft::$app->getUser()->getIdentity();
-                if ($user && Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
+                $currentUser = $event->currentUser;
+                $editedUser = $event->editedUser;
+
+                // Show the screen if:
+                // 1. Viewing your own account AND you have launcher permission, OR
+                // 2. You're an admin viewing any user who has launcher permission
+                $isOwnAccount = $currentUser->id === $editedUser->id;
+                $currentUserHasPermission = Craft::$app->getUser()->checkPermission('accessPlugin-launcher');
+                $editedUserHasPermission = Craft::$app->getUserPermissions()->doesUserHavePermission($editedUser->id, 'accessPlugin-launcher');
+
+                $shouldShowScreen = false;
+                if ($isOwnAccount && $currentUserHasPermission) {
+                    $shouldShowScreen = true;
+                } elseif ($currentUser->admin && $editedUserHasPermission) {
+                    $shouldShowScreen = true;
+                }
+
+                if ($shouldShowScreen) {
+                    $url = $isOwnAccount ? 'myaccount/launcher' : 'users/' . $editedUser->id . '/launcher';
+
                     $event->screens['launcher'] = [
                         'label' => 'Rocket Launcher',
-                        'url' => 'myaccount/launcher',
+                        'url' => $url,
                     ];
                 }
             }
@@ -247,8 +265,11 @@ class Launcher extends Plugin
                 // CP section
                 $event->rules['launcher'] = 'launcher/admin/index';
 
-                // User preferences
+                // User preferences (own account)
                 $event->rules['myaccount/launcher'] = 'launcher/user-account/index';
+
+                // User preferences (viewing another user - admins only)
+                $event->rules['users/<userId:\\d+>/launcher'] = 'launcher/user-account/view-user';
 
                 // Settings
                 $event->rules['launcher/settings/complete-first-run'] = 'launcher/settings/complete-first-run';

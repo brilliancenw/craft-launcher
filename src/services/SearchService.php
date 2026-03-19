@@ -631,8 +631,14 @@ class SearchService extends Component
         $globals = GlobalSet::find()->all();
         $results = [];
         $queryLower = strtolower($query);
+        $currentUser = Craft::$app->getUser();
 
         foreach ($globals as $global) {
+            // Check if user can edit this global set
+            if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('editGlobalSet:' . $global->uid)) {
+                continue;
+            }
+
             if (stripos($global->name, $query) !== false || stripos($global->handle, $query) !== false) {
                 $results[] = [
                     'id' => $global->id,
@@ -650,6 +656,11 @@ class SearchService extends Component
 
     private function searchSections(string $query): array
     {
+        // Only admins can access section settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $sections = Craft::$app->getEntries()->getAllSections();
         $results = [];
         $queryLower = strtolower($query);
@@ -672,6 +683,11 @@ class SearchService extends Component
 
     private function searchEntryTypes(string $query): array
     {
+        // Only admins can access entry type settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $sections = Craft::$app->getEntries()->getAllSections();
         $results = [];
 
@@ -697,6 +713,11 @@ class SearchService extends Component
 
     private function searchCategoryGroups(string $query): array
     {
+        // Only admins can access category group settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $groups = Craft::$app->getCategories()->getAllGroups();
         $results = [];
 
@@ -718,6 +739,11 @@ class SearchService extends Component
 
     private function searchFields(string $query): array
     {
+        // Only admins can access field settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $fields = Craft::$app->getFields()->getAllFields();
         $results = [];
 
@@ -740,6 +766,11 @@ class SearchService extends Component
 
     private function searchPlugins(string $query): array
     {
+        // Only admins can access plugin settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $plugins = Craft::$app->getPlugins()->getAllPlugins();
         $results = [];
 
@@ -762,6 +793,11 @@ class SearchService extends Component
 
     private function searchAssetVolumes(string $query): array
     {
+        // Only admins can access asset volume settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         // In Craft 5, use getVolumes() instead of getAssets()
         $volumes = Craft::$app->getVolumes()->getAllVolumes();
         $results = [];
@@ -961,8 +997,14 @@ class SearchService extends Component
     {
         $globals = GlobalSet::find()->limit($settings->maxResults)->all();
         $results = [];
+        $currentUser = Craft::$app->getUser();
 
         foreach ($globals as $global) {
+            // Check if user can edit this global set
+            if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('editGlobalSet:' . $global->uid)) {
+                continue;
+            }
+
             $results[] = [
                 'id' => $global->id,
                 'title' => $global->name,
@@ -978,6 +1020,11 @@ class SearchService extends Component
 
     private function searchStaticSettings(string $query): array
     {
+        // Only admins can access settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $queryLower = strtolower($query);
         $results = [];
 
@@ -1107,6 +1154,11 @@ class SearchService extends Component
      */
     private function getAllStaticSettings(): array
     {
+        // Only admins can access settings
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            return [];
+        }
+
         $results = [];
 
         // Define static settings destinations with their search terms
@@ -1225,7 +1277,13 @@ class SearchService extends Component
         if (!$this->isCommerceInstalled()) {
             return [];
         }
-        
+
+        // Check Commerce customer permission
+        $currentUser = Craft::$app->getUser();
+        if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('commerce-manageCustomers')) {
+            return [];
+        }
+
         try {
             if (!class_exists('craft\commerce\elements\Customer')) {
                 return [];
@@ -1266,7 +1324,13 @@ class SearchService extends Component
         if (!$this->isCommerceInstalled()) {
             return [];
         }
-        
+
+        // Check Commerce product permission
+        $currentUser = Craft::$app->getUser();
+        if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('commerce-manageProducts')) {
+            return [];
+        }
+
         try {
             if (!class_exists('craft\commerce\elements\Product') || !class_exists('craft\commerce\elements\Variant')) {
                 return [];
@@ -1322,7 +1386,13 @@ class SearchService extends Component
         if (!$this->isCommerceInstalled()) {
             return [];
         }
-        
+
+        // Check Commerce order permission
+        $currentUser = Craft::$app->getUser();
+        if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('commerce-manageOrders')) {
+            return [];
+        }
+
         try {
             // Import the Commerce classes directly
             if (!class_exists('craft\commerce\elements\Order')) {
@@ -1572,6 +1642,13 @@ class SearchService extends Component
             return [];
         }
 
+        $currentUser = Craft::$app->getUser();
+
+        // Non-admins need utility permissions
+        if (!$currentUser->getIsAdmin() && !$currentUser->checkPermission('accessCp')) {
+            return [];
+        }
+
         $queryLower = strtolower($query);
         $results = [];
 
@@ -1678,6 +1755,14 @@ class SearchService extends Component
 
         // Search through utilities
         foreach ($utilities as $utility) {
+            // Check if user has permission to access this utility
+            if (!$currentUser->getIsAdmin()) {
+                $utilityPermission = 'utility:' . $utility['handle'];
+                if (!$currentUser->checkPermission($utilityPermission)) {
+                    continue;
+                }
+            }
+
             $found = false;
 
             // Check if query matches any search term
@@ -1708,6 +1793,7 @@ class SearchService extends Component
      */
     private function getAllUtilities(): array
     {
+        $currentUser = Craft::$app->getUser();
         $results = [];
 
         // Define available utilities
@@ -1796,8 +1882,16 @@ class SearchService extends Component
             ];
         }
 
-        // Add all utilities to results
+        // Add all utilities to results (with permission check)
         foreach ($utilities as $utility) {
+            // Check if user has permission to access this utility
+            if (!$currentUser->getIsAdmin()) {
+                $utilityPermission = 'utility:' . $utility['handle'];
+                if (!$currentUser->checkPermission($utilityPermission)) {
+                    continue;
+                }
+            }
+
             $results[] = [
                 'id' => $utility['handle'],
                 'title' => $utility['title'],
