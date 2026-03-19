@@ -24,6 +24,13 @@
 <h2>{{ "Front-end Launcher"|t('launcher') }}</h2>
 <p>{{ "Enable the launcher on the front-end of your website, similar to how the debug toolbar works."|t('launcher') }}</p>
 
+<div class="readable">
+    <blockquote class="note warning">
+        <p><strong>{{ "Full Page Caching"|t('launcher') }}</strong></p>
+        <p>{{ "The front-end launcher has not been tested with full page caching solutions such as Blitz, Cloudflare CDN, Varnish, or similar. If you use full page caching, the launcher may not function correctly on cached pages."|t('launcher') }}</p>
+    </blockquote>
+</div>
+
 {{ forms.lightswitchField({
     label: 'Enable Front-end Launcher'|t('launcher'),
     instructions: 'When enabled, you can use the launcher on the public-facing pages of the website. The launcher will appear when you press your configured hotkey (' ~ craft.app.plugins.getPlugin('launcher').settings.hotkey ~ ').'|t('launcher'),
