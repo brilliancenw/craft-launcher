@@ -1,5 +1,9 @@
 {% import "_includes/forms" as forms %}
 
+{% if targetUserId is defined and targetUserId %}
+    <input type="hidden" name="targetUserId" value="{{ targetUserId }}">
+{% endif %}
+
 <h2>{{ "Search Filters"|t('launcher') }}</h2>
 <p>{{ "Customize search results using the filter icon in the launcher search box. Your filter preferences are saved automatically."|t('launcher') }}</p>
 

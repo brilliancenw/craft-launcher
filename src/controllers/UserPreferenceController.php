@@ -80,6 +80,52 @@ class UserPreferenceController extends Controller
     }
 
     /**
+     * Set front-end preferences for another user (admin only)
+     */
+    public function actionSetFrontEndEnabledForUser(): Response
+    {
+        $this->requirePostRequest();
+
+        // Only admins can edit other users' preferences
+        if (!Craft::$app->getUser()->getIsAdmin()) {
+            throw new \yii\web\ForbiddenHttpException('Only admins can edit other users\' launcher preferences');
+        }
+
+        $request = Craft::$app->getRequest();
+        $targetUserId = $request->getBodyParam('targetUserId');
+
+        if (!$targetUserId) {
+            Craft::$app->getSession()->setError('Target user ID is required');
+            return $this->redirectToPostedUrl();
+        }
+
+        $targetUser = Craft::$app->getUsers()->getUserById($targetUserId);
+        if (!$targetUser) {
+            Craft::$app->getSession()->setError('User not found');
+            return $this->redirectToPostedUrl();
+        }
+
+        $enabled = (bool) $request->getBodyParam('enabled', false);
+        $newTabEnabled = (bool) $request->getBodyParam('newTabEnabled', false);
+
+        // Save preferences for the target user
+        $preferences = [
+            'launcher_frontend_enabled' => $enabled,
+            'launcher_frontend_new_tab' => $newTabEnabled,
+        ];
+
+        try {
+            Craft::$app->getUsers()->saveUserPreferences($targetUser, $preferences);
+            Craft::$app->getSession()->setNotice('Launcher preferences updated for ' . $targetUser->getFriendlyName());
+        } catch (\Exception $e) {
+            Craft::error('Failed to save launcher preferences for user: ' . $e->getMessage(), 'launcher');
+            Craft::$app->getSession()->setError('Failed to update preferences');
+        }
+
+        return $this->redirectToPostedUrl();
+    }
+
+    /**
      * Set search filter preferences
      */
     public function actionSetSearchFilters(): Response

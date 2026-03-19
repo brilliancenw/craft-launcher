@@ -61,7 +61,7 @@ class UserAccountController extends Controller
     }
 
     /**
-     * View another user's launcher settings (admin only)
+     * View/edit another user's launcher settings (admin only)
      */
     public function actionViewUser(int $userId): Response
     {
@@ -86,14 +86,17 @@ class UserAccountController extends Controller
         $nestedEntriesPreference = $preferences['launcher_nested_entries'] ?? 'system';
         $globalHideNestedEntries = Launcher::$plugin->getSettings()->hideNestedEntries;
 
-        // Use contentTemplate to render the template (read-only view)
+        // Set up the form action and save button for admins
+        $response->action('launcher/user-preference/set-front-end-enabled-for-user');
+        $response->submitButtonLabel('Save');
+
         $response->contentTemplate('launcher/_user-account-content', [
             'user' => $user,
             'isEnabled' => $isEnabled,
             'isNewTabEnabled' => $isNewTabEnabled,
             'nestedEntriesPreference' => $nestedEntriesPreference,
             'globalHideNestedEntries' => $globalHideNestedEntries,
-            'readOnly' => true, // Indicate this is a read-only view
+            'targetUserId' => $userId,
         ]);
 
         return $response;
