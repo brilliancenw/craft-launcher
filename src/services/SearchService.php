@@ -238,7 +238,10 @@ class SearchService extends Component
 
     private function searchEntries(string $query, $settings): array
     {
-        // Search entries by content (existing functionality)
+        $results = [];
+        $foundEntryIds = [];
+
+        // Search regular entries using the search index
         $entryQuery = Entry::find()
             ->search($query)
             ->limit($settings->maxResults);
@@ -248,16 +251,18 @@ class SearchService extends Component
             $entryQuery->editable(true);
         }
 
-        if (!$settings->searchDrafts) {
-            $entryQuery->drafts(false);
-        }
+        // For regular search, explicitly exclude drafts (search index query)
+        $entryQuery->drafts(false);
 
         if (!$settings->searchRevisions) {
             $entryQuery->revisions(false);
         }
 
+        // Handle status filtering for regular entries
         if (!$settings->searchDisabled) {
-            $entryQuery->status(Entry::STATUS_ENABLED);
+            $entryQuery->status(Entry::STATUS_LIVE);
+        } else {
+            $entryQuery->status(null);
         }
 
         if (!empty($settings->searchableSections)) {
@@ -269,15 +274,14 @@ class SearchService extends Component
         }
 
         // Filter out nested entries if the setting is enabled
+        // In Craft 5, nested entries have a primaryOwnerId - filter for entries without one
         if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
-            $entryQuery->owner(null);
+            $entryQuery->andWhere(['entries.primaryOwnerId' => null]);
         }
 
         $entries = $entryQuery->all();
-        $results = [];
-        $foundEntryIds = [];
 
-        // Add entries found by content search
+        // Add regular entries to results
         foreach ($entries as $entry) {
             $section = $entry->getSection();
             $sectionName = $section ? $section->name : 'Unknown Section';
@@ -292,6 +296,57 @@ class SearchService extends Component
                 'status' => $entry->getStatus(),
                 'icon' => 'newspaper',
             ];
+        }
+
+        // If searching drafts is enabled, do a separate query for drafts by title
+        // (Craft's search index may not include draft content)
+        if ($settings->searchDrafts) {
+            $draftQuery = Entry::find()
+                ->drafts(true)
+                ->title('*' . $query . '*')
+                ->limit($settings->maxResults);
+
+            // Only return drafts the current user can edit
+            if (!Craft::$app->getUser()->getIsAdmin()) {
+                $draftQuery->editable(true);
+            }
+
+            if (!empty($settings->searchableSections)) {
+                $draftQuery->sectionId($settings->searchableSections);
+            }
+
+            if (!empty($settings->searchableEntryTypes)) {
+                $draftQuery->typeId($settings->searchableEntryTypes);
+            }
+
+            // Filter out nested entries if the setting is enabled
+            if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
+                $draftQuery->andWhere(['entries.primaryOwnerId' => null]);
+            }
+
+            // Status is not applicable for drafts, so we don't filter by it
+            $draftQuery->status(null);
+
+            $drafts = $draftQuery->all();
+
+            foreach ($drafts as $draft) {
+                // Avoid duplicates (in case a draft's canonical entry was already found)
+                if (!in_array($draft->id, $foundEntryIds) && !in_array($draft->canonicalId, $foundEntryIds)) {
+                    $section = $draft->getSection();
+                    $sectionName = $section ? $section->name : 'Unknown Section';
+
+                    $foundEntryIds[] = $draft->id;
+                    $results[] = [
+                        'id' => $draft->id,
+                        'title' => $draft->title . ' (Draft)',
+                        'url' => $draft->getCpEditUrl(),
+                        'type' => 'Entry',
+                        'section' => $sectionName,
+                        'status' => 'draft',
+                        'icon' => 'newspaper',
+                    ];
+                }
+            }
         }
 
         // Also search for entries by author name (if enabled)
@@ -319,7 +374,9 @@ class SearchService extends Component
             }
 
             // Apply the same filters as content search
-            if (!$settings->searchDrafts) {
+            if ($settings->searchDrafts) {
+                $authorQuery->drafts(null);
+            } else {
                 $authorQuery->drafts(false);
             }
 
@@ -328,7 +385,13 @@ class SearchService extends Component
             }
 
             if (!$settings->searchDisabled) {
-                $authorQuery->status(Entry::STATUS_ENABLED);
+                if ($settings->searchDrafts) {
+                    $authorQuery->status([Entry::STATUS_LIVE, Entry::STATUS_PENDING, Entry::STATUS_EXPIRED, 'draft']);
+                } else {
+                    $authorQuery->status(Entry::STATUS_LIVE);
+                }
+            } else {
+                $authorQuery->status(null);
             }
 
             if (!empty($settings->searchableSections)) {
@@ -340,8 +403,9 @@ class SearchService extends Component
             }
 
             // Filter out nested entries if the setting is enabled
+            // In Craft 5, nested entries have a primaryOwnerId - filter for entries without one
             if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
-                $authorQuery->owner(null);
+                $authorQuery->andWhere(['entries.primaryOwnerId' => null]);
             }
 
             $authoredEntries = $authorQuery->all();
@@ -639,7 +703,10 @@ class SearchService extends Component
             $entryQuery->editable(true);
         }
 
-        if (!$settings->searchDrafts) {
+        // Handle drafts: Craft excludes drafts by default, so we must explicitly include them
+        if ($settings->searchDrafts) {
+            $entryQuery->drafts(null); // Include both drafts and non-drafts
+        } else {
             $entryQuery->drafts(false);
         }
 
@@ -647,8 +714,17 @@ class SearchService extends Component
             $entryQuery->revisions(false);
         }
 
+        // Handle status filtering - drafts need special handling
         if (!$settings->searchDisabled) {
-            $entryQuery->status(['live']);
+            if ($settings->searchDrafts) {
+                // Include both enabled entries AND drafts
+                $entryQuery->status([Entry::STATUS_LIVE, Entry::STATUS_PENDING, Entry::STATUS_EXPIRED, 'draft']);
+            } else {
+                $entryQuery->status(Entry::STATUS_LIVE);
+            }
+        } else {
+            // Include all statuses including disabled
+            $entryQuery->status(null);
         }
 
         if (!empty($settings->searchableSections)) {
@@ -656,8 +732,9 @@ class SearchService extends Component
         }
 
         // Filter out nested entries if the setting is enabled
+        // In Craft 5, nested entries have a primaryOwnerId - filter for entries without one
         if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
-            $entryQuery->owner(null);
+            $entryQuery->andWhere(['entries.primaryOwnerId' => null]);
         }
 
         $entries = $entryQuery->all();
