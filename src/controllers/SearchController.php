@@ -115,7 +115,18 @@ class SearchController extends Controller
         // Validate context for security
         $context = $this->validateContext($context);
 
-        $searchResults = Launcher::$plugin->search->search($query, $context);
+        // Get user's effective filters (respects admin settings)
+        $userFilters = Launcher::$plugin->userPreference->getEffectiveFilters();
+
+        // Get any filter overrides from the request
+        $requestFilters = Craft::$app->getRequest()->getBodyParam('filters', []);
+
+        if (!empty($requestFilters)) {
+            // Merge request filters with user filters (request takes precedence)
+            $userFilters = array_merge($userFilters, $requestFilters);
+        }
+
+        $searchResults = Launcher::$plugin->search->search($query, $context, $userFilters);
         $formattedResults = Launcher::$plugin->launcher->formatResults($searchResults);
 
         return $this->asJson([

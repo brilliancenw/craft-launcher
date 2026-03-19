@@ -15,6 +15,11 @@ use craft\helpers\UrlHelper;
 class SearchService extends Component
 {
     /**
+     * Current filters being applied to the search
+     */
+    private array $currentFilters = [];
+
+    /**
      * Check if Craft Commerce is installed
      */
     private function isCommerceInstalled(): bool
@@ -95,7 +100,7 @@ class SearchService extends Component
         return [];
     }
 
-    public function search(string $query, array $context = []): array
+    public function search(string $query, array $context = [], array $filters = []): array
     {
 
         if (empty($query)) {
@@ -104,6 +109,9 @@ class SearchService extends Component
 
         $settings = Launcher::$plugin->getSettings();
         $results = [];
+
+        // Store filters for use in search methods
+        $this->currentFilters = $filters;
 
         // Add front-end context actions first (if applicable)
         if (!empty($context)) {
@@ -241,6 +249,9 @@ class SearchService extends Component
         $results = [];
         $foundEntryIds = [];
 
+        // Get user filters
+        $filters = $this->currentFilters;
+
         // Search regular entries using the search index
         $entryQuery = Entry::find()
             ->search($query)
@@ -252,6 +263,8 @@ class SearchService extends Component
         }
 
         // For regular search, explicitly exclude drafts (search index query)
+        // Unless user filter overrides it
+        $includeDrafts = $filters['includeDrafts'] ?? $settings->searchDrafts;
         $entryQuery->drafts(false);
 
         if (!$settings->searchRevisions) {
@@ -259,23 +272,30 @@ class SearchService extends Component
         }
 
         // Handle status filtering for regular entries
-        if (!$settings->searchDisabled) {
+        // Use user filter for disabled elements if provided, otherwise use settings
+        $includeDisabled = $filters['includeDisabled'] ?? $settings->searchDisabled;
+        if (!$includeDisabled) {
             $entryQuery->status(Entry::STATUS_LIVE);
         } else {
             $entryQuery->status(null);
         }
 
-        if (!empty($settings->searchableSections)) {
-            $entryQuery->sectionId($settings->searchableSections);
+        // Apply section filters: user filters take precedence, then fall back to admin settings
+        $sectionFilter = !empty($filters['sections']) ? $filters['sections'] : $settings->searchableSections;
+        if (!empty($sectionFilter)) {
+            $entryQuery->sectionId($sectionFilter);
         }
 
-        if (!empty($settings->searchableEntryTypes)) {
-            $entryQuery->typeId($settings->searchableEntryTypes);
+        // Apply entry type filters: user filters take precedence, then fall back to admin settings
+        $entryTypeFilter = !empty($filters['entryTypes']) ? $filters['entryTypes'] : $settings->searchableEntryTypes;
+        if (!empty($entryTypeFilter)) {
+            $entryQuery->typeId($entryTypeFilter);
         }
 
-        // Filter out nested entries if the setting is enabled
-        // In Craft 5, nested entries have a primaryOwnerId - filter for entries without one
-        if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
+        // Filter out nested entries based on user filter or global setting
+        // Note: shouldHideNestedEntries returns true when we should HIDE, so invert for includeNested
+        $includeNested = $filters['includeNested'] ?? !Launcher::$plugin->userPreference->shouldHideNestedEntries();
+        if (!$includeNested) {
             $entryQuery->andWhere(['entries.primaryOwnerId' => null]);
         }
 
@@ -298,9 +318,9 @@ class SearchService extends Component
             ];
         }
 
-        // If searching drafts is enabled, do a separate query for drafts by title
+        // If searching drafts is enabled (either by settings or user filter), do a separate query for drafts by title
         // (Craft's search index may not include draft content)
-        if ($settings->searchDrafts) {
+        if ($includeDrafts) {
             $draftQuery = Entry::find()
                 ->drafts(true)
                 ->title('*' . $query . '*')
@@ -311,16 +331,17 @@ class SearchService extends Component
                 $draftQuery->editable(true);
             }
 
-            if (!empty($settings->searchableSections)) {
-                $draftQuery->sectionId($settings->searchableSections);
+            // Apply same section/entry type filters as main query
+            if (!empty($sectionFilter)) {
+                $draftQuery->sectionId($sectionFilter);
             }
 
-            if (!empty($settings->searchableEntryTypes)) {
-                $draftQuery->typeId($settings->searchableEntryTypes);
+            if (!empty($entryTypeFilter)) {
+                $draftQuery->typeId($entryTypeFilter);
             }
 
-            // Filter out nested entries if the setting is enabled
-            if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
+            // Filter out nested entries if not including them
+            if (!$includeNested) {
                 $draftQuery->andWhere(['entries.primaryOwnerId' => null]);
             }
 
@@ -343,6 +364,73 @@ class SearchService extends Component
                         'type' => 'Entry',
                         'section' => $sectionName,
                         'status' => 'draft',
+                        'icon' => 'newspaper',
+                    ];
+                }
+            }
+        }
+
+        // If showing nested entries, do a separate title-based query for them
+        // (Craft's search index may not include nested entries)
+        if ($includeNested) {
+            $nestedQuery = Entry::find()
+                ->title('*' . $query . '*')
+                ->limit($settings->maxResults);
+
+            // Don't filter by editable for nested entries - they inherit permissions from parent
+            // The parent entry was already checked for editability in the main search
+
+            // Only get entries that ARE nested (have a primaryOwnerId)
+            $nestedQuery->andWhere(['not', ['entries.primaryOwnerId' => null]]);
+
+            // NOTE: Do NOT apply section filters to nested entries
+            // Nested entries have sectionId=null because they belong to a field, not a section
+            // We only apply entry type filters if specified
+            if (!empty($entryTypeFilter)) {
+                $nestedQuery->typeId($entryTypeFilter);
+            }
+
+            // Handle status filtering for nested entries
+            if (!$includeDisabled) {
+                $nestedQuery->status(Entry::STATUS_LIVE);
+            } else {
+                $nestedQuery->status(null);
+            }
+
+            // Exclude drafts unless including them
+            if (!$includeDrafts) {
+                $nestedQuery->drafts(false);
+            }
+
+            // Allow owner drafts/revisions to be queried
+            $nestedQuery->allowOwnerDrafts(true);
+            $nestedQuery->allowOwnerRevisions(true);
+
+            $nestedEntries = $nestedQuery->all();
+
+            foreach ($nestedEntries as $nested) {
+                // Avoid duplicates
+                if (!in_array($nested->id, $foundEntryIds)) {
+                    $section = $nested->getSection();
+                    $sectionName = $section ? $section->name : 'Unknown Section';
+
+                    // Get the owner entry for context
+                    $ownerTitle = '';
+                    if ($nested->primaryOwnerId) {
+                        $owner = Entry::find()->id($nested->primaryOwnerId)->one();
+                        if ($owner) {
+                            $ownerTitle = $owner->title;
+                        }
+                    }
+
+                    $foundEntryIds[] = $nested->id;
+                    $results[] = [
+                        'id' => $nested->id,
+                        'title' => $nested->title,
+                        'url' => $nested->getCpEditUrl(),
+                        'type' => 'Entry',
+                        'section' => $sectionName . ($ownerTitle ? ' (in ' . $ownerTitle . ')' : ' (Nested)'),
+                        'status' => $nested->getStatus(),
                         'icon' => 'newspaper',
                     ];
                 }
@@ -373,8 +461,8 @@ class SearchService extends Component
                 $authorQuery->editable(true);
             }
 
-            // Apply the same filters as content search
-            if ($settings->searchDrafts) {
+            // Apply the same filters as content search (using user filters)
+            if ($includeDrafts) {
                 $authorQuery->drafts(null);
             } else {
                 $authorQuery->drafts(false);
@@ -384,8 +472,8 @@ class SearchService extends Component
                 $authorQuery->revisions(false);
             }
 
-            if (!$settings->searchDisabled) {
-                if ($settings->searchDrafts) {
+            if (!$includeDisabled) {
+                if ($includeDrafts) {
                     $authorQuery->status([Entry::STATUS_LIVE, Entry::STATUS_PENDING, Entry::STATUS_EXPIRED, 'draft']);
                 } else {
                     $authorQuery->status(Entry::STATUS_LIVE);
@@ -394,17 +482,17 @@ class SearchService extends Component
                 $authorQuery->status(null);
             }
 
-            if (!empty($settings->searchableSections)) {
-                $authorQuery->sectionId($settings->searchableSections);
+            // Apply same section/entry type filters
+            if (!empty($sectionFilter)) {
+                $authorQuery->sectionId($sectionFilter);
             }
 
-            if (!empty($settings->searchableEntryTypes)) {
-                $authorQuery->typeId($settings->searchableEntryTypes);
+            if (!empty($entryTypeFilter)) {
+                $authorQuery->typeId($entryTypeFilter);
             }
 
-            // Filter out nested entries if the setting is enabled
-            // In Craft 5, nested entries have a primaryOwnerId - filter for entries without one
-            if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
+            // Filter out nested entries if not including them
+            if (!$includeNested) {
                 $authorQuery->andWhere(['entries.primaryOwnerId' => null]);
             }
 
@@ -696,6 +784,9 @@ class SearchService extends Component
 
     private function getAllEntries($settings): array
     {
+        // Get user filters
+        $filters = $this->currentFilters;
+
         $entryQuery = Entry::find()->limit($settings->maxResults);
 
         // Only return entries the current user can edit
@@ -703,8 +794,9 @@ class SearchService extends Component
             $entryQuery->editable(true);
         }
 
-        // Handle drafts: Craft excludes drafts by default, so we must explicitly include them
-        if ($settings->searchDrafts) {
+        // Handle drafts: use user filter or fall back to settings
+        $includeDrafts = $filters['includeDrafts'] ?? $settings->searchDrafts;
+        if ($includeDrafts) {
             $entryQuery->drafts(null); // Include both drafts and non-drafts
         } else {
             $entryQuery->drafts(false);
@@ -714,9 +806,10 @@ class SearchService extends Component
             $entryQuery->revisions(false);
         }
 
-        // Handle status filtering - drafts need special handling
-        if (!$settings->searchDisabled) {
-            if ($settings->searchDrafts) {
+        // Handle status filtering - use user filter or fall back to settings
+        $includeDisabled = $filters['includeDisabled'] ?? $settings->searchDisabled;
+        if (!$includeDisabled) {
+            if ($includeDrafts) {
                 // Include both enabled entries AND drafts
                 $entryQuery->status([Entry::STATUS_LIVE, Entry::STATUS_PENDING, Entry::STATUS_EXPIRED, 'draft']);
             } else {
@@ -727,13 +820,22 @@ class SearchService extends Component
             $entryQuery->status(null);
         }
 
-        if (!empty($settings->searchableSections)) {
-            $entryQuery->sectionId($settings->searchableSections);
+        // Apply section filters: user filters take precedence, then fall back to admin settings
+        $sectionFilter = !empty($filters['sections']) ? $filters['sections'] : $settings->searchableSections;
+        if (!empty($sectionFilter)) {
+            $entryQuery->sectionId($sectionFilter);
         }
 
-        // Filter out nested entries if the setting is enabled
-        // In Craft 5, nested entries have a primaryOwnerId - filter for entries without one
-        if (Launcher::$plugin->userPreference->shouldHideNestedEntries()) {
+        // Apply entry type filters: user filters take precedence, then fall back to admin settings
+        $entryTypeFilter = !empty($filters['entryTypes']) ? $filters['entryTypes'] : $settings->searchableEntryTypes;
+        if (!empty($entryTypeFilter)) {
+            $entryQuery->typeId($entryTypeFilter);
+        }
+
+        // Filter out nested entries based on user filter or global setting
+        // Note: shouldHideNestedEntries returns true when we should HIDE, so invert for includeNested
+        $includeNested = $filters['includeNested'] ?? !Launcher::$plugin->userPreference->shouldHideNestedEntries();
+        if (!$includeNested) {
             $entryQuery->andWhere(['entries.primaryOwnerId' => null]);
         }
 

@@ -717,6 +717,81 @@ document.addEventListener('DOMContentLoaded', function() {
     </tbody>
 </table>
 
+<hr>
+
+<h1>User Search Filter Options</h1>
+<p>Control which filter options users can see in the search filter dropdown. Disabled options will not appear for users.</p>
+
+<table class="data fullwidth fixed-layout" dir="ltr">
+    <tbody>
+        <tr>
+            <th style="width: 25%;">Filter Option</th>
+            <th style="width: 25%;">Allow Users</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <th class="light">Include Drafts Filter</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'allowUserFilterDrafts',
+                    name: 'allowUserFilterDrafts',
+                    on: settings.allowUserFilterDrafts,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Allow users to toggle draft inclusion in their search filter panel</td>
+        </tr>
+        <tr>
+            <th class="light">Include Disabled Filter</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'allowUserFilterDisabled',
+                    name: 'allowUserFilterDisabled',
+                    on: settings.allowUserFilterDisabled,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Allow users to toggle disabled element inclusion in their search filter panel</td>
+        </tr>
+        <tr>
+            <th class="light">Section Filter</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'allowUserFilterSections',
+                    name: 'allowUserFilterSections',
+                    on: settings.allowUserFilterSections,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Allow users to filter by specific sections in their search filter panel</td>
+        </tr>
+        <tr>
+            <th class="light">Entry Type Filter</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'allowUserFilterEntryTypes',
+                    name: 'allowUserFilterEntryTypes',
+                    on: settings.allowUserFilterEntryTypes,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Allow users to filter by specific entry types in their search filter panel</td>
+        </tr>
+        <tr>
+            <th class="light">Nested Entries Filter</th>
+            <td>
+                {{ forms.lightswitchField({
+                    id: 'allowUserFilterNestedEntries',
+                    name: 'allowUserFilterNestedEntries',
+                    on: settings.allowUserFilterNestedEntries,
+                    disabled: isProjectConfigReadOnly,
+                }) }}
+            </td>
+            <td class="light">Allow users to toggle nested entry visibility in their search filter panel</td>
+        </tr>
+    </tbody>
+</table>
+
 {% set isCommerceInstalled = craft.app.plugins.isPluginInstalled('commerce') %}
 {% if isCommerceInstalled %}
     <hr>

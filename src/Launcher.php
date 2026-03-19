@@ -112,6 +112,17 @@ class Launcher extends Plugin
                         $addonHotkeysJson = json_encode($addonHotkeys);
                         $modalTabsJson = json_encode($modalTabs);
 
+                        // Get filter configuration for frontend
+                        $userFilters = $this->userPreference->getSearchFilters();
+                        $availableFilterOptions = $this->userPreference->getAvailableFilterOptions();
+                        $allSections = $this->getAllSectionsForFilter();
+                        $allEntryTypes = $this->getAllEntryTypesForFilter();
+
+                        $userFiltersJson = json_encode($userFilters);
+                        $availableFilterOptionsJson = json_encode($availableFilterOptions);
+                        $allSectionsJson = json_encode($allSections);
+                        $allEntryTypesJson = json_encode($allEntryTypes);
+
                         $js = <<<JS
                         // Ensure LauncherPlugin initialization happens after DOM and Craft are ready
                         if (typeof Craft !== 'undefined') {
@@ -123,13 +134,18 @@ class Launcher extends Plugin
                                             hotkey: '$hotkey',
                                             searchUrl: Craft.getActionUrl('launcher/search'),
                                             drawerContentUrl: Craft.getActionUrl('launcher/search/drawer-content'),
+                                            setFiltersUrl: Craft.getActionUrl('launcher/user-preference/set-search-filters'),
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
                                             selectResultModifier: '{$settings->selectResultModifier}',
                                             searchableTypes: $searchableTypesJson,
                                             addons: $addonsJson,
                                             addonHotkeys: $addonHotkeysJson,
-                                            modalTabs: $modalTabsJson
+                                            modalTabs: $modalTabsJson,
+                                            searchFilters: $userFiltersJson,
+                                            availableFilterOptions: $availableFilterOptionsJson,
+                                            allSections: $allSectionsJson,
+                                            allEntryTypes: $allEntryTypesJson
                                         });
                                     }
                                 });
@@ -141,13 +157,18 @@ class Launcher extends Plugin
                                             hotkey: '$hotkey',
                                             searchUrl: Craft.getActionUrl('launcher/search'),
                                             drawerContentUrl: Craft.getActionUrl('launcher/search/drawer-content'),
+                                            setFiltersUrl: Craft.getActionUrl('launcher/user-preference/set-search-filters'),
                                             debounceDelay: {$settings->debounceDelay},
                                             assetUrl: '$assetUrl',
                                             selectResultModifier: '{$settings->selectResultModifier}',
                                             searchableTypes: $searchableTypesJson,
                                             addons: $addonsJson,
                                             addonHotkeys: $addonHotkeysJson,
-                                            modalTabs: $modalTabsJson
+                                            modalTabs: $modalTabsJson,
+                                            searchFilters: $userFiltersJson,
+                                            availableFilterOptions: $availableFilterOptionsJson,
+                                            allSections: $allSectionsJson,
+                                            allEntryTypes: $allEntryTypesJson
                                         });
                                     }
                                 });
@@ -326,6 +347,19 @@ class Launcher extends Plugin
         $openInNewTabJs = $openInNewTab ? 'true' : 'false';
         $searchableTypesJson = json_encode($settings->searchableTypes);
 
+        // Get filter configuration for frontend
+        $userFilters = $this->userPreference->getSearchFilters();
+        $availableFilterOptions = $this->userPreference->getAvailableFilterOptions();
+        $allSections = $this->getAllSectionsForFilter();
+        $allEntryTypes = $this->getAllEntryTypesForFilter();
+
+        $userFiltersJson = json_encode($userFilters);
+        $availableFilterOptionsJson = json_encode($availableFilterOptions);
+        $allSectionsJson = json_encode($allSections);
+        $allEntryTypesJson = json_encode($allEntryTypes);
+
+        $setFiltersUrl = Craft::$app->getUrlManager()->createUrl(['launcher/user-preference/set-search-filters']);
+
         $js = <<<JS
         // Front-end Launcher initialization
         document.addEventListener('DOMContentLoaded', function() {
@@ -336,6 +370,7 @@ class Launcher extends Plugin
                     navigateUrl: '$navigateUrl',
                     removeHistoryUrl: '$removeHistoryUrl',
                     executeIntegrationUrl: '$executeIntegrationUrl',
+                    setFiltersUrl: '$setFiltersUrl',
                     csrfTokenName: '$csrfTokenName',
                     csrfTokenValue: '$csrfTokenValue',
                     debounceDelay: {$settings->debounceDelay},
@@ -344,7 +379,11 @@ class Launcher extends Plugin
                     searchableTypes: $searchableTypesJson,
                     isFrontEnd: true,
                     openInNewTab: $openInNewTabJs,
-                    frontEndContext: $contextJson
+                    frontEndContext: $contextJson,
+                    searchFilters: $userFiltersJson,
+                    availableFilterOptions: $availableFilterOptionsJson,
+                    allSections: $allSectionsJson,
+                    allEntryTypes: $allEntryTypesJson
                 });
             }
         });
@@ -771,6 +810,62 @@ class Launcher extends Plugin
                 'Update Rocket Launcher plugin settings'
             );
         }
+    }
+
+    /**
+     * Get all sections for the filter panel
+     */
+    public function getAllSectionsForFilter(): array
+    {
+        $sections = Craft::$app->getEntries()->getAllSections();
+        $result = [];
+
+        foreach ($sections as $section) {
+            // Check if user can view entries in this section
+            if (!Craft::$app->getUser()->getIsAdmin()) {
+                if (!Craft::$app->getUser()->checkPermission('viewEntries:' . $section->uid)) {
+                    continue;
+                }
+            }
+
+            $result[] = [
+                'id' => $section->id,
+                'name' => $section->name,
+                'handle' => $section->handle,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get all entry types for the filter panel
+     */
+    public function getAllEntryTypesForFilter(): array
+    {
+        $sections = Craft::$app->getEntries()->getAllSections();
+        $result = [];
+
+        foreach ($sections as $section) {
+            // Check if user can view entries in this section
+            if (!Craft::$app->getUser()->getIsAdmin()) {
+                if (!Craft::$app->getUser()->checkPermission('viewEntries:' . $section->uid)) {
+                    continue;
+                }
+            }
+
+            foreach ($section->getEntryTypes() as $entryType) {
+                $result[] = [
+                    'id' => $entryType->id,
+                    'name' => $entryType->name,
+                    'handle' => $entryType->handle,
+                    'sectionId' => $section->id,
+                    'sectionName' => $section->name,
+                ];
+            }
+        }
+
+        return $result;
     }
 
     /**

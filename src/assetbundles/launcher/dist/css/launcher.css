@@ -175,12 +175,314 @@
 .launcher-search {
     width: 100%;
     padding: 20px;
+    padding-right: 90px;
     font-size: 18px;
     border: none;
     outline: none;
     background: #fff;
     color: var(--text-color, #3f4d5a);
     font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
+}
+
+/* Filter button */
+.launcher-filter-btn {
+    position: absolute;
+    right: 48px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    color: var(--light-text-color, #8b92a1);
+    cursor: pointer;
+    border-radius: var(--border-radius, 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.launcher-filter-btn:hover {
+    background: var(--gray-100, #f3f7fc);
+    color: var(--ui-control-color, #0d78f2);
+}
+
+.launcher-filter-btn.launcher-filter-active {
+    color: var(--ui-control-color, #0d78f2);
+    background: rgba(13, 120, 242, 0.1);
+}
+
+.launcher-filter-btn.launcher-filter-has-filters {
+    color: var(--ui-control-color, #0d78f2);
+}
+
+.launcher-filter-btn.launcher-filter-has-filters::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background: var(--ui-control-color, #0d78f2);
+    border-radius: 50%;
+}
+
+.launcher-filter-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Filter panel */
+.launcher-filter-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-bottom: 1px solid var(--hairline-color, #e3e5e8);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}
+
+.launcher-filter-panel.launcher-filter-panel-open {
+    display: block;
+}
+
+.launcher-filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--hairline-color, #e3e5e8);
+    background: var(--gray-050, #fafafa);
+}
+
+.launcher-filter-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--light-text-color, #8b92a1);
+}
+
+.launcher-filter-reset {
+    font-size: 12px;
+    color: var(--ui-control-color, #0d78f2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--border-radius, 4px);
+    transition: all 0.15s ease;
+}
+
+.launcher-filter-reset:hover {
+    background: rgba(13, 120, 242, 0.1);
+}
+
+.launcher-filter-content {
+    padding: 12px 16px;
+}
+
+.launcher-filter-section {
+    margin-bottom: 16px;
+}
+
+.launcher-filter-section:last-child {
+    margin-bottom: 0;
+}
+
+.launcher-filter-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--light-text-color, #8b92a1);
+    margin-bottom: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.launcher-filter-section-title svg {
+    width: 12px;
+    height: 12px;
+    transition: transform 0.2s ease;
+}
+
+.launcher-filter-section-title.collapsed svg {
+    transform: rotate(-90deg);
+}
+
+.launcher-filter-section-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.launcher-filter-section-content.collapsed {
+    display: none;
+}
+
+/* Toggle switch */
+.launcher-filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 6px 0;
+}
+
+.launcher-filter-toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: var(--gray-300, #cbd5e0);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.launcher-filter-toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.launcher-filter-toggle.active .launcher-filter-toggle-switch {
+    background: var(--ui-control-color, #0d78f2);
+}
+
+.launcher-filter-toggle.active .launcher-filter-toggle-switch::after {
+    transform: translateX(16px);
+}
+
+.launcher-filter-toggle-label {
+    font-size: 13px;
+    color: var(--text-color, #3f4d5a);
+}
+
+/* Checkbox styles */
+.launcher-filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.launcher-filter-checkbox-box {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--gray-400, #a0aec0);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.launcher-filter-checkbox.checked .launcher-filter-checkbox-box {
+    background: var(--ui-control-color, #0d78f2);
+    border-color: var(--ui-control-color, #0d78f2);
+}
+
+.launcher-filter-checkbox-box svg {
+    width: 10px;
+    height: 10px;
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.launcher-filter-checkbox.checked .launcher-filter-checkbox-box svg {
+    opacity: 1;
+}
+
+.launcher-filter-checkbox-label {
+    font-size: 13px;
+    color: var(--text-color, #3f4d5a);
+}
+
+.launcher-filter-checkbox-meta {
+    font-size: 11px;
+    color: var(--light-text-color, #8b92a1);
+    margin-left: auto;
+}
+
+/* Collapsible sections */
+.launcher-filter-collapsible {
+    border: 1px solid var(--hairline-color, #e3e5e8);
+    border-radius: var(--border-radius, 4px);
+    overflow: hidden;
+}
+
+.launcher-filter-collapsible-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--gray-050, #fafafa);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+
+.launcher-filter-collapsible-header:hover {
+    background: var(--gray-100, #f3f7fc);
+}
+
+.launcher-filter-collapsible-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-color, #3f4d5a);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.launcher-filter-collapsible-count {
+    font-size: 11px;
+    color: var(--light-text-color, #8b92a1);
+    background: var(--gray-200, #e2e8f0);
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.launcher-filter-collapsible-chevron {
+    width: 16px;
+    height: 16px;
+    color: var(--light-text-color, #8b92a1);
+    transition: transform 0.2s ease;
+}
+
+.launcher-filter-collapsible.expanded .launcher-filter-collapsible-chevron {
+    transform: rotate(180deg);
+}
+
+.launcher-filter-collapsible-body {
+    display: none;
+    padding: 8px 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.launcher-filter-collapsible.expanded .launcher-filter-collapsible-body {
+    display: block;
 }
 
 .launcher-close {

@@ -11,7 +11,11 @@
             searchableTypes: {},
             addons: [],
             addonHotkeys: [],
-            modalTabs: {}
+            modalTabs: {},
+            searchFilters: {},
+            availableFilterOptions: {},
+            allSections: [],
+            allEntryTypes: []
         },
         searchTimeout: null,
         currentResults: [],
@@ -28,6 +32,15 @@
         currentTab: 'search',
         tabContainers: {},
         tabButtons: {},
+        // Filter system
+        filterPanelOpen: false,
+        searchFilters: {
+            includeDrafts: false,
+            includeDisabled: false,
+            includeNested: false,
+            sections: [],
+            entryTypes: []
+        },
 
         _m5: function(s) {
             function L(k,d){return(k<<d)|(k>>>(32-d))}function K(G,k){var I,d,F,H,x;F=(G&2147483648);H=(k&2147483648);I=(G&1073741824);d=(k&1073741824);x=(G&1073741823)+(k&1073741823);if(I&d){return(x^2147483648^F^H)}if(I|d){if(x&1073741824){return(x^3221225472^F^H)}else{return(x^1073741824^F^H)}}else{return(x^F^H)}}function r(d,F,k){return(d&F)|((~d)&k)}function q(d,F,k){return(d&k)|(F&(~k))}function p(d,F,k){return(d^F^k)}function n(d,F,k){return(F^(d|(~k)))}function u(G,F,aa,Z,k,H,I){G=K(G,K(K(r(F,aa,Z),k),I));return K(L(G,H),F)}function f(G,F,aa,Z,k,H,I){G=K(G,K(K(q(F,aa,Z),k),I));return K(L(G,H),F)}function D(G,F,aa,Z,k,H,I){G=K(G,K(K(p(F,aa,Z),k),I));return K(L(G,H),F)}function t(G,F,aa,Z,k,H,I){G=K(G,K(K(n(F,aa,Z),k),I));return K(L(G,H),F)}function e(G){var Z;var F=G.length;var x=F+8;var k=(x-(x%64))/64;var I=(k+1)*16;var aa=Array(I-1);var d=0;var H=0;while(H<F){Z=(H-(H%4))/4;d=(H%4)*8;aa[Z]=(aa[Z]|(G.charCodeAt(H)<<d));H++}Z=(H-(H%4))/4;d=(H%4)*8;aa[Z]=aa[Z]|(128<<d);aa[I-2]=F<<3;aa[I-1]=F>>>29;return aa}function B(x){var k="",F="",G,d;for(d=0;d<=3;d++){G=(x>>>(d*8))&255;F="0"+G.toString(16);k=k+F.substr(F.length-2,2)}return k}function J(k){k=k.replace(/rn/g,"n");var d="";for(var F=0;F<k.length;F++){var x=k.charCodeAt(F);if(x<128){d+=String.fromCharCode(x)}else{if((x>127)&&(x<2048)){d+=String.fromCharCode((x>>6)|192);d+=String.fromCharCode((x&63)|128)}else{d+=String.fromCharCode((x>>12)|224);d+=String.fromCharCode(((x>>6)&63)|128);d+=String.fromCharCode((x&63)|128)}}}return d}var C=Array();var P,h,E,v,g,Y,X,W,V;var S=7,Q=12,N=17,M=22;var A=5,z=9,y=14,w=20;var o=4,m=11,l=16,j=23;var U=6,T=10,R=15,O=21;s=J(s);C=e(s);Y=1732584193;X=4023233417;W=2562383102;V=271733878;for(P=0;P<C.length;P+=16){h=Y;E=X;v=W;g=V;Y=u(Y,X,W,V,C[P+0],S,3614090360);V=u(V,Y,X,W,C[P+1],Q,3905402710);W=u(W,V,Y,X,C[P+2],N,606105819);X=u(X,W,V,Y,C[P+3],M,3250441966);Y=u(Y,X,W,V,C[P+4],S,4118548399);V=u(V,Y,X,W,C[P+5],Q,1200080426);W=u(W,V,Y,X,C[P+6],N,2821735955);X=u(X,W,V,Y,C[P+7],M,4249261313);Y=u(Y,X,W,V,C[P+8],S,1770035416);V=u(V,Y,X,W,C[P+9],Q,2336552879);W=u(W,V,Y,X,C[P+10],N,4294925233);X=u(X,W,V,Y,C[P+11],M,2304563134);Y=u(Y,X,W,V,C[P+12],S,1804603682);V=u(V,Y,X,W,C[P+13],Q,4254626195);W=u(W,V,Y,X,C[P+14],N,2792965006);X=u(X,W,V,Y,C[P+15],M,1236535329);Y=f(Y,X,W,V,C[P+1],A,4129170786);V=f(V,Y,X,W,C[P+6],z,3225465664);W=f(W,V,Y,X,C[P+11],y,643717713);X=f(X,W,V,Y,C[P+0],w,3921069994);Y=f(Y,X,W,V,C[P+5],A,3593408605);V=f(V,Y,X,W,C[P+10],z,38016083);W=f(W,V,Y,X,C[P+15],y,3634488961);X=f(X,W,V,Y,C[P+4],w,3889429448);Y=f(Y,X,W,V,C[P+9],A,568446438);V=f(V,Y,X,W,C[P+14],z,3275163606);W=f(W,V,Y,X,C[P+3],y,4107603335);X=f(X,W,V,Y,C[P+8],w,1163531501);Y=f(Y,X,W,V,C[P+13],A,2850285829);V=f(V,Y,X,W,C[P+2],z,4243563512);W=f(W,V,Y,X,C[P+7],y,1735328473);X=f(X,W,V,Y,C[P+12],w,2368359562);Y=D(Y,X,W,V,C[P+5],o,4294588738);V=D(V,Y,X,W,C[P+8],m,2272392833);W=D(W,V,Y,X,C[P+11],l,1839030562);X=D(X,W,V,Y,C[P+14],j,4259657740);Y=D(Y,X,W,V,C[P+1],o,2763975236);V=D(V,Y,X,W,C[P+4],m,1272893353);W=D(W,V,Y,X,C[P+7],l,4139469664);X=D(X,W,V,Y,C[P+10],j,3200236656);Y=D(Y,X,W,V,C[P+13],o,681279174);V=D(V,Y,X,W,C[P+0],m,3936430074);W=D(W,V,Y,X,C[P+3],l,3572445317);X=D(X,W,V,Y,C[P+6],j,76029189);Y=D(Y,X,W,V,C[P+9],o,3654602809);V=D(V,Y,X,W,C[P+12],m,3873151461);W=D(W,V,Y,X,C[P+15],l,530742520);X=D(X,W,V,Y,C[P+2],j,3299628645);Y=t(Y,X,W,V,C[P+0],U,4096336452);V=t(V,Y,X,W,C[P+7],T,1126891415);W=t(W,V,Y,X,C[P+14],R,2878612391);X=t(X,W,V,Y,C[P+5],O,4237533241);Y=t(Y,X,W,V,C[P+12],U,1700485571);V=t(V,Y,X,W,C[P+3],T,2399980690);W=t(W,V,Y,X,C[P+10],R,4293915773);X=t(X,W,V,Y,C[P+1],O,2240044497);Y=t(Y,X,W,V,C[P+8],U,1873313359);V=t(V,Y,X,W,C[P+15],T,4264355552);W=t(W,V,Y,X,C[P+6],R,2734768916);X=t(X,W,V,Y,C[P+13],O,1309151649);Y=t(Y,X,W,V,C[P+4],U,4149444226);V=t(V,Y,X,W,C[P+11],T,3174756917);W=t(W,V,Y,X,C[P+2],R,718787259);X=t(X,W,V,Y,C[P+9],O,3951481745);Y=K(Y,h);X=K(X,E);W=K(W,v);V=K(V,g)}var i=B(Y)+B(X)+B(W)+B(V);return i.toLowerCase()},
@@ -51,6 +64,12 @@
             Object.assign(this.config, config);
             this.isFrontEnd = config.isFrontEnd || false;
             this.frontEndContext = config.frontEndContext || null;
+
+            // Initialize filters from config
+            if (config.searchFilters) {
+                this.searchFilters = Object.assign({}, this.searchFilters, config.searchFilters);
+            }
+
             this.createModal();
             this.bindEvents();
             this.isInitialized = true;
@@ -137,6 +156,17 @@
                         <div id="launcher-search-tab" class="launcher-tab-content" style="display: block;">
                             <div class="launcher-search-wrapper">
                                 <input type="text" id="launcher-search" class="launcher-search" placeholder="Search for anything..." autocomplete="off">
+                                <button type="button" class="launcher-filter-btn" id="launcher-filter-btn" aria-label="Search Filters" title="Search Filters">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="4" y1="6" x2="14" y2="6"/>
+                                        <circle cx="17" cy="6" r="3"/>
+                                        <line x1="10" y1="12" x2="20" y2="12"/>
+                                        <circle cx="7" cy="12" r="3"/>
+                                        <line x1="4" y1="18" x2="14" y2="18"/>
+                                        <circle cx="17" cy="18" r="3"/>
+                                    </svg>
+                                </button>
+                                <div id="launcher-filter-panel" class="launcher-filter-panel"></div>
                             </div>
                             <div id="launcher-loading-bar" class="launcher-loading-bar" style="display: none;">
                                 <div class="launcher-loading-dots">
@@ -169,6 +199,12 @@
             this.drawerOpen = false;
             this.resizeHandle = this.modal.querySelector('.launcher-resize-handle');
             this.dialog = this.modal.querySelector('.launcher-dialog');
+            this.filterBtn = document.getElementById('launcher-filter-btn');
+            this.filterPanel = document.getElementById('launcher-filter-panel');
+
+            // Initialize filter panel content
+            this.renderFilterPanel();
+            this.updateFilterButtonState();
 
             // Store references to tab elements
             tabKeys.forEach(function(key) {
@@ -296,6 +332,19 @@
             this.drawerTab.addEventListener('click', function(e) {
                 e.stopPropagation();
                 self.toggleDrawer();
+            });
+
+            // Filter button click to toggle
+            this.filterBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                self.toggleFilterPanel();
+            });
+
+            // Close filter panel when clicking outside
+            document.addEventListener('click', function(e) {
+                if (self.filterPanelOpen && !e.target.closest('.launcher-filter-panel') && !e.target.closest('.launcher-filter-btn')) {
+                    self.closeFilterPanel();
+                }
             });
 
             // Click on dialog (outside drawer) to close drawer
@@ -478,6 +527,9 @@
             if (this.drawerOpen) {
                 this.closeDrawer();
             }
+            if (this.filterPanelOpen) {
+                this.closeFilterPanel();
+            }
         },
 
         toggleDrawer: function() {
@@ -505,6 +557,325 @@
             this.drawer.classList.remove('launcher-drawer-open');
             this.drawerTab.classList.remove('launcher-drawer-tab-active');
             this.drawerOpen = false;
+        },
+
+        // Filter Panel Methods
+        toggleFilterPanel: function() {
+            if (this.filterPanelOpen) {
+                this.closeFilterPanel();
+            } else {
+                this.openFilterPanel();
+            }
+        },
+
+        openFilterPanel: function() {
+            this.filterPanel.classList.add('launcher-filter-panel-open');
+            this.filterBtn.classList.add('launcher-filter-active');
+            this.filterPanelOpen = true;
+        },
+
+        closeFilterPanel: function() {
+            this.filterPanel.classList.remove('launcher-filter-panel-open');
+            this.filterBtn.classList.remove('launcher-filter-active');
+            this.filterPanelOpen = false;
+        },
+
+        renderFilterPanel: function() {
+            const self = this;
+            const options = this.config.availableFilterOptions || {};
+            const sections = this.config.allSections || [];
+            const entryTypes = this.config.allEntryTypes || [];
+
+            // Check if any filters are available
+            const hasAnyFilters = options.allowDrafts || options.allowDisabled ||
+                                  options.allowNestedEntries || options.allowSections || options.allowEntryTypes;
+
+            if (!hasAnyFilters) {
+                this.filterBtn.style.display = 'none';
+                return;
+            }
+
+            let html = `
+                <div class="launcher-filter-header">
+                    <span class="launcher-filter-title">Filters</span>
+                    <button type="button" class="launcher-filter-reset" id="launcher-filter-reset">Reset</button>
+                </div>
+                <div class="launcher-filter-content">
+            `;
+
+            // Toggle filters section
+            if (options.allowDrafts || options.allowDisabled || options.allowNestedEntries) {
+                html += '<div class="launcher-filter-section">';
+
+                if (options.allowDrafts) {
+                    html += `
+                        <div class="launcher-filter-toggle ${this.searchFilters.includeDrafts ? 'active' : ''}" data-filter="includeDrafts">
+                            <div class="launcher-filter-toggle-switch"></div>
+                            <span class="launcher-filter-toggle-label">Include Drafts</span>
+                        </div>
+                    `;
+                }
+
+                if (options.allowDisabled) {
+                    html += `
+                        <div class="launcher-filter-toggle ${this.searchFilters.includeDisabled ? 'active' : ''}" data-filter="includeDisabled">
+                            <div class="launcher-filter-toggle-switch"></div>
+                            <span class="launcher-filter-toggle-label">Include Disabled</span>
+                        </div>
+                    `;
+                }
+
+                if (options.allowNestedEntries) {
+                    html += `
+                        <div class="launcher-filter-toggle ${this.searchFilters.includeNested ? 'active' : ''}" data-filter="includeNested">
+                            <div class="launcher-filter-toggle-switch"></div>
+                            <span class="launcher-filter-toggle-label">Include Nested Entries</span>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+            }
+
+            // Sections filter
+            if (options.allowSections && sections.length > 0) {
+                const selectedCount = this.searchFilters.sections.length;
+                html += `
+                    <div class="launcher-filter-collapsible" data-collapsible="sections">
+                        <div class="launcher-filter-collapsible-header">
+                            <span class="launcher-filter-collapsible-title">
+                                Sections
+                                ${selectedCount > 0 ? `<span class="launcher-filter-collapsible-count">${selectedCount} selected</span>` : ''}
+                            </span>
+                            <svg class="launcher-filter-collapsible-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="launcher-filter-collapsible-body">
+                `;
+
+                sections.forEach(section => {
+                    const isChecked = this.searchFilters.sections.includes(section.id);
+                    html += `
+                        <div class="launcher-filter-checkbox ${isChecked ? 'checked' : ''}" data-filter="sections" data-value="${section.id}">
+                            <div class="launcher-filter-checkbox-box">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <span class="launcher-filter-checkbox-label">${section.name}</span>
+                            <span class="launcher-filter-checkbox-meta">${section.handle}</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div></div>';
+            }
+
+            // Entry Types filter
+            if (options.allowEntryTypes && entryTypes.length > 0) {
+                const selectedCount = this.searchFilters.entryTypes.length;
+                html += `
+                    <div class="launcher-filter-collapsible" data-collapsible="entryTypes">
+                        <div class="launcher-filter-collapsible-header">
+                            <span class="launcher-filter-collapsible-title">
+                                Entry Types
+                                ${selectedCount > 0 ? `<span class="launcher-filter-collapsible-count">${selectedCount} selected</span>` : ''}
+                            </span>
+                            <svg class="launcher-filter-collapsible-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="launcher-filter-collapsible-body">
+                `;
+
+                // Group entry types by section
+                const groupedTypes = {};
+                entryTypes.forEach(type => {
+                    if (!groupedTypes[type.sectionName]) {
+                        groupedTypes[type.sectionName] = [];
+                    }
+                    groupedTypes[type.sectionName].push(type);
+                });
+
+                Object.keys(groupedTypes).forEach(sectionName => {
+                    html += `<div class="launcher-filter-section-title" style="margin-top: 8px; margin-bottom: 4px; font-size: 10px;">${sectionName}</div>`;
+                    groupedTypes[sectionName].forEach(type => {
+                        const isChecked = this.searchFilters.entryTypes.includes(type.id);
+                        html += `
+                            <div class="launcher-filter-checkbox ${isChecked ? 'checked' : ''}" data-filter="entryTypes" data-value="${type.id}">
+                                <div class="launcher-filter-checkbox-box">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </div>
+                                <span class="launcher-filter-checkbox-label">${type.name}</span>
+                            </div>
+                        `;
+                    });
+                });
+
+                html += '</div></div>';
+            }
+
+            html += '</div>';
+
+            this.filterPanel.innerHTML = html;
+            this.bindFilterEvents();
+        },
+
+        bindFilterEvents: function() {
+            const self = this;
+
+            // Prevent any clicks inside the panel from closing it
+            this.filterPanel.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // Toggle switches
+            this.filterPanel.querySelectorAll('.launcher-filter-toggle').forEach(function(toggle) {
+                toggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const filter = this.dataset.filter;
+                    self.updateFilter(filter, !self.searchFilters[filter]);
+                });
+            });
+
+            // Checkboxes
+            this.filterPanel.querySelectorAll('.launcher-filter-checkbox').forEach(function(checkbox) {
+                checkbox.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const filter = this.dataset.filter;
+                    const value = parseInt(this.dataset.value);
+                    const currentValues = self.searchFilters[filter] || [];
+
+                    if (currentValues.includes(value)) {
+                        // Remove value
+                        self.searchFilters[filter] = currentValues.filter(v => v !== value);
+                    } else {
+                        // Add value
+                        self.searchFilters[filter] = [...currentValues, value];
+                    }
+
+                    self.saveFilters();
+                    self.renderFilterPanel();
+                    self.updateFilterButtonState();
+                    self.triggerSearch();
+                });
+            });
+
+            // Collapsible headers
+            this.filterPanel.querySelectorAll('.launcher-filter-collapsible-header').forEach(function(header) {
+                header.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const collapsible = this.parentElement;
+                    collapsible.classList.toggle('expanded');
+                });
+            });
+
+            // Reset button
+            const resetBtn = this.filterPanel.querySelector('#launcher-filter-reset');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    self.resetFilters();
+                });
+            }
+        },
+
+        updateFilter: function(key, value) {
+            console.log('[Launcher] Updating filter:', key, 'from', this.searchFilters[key], 'to', value);
+            this.searchFilters[key] = value;
+            console.log('[Launcher] Current filters after update:', JSON.stringify(this.searchFilters));
+            this.saveFilters();
+            this.renderFilterPanel();
+            this.updateFilterButtonState();
+            this.triggerSearch();
+        },
+
+        resetFilters: function() {
+            this.searchFilters = {
+                includeDrafts: false,
+                includeDisabled: false,
+                includeNested: false,
+                sections: [],
+                entryTypes: []
+            };
+            this.saveFilters();
+            this.renderFilterPanel();
+            this.updateFilterButtonState();
+            this.triggerSearch();
+        },
+
+        updateFilterButtonState: function() {
+            // Check if any non-default filters are active
+            const hasFilters = this.searchFilters.includeDrafts ||
+                              this.searchFilters.includeDisabled ||
+                              this.searchFilters.includeNested ||
+                              this.searchFilters.sections.length > 0 ||
+                              this.searchFilters.entryTypes.length > 0;
+
+            if (hasFilters) {
+                this.filterBtn.classList.add('launcher-filter-has-filters');
+            } else {
+                this.filterBtn.classList.remove('launcher-filter-has-filters');
+            }
+        },
+
+        saveFilters: function() {
+            const self = this;
+            const url = this.config.setFiltersUrl;
+
+            if (!url) {
+                console.warn('No setFiltersUrl configured');
+                return;
+            }
+
+            const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
+            const csrfTokenValue = this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : null);
+
+            const requestBody = Object.assign({}, this.searchFilters);
+            if (csrfTokenName && csrfTokenValue) {
+                requestBody[csrfTokenName] = csrfTokenValue;
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            if (csrfTokenValue) {
+                headers['X-CSRF-Token'] = csrfTokenValue;
+            }
+
+            console.log('[Launcher] Saving filters to URL:', url);
+            console.log('[Launcher] Request body:', JSON.stringify(requestBody));
+
+            fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(requestBody),
+                redirect: 'error' // This will throw an error if there's a redirect
+            })
+            .then(response => {
+                console.log('[Launcher] Save filters response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('[Launcher] Save filters response:', data);
+                if (!data.success) {
+                    console.warn('Failed to save filters:', data.message);
+                }
+            })
+            .catch(error => {
+                console.warn('Failed to save filters:', error);
+            });
+        },
+
+        triggerSearch: function() {
+            // Re-run the current search with new filters
+            const query = this.searchInput.value;
+            this.performSearch(query);
         },
 
         loadDrawerContent: function() {
@@ -979,8 +1350,12 @@
 
             // Prepare request body
             const requestBody = {
-                query: query
+                query: query,
+                filters: this.searchFilters
             };
+
+            // Debug: Log filter values being sent
+            console.log('[Launcher] Sending search with filters:', JSON.stringify(this.searchFilters));
 
             // Add CSRF token - use config values if available (front-end), otherwise fall back to Craft object (CP)
             const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
@@ -1665,7 +2040,7 @@
                 'users': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2 14c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
                 'globals': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2 8h12M8 2c2.21 0 4 2.69 4 6s-1.79 6-4 6-4-2.69-4-6 1.79-6 4-6z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
                 'sections': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2 6h12M6 2v12" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="4" r=".5" fill="currentColor"/></svg>',
-                'fields': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4 6h8M4 8h8M4 10h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 1v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+                'fields': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 8h1M8 6v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="2" r="1.5" fill="currentColor"/></svg>',
                 'plugins': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6.5 1v4.5H2v3h4.5V14l3-3h4.5V2H6.5z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/><circle cx="8" cy="6" r="1" fill="currentColor"/><circle cx="11" cy="6" r="1" fill="currentColor"/></svg>',
                 'routes': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h4l2-4h4l2 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="8" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="13" cy="8" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
                 'volumes': '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4 4V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6 7v2M8 7v2M10 7v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',

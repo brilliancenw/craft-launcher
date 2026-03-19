@@ -1,20 +1,23 @@
 {% import "_includes/forms" as forms %}
 
-<h2>{{ "Search Preferences"|t('launcher') }}</h2>
-<p>{{ "Configure how the launcher displays search results."|t('launcher') }}</p>
+<h2>{{ "Search Filters"|t('launcher') }}</h2>
+<p>{{ "Customize search results using the filter icon in the launcher search box. Your filter preferences are saved automatically."|t('launcher') }}</p>
 
-{{ forms.selectField({
-    label: 'Nested Entries'|t('launcher'),
-    instructions: 'Control whether nested/child entries appear in search results. The system default is currently set to ' ~ (globalHideNestedEntries ? '"Hide"' : '"Show"') ~ '.'|t('launcher'),
-    id: 'nestedEntriesPreference',
-    name: 'nestedEntriesPreference',
-    value: nestedEntriesPreference,
-    options: [
-        { label: 'Use System Setting'|t('launcher'), value: 'system' },
-        { label: 'Always Show Nested Entries'|t('launcher'), value: 'show' },
-        { label: 'Always Hide Nested Entries'|t('launcher'), value: 'hide' }
-    ]
-}) }}
+<div class="field">
+    <div class="heading">
+        <label>{{ "Available Filters"|t('launcher') }}</label>
+    </div>
+    <div class="input">
+        <ul>
+            <li><strong>{{ "Include Drafts"|t('launcher') }}:</strong> {{ "Show draft entries in search results"|t('launcher') }}</li>
+            <li><strong>{{ "Include Disabled"|t('launcher') }}:</strong> {{ "Show disabled entries in search results"|t('launcher') }}</li>
+            <li><strong>{{ "Hide Nested Entries"|t('launcher') }}:</strong> {{ "Filter out nested/child entries from results"|t('launcher') }}</li>
+            <li><strong>{{ "Sections"|t('launcher') }}:</strong> {{ "Filter by specific sections"|t('launcher') }}</li>
+            <li><strong>{{ "Entry Types"|t('launcher') }}:</strong> {{ "Filter by specific entry types"|t('launcher') }}</li>
+        </ul>
+        <p class="light">{{ "Note: Available filters depend on your administrator's settings."|t('launcher') }}</p>
+    </div>
+</div>
 
 <hr>
 

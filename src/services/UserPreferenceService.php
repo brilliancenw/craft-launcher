@@ -11,6 +11,13 @@ class UserPreferenceService extends Component
     private const NEW_TAB_KEY = 'launcher_frontend_new_tab';
     private const NESTED_ENTRIES_KEY = 'launcher_nested_entries';
 
+    // Search filter preference keys
+    private const FILTER_INCLUDE_DRAFTS = 'launcher_filter_drafts';
+    private const FILTER_INCLUDE_DISABLED = 'launcher_filter_disabled';
+    private const FILTER_SECTIONS = 'launcher_filter_sections';
+    private const FILTER_ENTRY_TYPES = 'launcher_filter_entry_types';
+    private const FILTER_INCLUDE_NESTED = 'launcher_filter_include_nested';
+
     /**
      * Check if the current user has front-end launcher enabled
      */
@@ -199,9 +206,157 @@ class UserPreferenceService extends Component
         // Fall back to global setting
         $plugin = Craft::$app->getPlugins()->getPlugin('launcher');
         if ($plugin) {
-            return $plugin->getSettings()->hideNestedEntries;
+            return $plugin->getSettings()->includeNestedEntries;
         }
 
         return true; // Default to hiding nested entries
+    }
+
+    /**
+     * Get all search filters as array
+     */
+    public function getSearchFilters(): array
+    {
+        $user = Craft::$app->getUser()->getIdentity();
+
+        if (!$user) {
+            return $this->getDefaultSearchFilters();
+        }
+
+        $preferences = $user->getPreferences();
+
+        return [
+            'includeDrafts' => $preferences[self::FILTER_INCLUDE_DRAFTS] ?? false,
+            'includeDisabled' => $preferences[self::FILTER_INCLUDE_DISABLED] ?? false,
+            'includeNested' => $preferences[self::FILTER_INCLUDE_NESTED] ?? false,
+            'sections' => $preferences[self::FILTER_SECTIONS] ?? [],
+            'entryTypes' => $preferences[self::FILTER_ENTRY_TYPES] ?? [],
+        ];
+    }
+
+    /**
+     * Get default search filter values
+     */
+    public function getDefaultSearchFilters(): array
+    {
+        return [
+            'includeDrafts' => false,
+            'includeDisabled' => false,
+            'includeNested' => false,
+            'sections' => [],
+            'entryTypes' => [],
+        ];
+    }
+
+    /**
+     * Set search filters from array
+     */
+    public function setSearchFilters(array $filters): bool
+    {
+        $user = Craft::$app->getUser()->getIdentity();
+
+        if (!$user) {
+            return false;
+        }
+
+        // Check if user has launcher permissions
+        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
+            return false;
+        }
+
+        $preferences = [];
+
+        // Validate and set each filter
+        if (isset($filters['includeDrafts'])) {
+            $preferences[self::FILTER_INCLUDE_DRAFTS] = (bool) $filters['includeDrafts'];
+        }
+
+        if (isset($filters['includeDisabled'])) {
+            $preferences[self::FILTER_INCLUDE_DISABLED] = (bool) $filters['includeDisabled'];
+        }
+
+        if (isset($filters['includeNested'])) {
+            $preferences[self::FILTER_INCLUDE_NESTED] = (bool) $filters['includeNested'];
+        }
+
+        if (isset($filters['sections'])) {
+            // Ensure sections is an array of integers
+            $preferences[self::FILTER_SECTIONS] = array_map('intval', (array) $filters['sections']);
+        }
+
+        if (isset($filters['entryTypes'])) {
+            // Ensure entry types is an array of integers
+            $preferences[self::FILTER_ENTRY_TYPES] = array_map('intval', (array) $filters['entryTypes']);
+        }
+
+        try {
+            Craft::$app->getUsers()->saveUserPreferences($user, $preferences);
+            return true;
+        } catch (\Exception $e) {
+            Craft::error('Failed to save search filter preferences: ' . $e->getMessage(), 'launcher');
+            return false;
+        }
+    }
+
+    /**
+     * Get effective filters respecting admin settings
+     * Returns only filters that are allowed by admin settings
+     */
+    public function getEffectiveFilters(): array
+    {
+        $plugin = Craft::$app->getPlugins()->getPlugin('launcher');
+        if (!$plugin) {
+            return $this->getDefaultSearchFilters();
+        }
+
+        $settings = $plugin->getSettings();
+        $userFilters = $this->getSearchFilters();
+        $effectiveFilters = [];
+
+        // Apply admin restrictions
+        $effectiveFilters['includeDrafts'] = $settings->allowUserFilterDrafts
+            ? $userFilters['includeDrafts']
+            : $settings->searchDrafts;
+
+        $effectiveFilters['includeDisabled'] = $settings->allowUserFilterDisabled
+            ? $userFilters['includeDisabled']
+            : $settings->searchDisabled;
+
+        // Note: Admin setting is hideNestedEntries, so we invert it for includeNested
+        $effectiveFilters['includeNested'] = $settings->allowUserFilterNestedEntries
+            ? $userFilters['includeNested']
+            : !$settings->hideNestedEntries;
+
+        $effectiveFilters['sections'] = $settings->allowUserFilterSections
+            ? $userFilters['sections']
+            : [];
+
+        $effectiveFilters['entryTypes'] = $settings->allowUserFilterEntryTypes
+            ? $userFilters['entryTypes']
+            : [];
+
+        return $effectiveFilters;
+    }
+
+    /**
+     * Get available filter options for the filter panel
+     * Returns which filters the admin allows users to customize
+     */
+    public function getAvailableFilterOptions(): array
+    {
+        $plugin = Craft::$app->getPlugins()->getPlugin('launcher');
+        if (!$plugin) {
+            return [];
+        }
+
+        $settings = $plugin->getSettings();
+
+        return [
+            'allowDrafts' => $settings->allowUserFilterDrafts,
+            'allowDisabled' => $settings->allowUserFilterDisabled,
+            'allowSections' => $settings->allowUserFilterSections,
+            'allowEntryTypes' => $settings->allowUserFilterEntryTypes,
+            'allowNestedEntries' => $settings->allowUserFilterNestedEntries,
+        ];
     }
 }

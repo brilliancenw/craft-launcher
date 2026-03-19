@@ -78,4 +78,76 @@ class UserPreferenceController extends Controller
             'newTabEnabled' => $newTabEnabled
         ]);
     }
+
+    /**
+     * Set search filter preferences
+     */
+    public function actionSetSearchFilters(): Response
+    {
+        $this->requirePostRequest();
+
+        $request = Craft::$app->getRequest();
+
+        // Get filters from request body
+        $filters = [];
+
+        if ($request->getIsAjax() && $request->getContentType() === 'application/json') {
+            $filters = [
+                'includeDrafts' => $request->getBodyParam('includeDrafts'),
+                'includeDisabled' => $request->getBodyParam('includeDisabled'),
+                'includeNested' => $request->getBodyParam('includeNested'),
+                'sections' => $request->getBodyParam('sections', []),
+                'entryTypes' => $request->getBodyParam('entryTypes', []),
+            ];
+        } else {
+            $filters = [
+                'includeDrafts' => $request->getBodyParam('includeDrafts'),
+                'includeDisabled' => $request->getBodyParam('includeDisabled'),
+                'includeNested' => $request->getBodyParam('includeNested'),
+                'sections' => $request->getBodyParam('sections', []),
+                'entryTypes' => $request->getBodyParam('entryTypes', []),
+            ];
+        }
+
+        // Filter out null values (only update what was sent)
+        $filters = array_filter($filters, function($value) {
+            return $value !== null;
+        });
+
+        $success = Launcher::$plugin->userPreference->setSearchFilters($filters);
+
+        if ($request->getIsAjax()) {
+            return $this->asJson([
+                'success' => $success,
+                'message' => $success
+                    ? 'Search filters updated successfully'
+                    : 'Failed to update search filters',
+                'filters' => Launcher::$plugin->userPreference->getSearchFilters()
+            ]);
+        } else {
+            if ($success) {
+                Craft::$app->getSession()->setNotice('Search filters updated successfully');
+            } else {
+                Craft::$app->getSession()->setError('Failed to update search filters');
+            }
+            return $this->redirectToPostedUrl();
+        }
+    }
+
+    /**
+     * Get current search filter preferences
+     */
+    public function actionGetSearchFilters(): Response
+    {
+        $this->requireAcceptsJson();
+
+        $filters = Launcher::$plugin->userPreference->getSearchFilters();
+        $availableOptions = Launcher::$plugin->userPreference->getAvailableFilterOptions();
+
+        return $this->asJson([
+            'success' => true,
+            'filters' => $filters,
+            'availableOptions' => $availableOptions
+        ]);
+    }
 }
