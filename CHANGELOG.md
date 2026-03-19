@@ -1,5 +1,48 @@
 # Changelog
 
+## [v1.3.0] - 2026-03-19
+
+### New Features
+
+**Gmail-Style Search Filters**
+- **NEW**: Filter icon in search box opens dropdown panel for refining results
+- **NEW**: Toggle filters: Include Drafts, Include Disabled, Include Nested Entries
+- **NEW**: Section and Entry Type filtering with collapsible checkbox lists
+- **NEW**: Filters persist per-user via Craft's user preferences
+- **NEW**: Admin settings control which filter options are visible to users
+- **NEW**: Filters apply immediately when toggled (no submit button needed)
+
+**Admin User Management**
+- **NEW**: Admins can view and edit other users' launcher preferences
+- **NEW**: Rocket Launcher tab appears on user profile pages for users with launcher permission
+- **IMPROVED**: Proper URL routing for viewing other users' launcher settings
+
+### Security Enhancements
+
+**Comprehensive Permission Checks**
+- **FIXED**: Non-admin users no longer see admin-only items in search results
+- **ADDED**: Sections, Entry Types, Fields, Plugins, Asset Volumes - admin only
+- **ADDED**: Category Groups - admin only
+- **ADDED**: Static Settings pages - admin only
+- **ADDED**: Utilities - checks specific `utility:<handle>` permissions
+- **ADDED**: Globals - checks `editGlobalSet:<uid>` permission per global
+- **ADDED**: Commerce Customers - checks `commerce-manageCustomers` permission
+- **ADDED**: Commerce Products - checks `commerce-manageProducts` permission
+- **ADDED**: Commerce Orders - checks `commerce-manageOrders` permission
+
+### Bug Fixes
+
+**Nested Entries Search**
+- **FIXED**: Nested entries now appear in search results when "Include Nested Entries" is enabled
+- **FIXED**: Nested entries have `sectionId=null` so section filters no longer exclude them
+- **FIXED**: Proper status filtering for nested entries (respects Include Disabled toggle)
+
+### Documentation
+
+- **ADDED**: Warning about full page caching compatibility (Blitz, Cloudflare CDN, Varnish) for front-end launcher
+
+> **Major Update**: This release adds powerful Gmail-style search filters, comprehensive permission checks for all searchable content types, and the ability for admins to manage other users' launcher preferences.
+
 ## [v1.2.0] - 2025-03-02
 
 ### New Features
