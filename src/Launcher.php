@@ -34,6 +34,7 @@ use craft\web\UrlManager;
 use craft\web\View;
 use craft\web\twig\variables\CraftVariable;
 use yii\base\Event;
+use yii\web\Response;
 
 class Launcher extends Plugin
 {
@@ -67,6 +68,9 @@ class Launcher extends Plugin
     {
         parent::init();
         self::$plugin = $this;
+
+        // Debug logging can be enabled by uncommenting the line below
+        // Craft::info('[Launcher] Plugin init() called - request type: ' . (Craft::$app->getRequest()->getIsConsoleRequest() ? 'console' : 'web'), __METHOD__);
 
         $this->setComponents([
             'launcher' => LauncherService::class,
@@ -182,16 +186,44 @@ class Launcher extends Plugin
             );
         }
 
-        // Handle front-end launcher injection
-        if (!Craft::$app->getRequest()->getIsCpRequest()) {
-            Event::on(
-                View::class,
-                View::EVENT_BEFORE_RENDER_TEMPLATE,
-                function ($event) {
-                    $this->injectFrontEndLauncher($event);
+        // Handle front-end launcher injection using Response::EVENT_BEFORE_SEND
+        // This event fires before the response is sent, reliable for front-end pages
+        Event::on(
+            Response::class,
+            Response::EVENT_BEFORE_SEND,
+            function ($event) {
+                $request = Craft::$app->getRequest();
+                $response = $event->sender;
+
+                // Only inject on front-end HTML requests
+                if ($request->getIsCpRequest() || $request->getIsConsoleRequest()) {
+                    return;
                 }
-            );
-        }
+
+                // Check if this is an HTML response
+                // Content-type may not be set yet, so also check response format and content
+                $contentType = $response->getHeaders()->get('content-type');
+                $isHtml = $contentType && strpos($contentType, 'text/html') !== false;
+
+                // If content-type not set, check if response format is HTML or content contains HTML
+                if (!$isHtml) {
+                    $format = $response->format;
+                    $isHtml = ($format === Response::FORMAT_HTML);
+
+                    // If still unsure, check if content looks like HTML
+                    if (!$isHtml && is_string($response->content)) {
+                        $isHtml = (stripos($response->content, '<!DOCTYPE html') !== false ||
+                                   stripos($response->content, '<html') !== false);
+                    }
+                }
+
+                if (!$isHtml) {
+                    return;
+                }
+
+                $this->injectFrontEndLauncherToResponse($response);
+            }
+        );
 
         Event::on(
             View::class,
@@ -310,22 +342,29 @@ class Launcher extends Plugin
     }
 
     /**
-     * Inject launcher assets on the front-end if user has enabled it
+     * Inject launcher bootstrap script on the front-end
+     *
+     * This method injects a minimal bootstrap script that calls an action endpoint
+     * to check authorization. This approach is compatible with full-page caching
+     * solutions (Varnish, Blitz, Cloudflare, etc.) because no user-specific data
+     * is embedded in the cached page.
+     *
+     * The bootstrap script:
+     * 1. Calls /actions/launcher/bootstrap
+     * 2. If authorized, loads the full launcher assets
+     * 3. If not authorized, silently does nothing
+     *
+     * @param mixed $event The template render event (may contain template variables)
      */
     protected function injectFrontEndLauncher($event = null): void
     {
-        // Security check: Only inject if user is authenticated
-        if (!Craft::$app->getUser()->getIdentity()) {
-            return;
-        }
+        $settings = $this->getSettings();
 
-        // Security check: Verify user has launcher permissions
-        if (!Craft::$app->getUser()->checkPermission('accessPlugin-launcher')) {
-            return;
-        }
-
-        // Only inject if user is logged in and has preference enabled
-        if (!$this->userPreference->isFrontEndEnabled()) {
+        // Only auto-inject if deployment method is 'auto'
+        // 'disabled' = no front-end at all
+        // 'twig' = only via {{ craft.launcher.bootstrap() }}
+        // 'auto' = inject on all front-end pages
+        if ($settings->frontEndDeployment !== 'auto') {
             return;
         }
 
@@ -334,81 +373,122 @@ class Launcher extends Plugin
             return;
         }
 
-        // Security check: Skip if request contains suspicious patterns
-        $request = Craft::$app->getRequest();
-        $userAgent = $request->getUserAgent();
-        if (empty($userAgent) || $this->isSuspiciousRequest($request)) {
+        // Inject the bootstrap script
+        $this->injectBootstrapScript($event);
+    }
+
+    /**
+     * Inject bootstrap script into Response body
+     *
+     * @param Response $response The response object
+     */
+    protected function injectFrontEndLauncherToResponse($response): void
+    {
+        $settings = $this->getSettings();
+
+        // Only auto-inject if deployment method is 'auto'
+        if ($settings->frontEndDeployment !== 'auto') {
             return;
         }
 
-        // Register the launcher assets (front-end version without CP dependencies)
-        Craft::$app->getView()->registerAssetBundle(LauncherFrontEndAsset::class);
+        // Skip in Live Preview mode
+        if (Craft::$app->getRequest()->getIsLivePreview()) {
+            return;
+        }
 
-        $settings = $this->getSettings();
-        $hotkey = $settings->hotkey;
-        $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl('@brilliance/launcher/assetbundles/launcher/dist');
-        $searchUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search']);
-        $navigateUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search/navigate']);
-        $removeHistoryUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search/remove-history-item']);
-        $executeIntegrationUrl = Craft::$app->getUrlManager()->createUrl(['launcher/search/execute-integration']);
+        $content = $response->content;
+        if (empty($content) || !is_string($content)) {
+            return;
+        }
 
-        // Get CSRF token details
-        $request = Craft::$app->getRequest();
-        $csrfTokenName = $request->csrfParam;
-        $csrfTokenValue = $request->getCsrfToken();
+        // Check if content has </body> tag
+        if (stripos($content, '</body>') === false) {
+            return;
+        }
 
-        // Get user preferences
-        $openInNewTab = $this->userPreference->isFrontEndNewTabEnabled();
+        // Build the bootstrap script
+        $bootstrapUrl = Craft::$app->getUrlManager()->createUrl(['launcher/bootstrap']);
+        $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl(
+            '@brilliance/launcher/assetbundles/launcher/dist',
+            true
+        );
+        $bootstrapScriptUrl = $assetUrl . '/js/launcher-bootstrap.js';
 
-        // Get current entry context if available
-        $context = $this->getFrontEndContext($event);
-        $contextJson = json_encode($context);
+        $script = <<<HTML
+<!-- Rocket Launcher Bootstrap -->
+<script>
+(function() {
+    // Create and load bootstrap script
+    var bootstrapScript = document.createElement('script');
+    bootstrapScript.src = '{$bootstrapScriptUrl}';
+    bootstrapScript.setAttribute('data-bootstrap-url', '{$bootstrapUrl}');
+    document.body.appendChild(bootstrapScript);
+})();
+</script>
+HTML;
 
-        // Convert boolean to string for JavaScript
-        $openInNewTabJs = $openInNewTab ? 'true' : 'false';
-        $searchableTypesJson = json_encode($settings->searchableTypes);
+        // Inject before </body>
+        $content = str_ireplace('</body>', $script . '</body>', $content);
+        $response->content = $content;
+    }
 
-        // Get filter configuration for frontend
-        $userFilters = $this->userPreference->getSearchFilters();
-        $availableFilterOptions = $this->userPreference->getAvailableFilterOptions();
-        $allSections = $this->getAllSectionsForFilter();
-        $allEntryTypes = $this->getAllEntryTypesForFilter();
+    /**
+     * Inject the bootstrap script tag
+     *
+     * This injects a minimal script that calls the bootstrap endpoint.
+     * The endpoint performs all authorization checks and returns the
+     * full launcher configuration if authorized.
+     *
+     * @param mixed $event The template render event
+     */
+    protected function injectBootstrapScript($event = null): void
+    {
+        $bootstrapUrl = Craft::$app->getUrlManager()->createUrl(['launcher/bootstrap']);
 
-        $userFiltersJson = json_encode($userFilters);
-        $availableFilterOptionsJson = json_encode($availableFilterOptions);
-        $allSectionsJson = json_encode($allSections);
-        $allEntryTypesJson = json_encode($allEntryTypes);
+        $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl(
+            '@brilliance/launcher/assetbundles/launcher/dist',
+            true
+        );
+        $bootstrapScriptUrl = $assetUrl . '/js/launcher-bootstrap.js';
 
-        $setFiltersUrl = Craft::$app->getUrlManager()->createUrl(['launcher/user-preference/set-search-filters']);
-
-        $js = <<<JS
-        // Front-end Launcher initialization
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.LauncherPlugin) {
-                window.LauncherPlugin.init({
-                    hotkey: '$hotkey',
-                    searchUrl: '$searchUrl',
-                    navigateUrl: '$navigateUrl',
-                    removeHistoryUrl: '$removeHistoryUrl',
-                    executeIntegrationUrl: '$executeIntegrationUrl',
-                    setFiltersUrl: '$setFiltersUrl',
-                    csrfTokenName: '$csrfTokenName',
-                    csrfTokenValue: '$csrfTokenValue',
-                    debounceDelay: {$settings->debounceDelay},
-                    assetUrl: '$assetUrl',
-                    selectResultModifier: '{$settings->selectResultModifier}',
-                    searchableTypes: $searchableTypesJson,
-                    isFrontEnd: true,
-                    openInNewTab: $openInNewTabJs,
-                    frontEndContext: $contextJson,
-                    searchFilters: $userFiltersJson,
-                    availableFilterOptions: $availableFilterOptionsJson,
-                    allSections: $allSectionsJson,
-                    allEntryTypes: $allEntryTypesJson
-                });
+        // Build context if available from template variables
+        $contextJson = '{}';
+        if ($event && !empty($event->variables)) {
+            $context = $this->getFrontEndContext($event);
+            if (!empty($context)) {
+                // Escape for use in JavaScript string
+                $contextJson = json_encode($context, JSON_HEX_APOS | JSON_HEX_QUOT);
             }
-        });
-        JS;
+        }
+
+        // Inject the bootstrap script by dynamically creating script tags
+        // This approach works with Craft's registerJs method
+        $js = <<<JS
+(function() {
+    console.log('[Launcher Bootstrap] Injecting bootstrap script...');
+    console.log('[Launcher Bootstrap] Bootstrap URL:', '{$bootstrapUrl}');
+    console.log('[Launcher Bootstrap] Script URL:', '{$bootstrapScriptUrl}');
+
+    // Create context script
+    var contextScript = document.createElement('script');
+    contextScript.type = 'application/json';
+    contextScript.id = 'launcher-context';
+    contextScript.textContent = '{$contextJson}';
+    document.body.appendChild(contextScript);
+
+    // Create and load bootstrap script
+    var bootstrapScript = document.createElement('script');
+    bootstrapScript.src = '{$bootstrapScriptUrl}';
+    bootstrapScript.setAttribute('data-bootstrap-url', '{$bootstrapUrl}');
+    bootstrapScript.onload = function() {
+        console.log('[Launcher Bootstrap] Bootstrap script loaded successfully');
+    };
+    bootstrapScript.onerror = function() {
+        console.error('[Launcher Bootstrap] Failed to load bootstrap script');
+    };
+    document.body.appendChild(bootstrapScript);
+})();
+JS;
 
         Craft::$app->getView()->registerJs($js, View::POS_END);
     }

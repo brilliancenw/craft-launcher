@@ -1021,6 +1021,91 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <hr>
 
+<h1>Front-End Launcher</h1>
+<p>Allow authorized users to access the launcher on the public-facing pages of your website.</p>
+
+<div class="readable">
+    <blockquote class="note warning">
+        <p><strong>Security Notice</strong></p>
+        <p>The front-end launcher is disabled by default for security. Before enabling, understand the implications:</p>
+        <ul style="margin-top: 10px; margin-bottom: 0;">
+            <li>Only users with the "Access Rocket Launcher" permission can use it</li>
+            <li>Users must also enable it in their personal account preferences</li>
+            <li>The bootstrap method is compatible with full-page caching (Varnish, Blitz, Cloudflare)</li>
+        </ul>
+    </blockquote>
+</div>
+
+{{ forms.selectField({
+    label: 'Deployment Method'|t('launcher'),
+    instructions: 'Choose how the front-end launcher is deployed to your site.'|t('launcher'),
+    id: 'frontEndDeployment',
+    name: 'frontEndDeployment',
+    value: settings.frontEndDeployment,
+    options: [
+        { value: 'disabled', label: 'Disabled (Recommended Default)'|t('launcher') },
+        { value: 'twig', label: 'Twig Tag Only'|t('launcher') },
+        { value: 'auto', label: 'Auto-Inject (All Pages)'|t('launcher') },
+    ],
+    disabled: isProjectConfigReadOnly,
+}) }}
+
+<div id="deployment-disabled-info" class="deployment-info"{% if settings.frontEndDeployment != 'disabled' %} style="display: none;"{% endif %}>
+    <div class="readable">
+        <blockquote class="note">
+            <p><strong>Front-End Disabled</strong></p>
+            <p>No launcher code is added to front-end pages. This is the most secure option and recommended for most sites.</p>
+        </blockquote>
+    </div>
+</div>
+
+<div id="deployment-twig-info" class="deployment-info"{% if settings.frontEndDeployment != 'twig' %} style="display: none;"{% endif %}>
+    <div class="readable">
+        <blockquote class="note tip">
+            <p><strong>Twig Tag Deployment</strong></p>
+            <p>Add the launcher to specific templates using the Twig tag:</p>
+            <pre style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 4px; overflow-x: auto;"><code>{% verbatim %}{{ craft.launcher.bootstrap() }}{% endverbatim %}</code></pre>
+            <p style="margin-top: 10px;">With entry context for "edit this page" functionality:</p>
+            <pre style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 4px; overflow-x: auto;"><code>{% verbatim %}{{ craft.launcher.bootstrap({ context: entry }) }}{% endverbatim %}</code></pre>
+            <p style="margin-top: 10px;"><strong>Best for:</strong> Sites that want selective launcher placement, or need control over which pages include the launcher.</p>
+            <p style="margin-top: 10px;"><strong>Cache Compatible:</strong> Yes - works with Varnish, Blitz, Cloudflare CDN, and other full-page cache solutions.</p>
+        </blockquote>
+    </div>
+</div>
+
+<div id="deployment-auto-info" class="deployment-info"{% if settings.frontEndDeployment != 'auto' %} style="display: none;"{% endif %}>
+    <div class="readable">
+        <blockquote class="note tip">
+            <p><strong>Auto-Inject Deployment</strong></p>
+            <p>The bootstrap script is automatically added to all front-end pages. Authorized users will see the launcher on every page.</p>
+            <p style="margin-top: 10px;"><strong>Best for:</strong> Sites where all pages should have launcher access for authorized users.</p>
+            <p style="margin-top: 10px;"><strong>Cache Compatible:</strong> Yes - works with Varnish, Blitz, Cloudflare CDN, and other full-page cache solutions.</p>
+            <p style="margin-top: 10px;"><strong>How it works:</strong> A small bootstrap script is injected that calls an action endpoint. Since action endpoints bypass page caches, each user gets their own authorization check.</p>
+        </blockquote>
+    </div>
+</div>
+
+<script>
+(function() {
+    var select = document.getElementById('settings-frontEndDeployment');
+    if (select) {
+        select.addEventListener('change', function() {
+            var infos = document.querySelectorAll('.deployment-info');
+            infos.forEach(function(el) {
+                el.style.display = 'none';
+            });
+            var targetId = 'deployment-' + this.value + '-info';
+            var target = document.getElementById(targetId);
+            if (target) {
+                target.style.display = '';
+            }
+        });
+    }
+})();
+</script>
+
+<hr>
+
 <h1>System Diagnostics</h1>
 <p>Information about the launcher's database setup and functionality.</p>
 
@@ -1114,18 +1199,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check on page load and when Craft is ready
     if (typeof Craft !== 'undefined' && Craft.cp) {
-        console.log('[Launcher Settings] Using Craft.cp.ready');
         Craft.cp.ready(function() {
-            console.log('[Launcher Settings] Craft.cp ready fired');
-
             // Wait a bit for Craft's lightswitch components to initialize
             setTimeout(function() {
-                console.log('[Launcher Settings] Running initial check');
                 checkSearchableTypes();
 
                 // Monitor all searchable type toggles for changes
                 const inputs = document.querySelectorAll('input[type="hidden"][name^="settings[searchableTypes]["]');
-                console.log('[Launcher Settings] Attaching listeners to', inputs.length, 'inputs');
 
                 // Use MutationObserver to watch for value changes on all inputs
                 inputs.forEach(function(input) {
@@ -1133,7 +1213,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     const observer = new MutationObserver(function(mutations) {
                         mutations.forEach(function(mutation) {
                             if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
-                                console.log('[Launcher Settings] Input value changed:', input.name, 'New value:', input.value);
                                 setTimeout(checkSearchableTypes, 50);
                             }
                         });
@@ -1147,9 +1226,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (parent) {
                         const lightswitch = parent.querySelector('.lightswitch');
                         if (lightswitch) {
-                            console.log('[Launcher Settings] Found lightswitch for:', input.name);
                             lightswitch.addEventListener('click', function() {
-                                console.log('[Launcher Settings] Lightswitch clicked for:', input.name);
                                 // Check multiple times as Craft may update the value asynchronously
                                 setTimeout(checkSearchableTypes, 50);
                                 setTimeout(checkSearchableTypes, 150);
@@ -1160,23 +1237,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 250);
         });
     } else {
-        console.log('[Launcher Settings] Using DOMContentLoaded fallback');
         // Fallback if Craft.cp is not available
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('[Launcher Settings] DOMContentLoaded fired');
-
             // Poll for inputs to appear (try every 200ms for up to 5 seconds)
             let attempts = 0;
             const maxAttempts = 25;
 
             const pollForInputs = function() {
                 attempts++;
-                console.log('[Launcher Settings] Polling attempt', attempts);
 
                 const inputs = document.querySelectorAll('input[type="hidden"][name^="settings[searchableTypes]["]');
 
                 if (inputs.length > 0) {
-                    console.log('[Launcher Settings] Found', inputs.length, 'inputs after', attempts, 'attempts!');
                     checkSearchableTypes();
 
                     // Use MutationObserver to watch for value changes on all inputs
@@ -1185,7 +1257,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         const observer = new MutationObserver(function(mutations) {
                             mutations.forEach(function(mutation) {
                                 if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
-                                    console.log('[Launcher Settings] Input value changed:', input.name, 'New value:', input.value);
                                     setTimeout(checkSearchableTypes, 50);
                                 }
                             });
@@ -1199,9 +1270,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (parent) {
                             const lightswitch = parent.querySelector('.lightswitch');
                             if (lightswitch) {
-                                console.log('[Launcher Settings] Found lightswitch for:', input.name);
                                 lightswitch.addEventListener('click', function() {
-                                    console.log('[Launcher Settings] Lightswitch clicked for:', input.name);
                                     // Check multiple times as Craft may update the value asynchronously
                                     setTimeout(checkSearchableTypes, 50);
                                     setTimeout(checkSearchableTypes, 150);
@@ -1212,8 +1281,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (attempts < maxAttempts) {
                     // Keep polling
                     setTimeout(pollForInputs, 200);
-                } else {
-                    console.error('[Launcher Settings] Gave up after', maxAttempts, 'attempts');
                 }
             };
 

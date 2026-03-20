@@ -1,5 +1,48 @@
 # Changelog
 
+## [v1.4.0] - 2026-03-20
+
+### Full Page Caching Support (Fixes #12)
+
+**Cache-Compatible Front-end Launcher**
+- **NEW**: Bootstrap approach for front-end launcher that works with Blitz, Varnish, Cloudflare CDN, and other full-page caching solutions
+- **NEW**: Lightweight bootstrap script injected into pages calls action endpoint for per-user authorization
+- **NEW**: Action endpoints bypass page caches, ensuring each user gets proper permission checks even on cached pages
+- **NEW**: Silent 204 response for unauthorized users prevents information leakage on cached pages
+
+**Front-end Deployment Options**
+- **NEW**: Three deployment modes in admin settings: Disabled (default), Twig Tag, Auto-Inject
+- **NEW**: Twig tag deployment: `{{ craft.launcher.bootstrap() }}` for selective page inclusion
+- **NEW**: Context-aware Twig tag: `{{ craft.launcher.bootstrap({ context: entry }) }}` for "edit this page" functionality
+- **NEW**: Auto-inject mode automatically adds bootstrap script to all front-end HTML pages
+
+**Front-end Search Filters**
+- **NEW**: Search filter preferences stored in browser localStorage on front-end for cache compatibility
+- **NEW**: Visual indicator in filter panel shows "Filters are saved in your browser only" for front-end users
+- **IMPROVED**: Control panel filters continue to sync to user account across devices
+
+### Security Enhancements
+
+- **ADDED**: Rate limiting for bootstrap requests (60 per minute per user)
+- **ADDED**: Bot detection via empty user agent filtering
+- **ADDED**: Fresh CSRF token provided in bootstrap response for subsequent requests
+- **IMPROVED**: Silent denial (204 No Content) reveals no information about launcher existence
+
+### Documentation
+
+- **UPDATED**: README now documents full cache compatibility (previously warned "not tested")
+- **UPDATED**: User account preferences explain CP vs front-end filter storage differences
+- **IMPROVED**: Admin settings include detailed explanations for each deployment mode
+
+### Technical Details
+
+- **ADDED**: BootstrapController for handling `/actions/launcher/bootstrap` endpoint
+- **ADDED**: `launcher-bootstrap.js` minimal script for cache-compatible initialization
+- **IMPROVED**: Response::EVENT_BEFORE_SEND used for reliable HTML injection on front-end
+- **REMOVED**: Debug console.log statements from settings page JavaScript
+
+> **Cache Compatibility**: This release makes the front-end launcher fully compatible with static file caching solutions like Blitz. The bootstrap approach ensures each user gets proper authorization while pages remain cacheable. Closes #12. Thanks to **@SETU-WEB** (Brian Hackett) for reporting this issue and providing detailed analysis.
+
 ## [v1.3.0] - 2026-03-19
 
 ### New Features

@@ -1,3 +1,4 @@
+/* Rocket Launcher v1.5.0 - Build 20260320 */
 (function() {
     window.LauncherPlugin = {
         modal: null,
@@ -65,9 +66,14 @@
             this.isFrontEnd = config.isFrontEnd || false;
             this.frontEndContext = config.frontEndContext || null;
 
-            // Initialize filters from config
+            // Initialize filters from config (server-side preferences)
             if (config.searchFilters) {
                 this.searchFilters = Object.assign({}, this.searchFilters, config.searchFilters);
+            }
+
+            // On front-end, override with localStorage filters (browser-local)
+            if (this.isFrontEnd) {
+                this.loadFiltersFromStorage();
             }
 
             this.createModal();
@@ -718,6 +724,20 @@
                 html += '</div></div>';
             }
 
+            // Add note for front-end users about browser storage
+            if (this.isFrontEnd) {
+                html += `
+                    <div class="launcher-filter-note">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <span>Filters are saved in your browser only</span>
+                    </div>
+                `;
+            }
+
             html += '</div>';
 
             this.filterPanel.innerHTML = html;
@@ -784,9 +804,7 @@
         },
 
         updateFilter: function(key, value) {
-            console.log('[Launcher] Updating filter:', key, 'from', this.searchFilters[key], 'to', value);
             this.searchFilters[key] = value;
-            console.log('[Launcher] Current filters after update:', JSON.stringify(this.searchFilters));
             this.saveFilters();
             this.renderFilterPanel();
             this.updateFilterButtonState();
@@ -823,11 +841,20 @@
         },
 
         saveFilters: function() {
-            const self = this;
-            const url = this.config.setFiltersUrl;
+            // On front-end, save to localStorage (more secure, avoids server POST issues)
+            // On CP, save to user preferences via server
+            if (this.isFrontEnd) {
+                try {
+                    localStorage.setItem('launcher_filters', JSON.stringify(this.searchFilters));
+                } catch (e) {
+                    // localStorage not available, filters will just be session-only
+                }
+                return;
+            }
 
+            // CP: Save to server
+            const url = this.config.setFiltersUrl;
             if (!url) {
-                console.warn('No setFiltersUrl configured');
                 return;
             }
 
@@ -839,37 +866,40 @@
                 requestBody[csrfTokenName] = csrfTokenValue;
             }
 
-            const headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            };
-
-            if (csrfTokenValue) {
-                headers['X-CSRF-Token'] = csrfTokenValue;
-            }
-
-            console.log('[Launcher] Saving filters to URL:', url);
-            console.log('[Launcher] Request body:', JSON.stringify(requestBody));
-
             fetch(url, {
                 method: 'POST',
-                headers: headers,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': csrfTokenValue || ''
+                },
                 body: JSON.stringify(requestBody),
-                redirect: 'error' // This will throw an error if there's a redirect
+                credentials: 'same-origin'
             })
-            .then(response => {
-                console.log('[Launcher] Save filters response status:', response.status);
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('[Launcher] Save filters response:', data);
                 if (!data.success) {
-                    console.warn('Failed to save filters:', data.message);
+                    console.warn('[Launcher] Failed to save filters');
                 }
             })
             .catch(error => {
-                console.warn('Failed to save filters:', error);
+                console.warn('[Launcher] Failed to save filters:', error);
             });
+        },
+
+        loadFiltersFromStorage: function() {
+            // On front-end, load from localStorage
+            if (this.isFrontEnd) {
+                try {
+                    const stored = localStorage.getItem('launcher_filters');
+                    if (stored) {
+                        const filters = JSON.parse(stored);
+                        this.searchFilters = Object.assign({}, this.searchFilters, filters);
+                    }
+                } catch (e) {
+                    // localStorage not available or invalid data
+                }
+            }
         },
 
         triggerSearch: function() {
@@ -1175,15 +1205,12 @@
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-Token': window.Craft.csrfTokenValue || '',
-                }
+                    'X-CSRF-Token': this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : ''),
+                },
+                credentials: 'same-origin'
             })
-            .then(response => {
-                console.log('AI Start Response Status:', response.status);
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('AI Start Response Data:', data);
                 if (data.success) {
                     self.aiThreadId = data.conversation.threadId;
 
@@ -1233,8 +1260,9 @@
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-Token': window.Craft.csrfTokenValue || '',
+                    'X-CSRF-Token': this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : ''),
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({
                     threadId: this.aiThreadId,
                     message: message,
@@ -1354,9 +1382,6 @@
                 filters: this.searchFilters
             };
 
-            // Debug: Log filter values being sent
-            console.log('[Launcher] Sending search with filters:', JSON.stringify(this.searchFilters));
-
             // Add CSRF token - use config values if available (front-end), otherwise fall back to Craft object (CP)
             const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
             const csrfTokenValue = this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : null);
@@ -1383,7 +1408,8 @@
             fetch(this.config.searchUrl, {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify(requestBody),
+                credentials: 'same-origin'
             })
             .then(response => response.json())
             .then(data => {
@@ -1400,9 +1426,6 @@
         },
 
         displayResults: function(results, isRecent, data) {
-            // Debug: Log all results to see what data is available
-            console.log('[Launcher] Displaying results:', results);
-
             // Add "Edit this page" option for front-end context
             if (this.isFrontEnd && this.frontEndContext && this.frontEndContext.currentElement && !this.browseMode) {
                 const currentElement = this.frontEndContext.currentElement;
@@ -1445,11 +1468,6 @@
             }
 
             results.forEach((result, index) => {
-                // Debug: Log integration data
-                if (result.integrations && result.integrations.length > 0) {
-                    console.log('[Launcher] Result with integrations:', result.title, result.integrations);
-                }
-
                 const iconType = result.type || result.icon;
                 const iconSvg = this.getIconSvg(iconType);
                 // Generate shortcut display based on index and settings
@@ -1612,8 +1630,6 @@
             const result = this.currentResults[index];
             if (!result || !result.url) return;
 
-            console.log('Navigating to result:', result.title, result.url);
-
             // Get action URL and CSRF token
             const actionUrl = this.config.navigateUrl || (typeof Craft !== 'undefined' ? Craft.getActionUrl('launcher/search/navigate') : null);
             const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
@@ -1627,8 +1643,6 @@
                 this.closeModal();
                 return;
             }
-
-            console.log('Making request to:', actionUrl, 'with item:', result);
 
             const requestBody = { item: result };
             if (csrfTokenName && csrfTokenValue) {
@@ -1647,14 +1661,11 @@
             fetch(actionUrl, {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify(requestBody),
+                credentials: 'same-origin'
             })
-            .then(response => {
-                console.log('Navigation tracking response status:', response.status);
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('Navigation tracking response:', data);
                 // Navigation tracking complete, now navigate
                 this.navigateToUrl(result.url);
                 this.closeModal();
@@ -1668,15 +1679,12 @@
         },
 
         removeHistoryItem: function(itemHash, index) {
-            console.log('Removing history item:', itemHash);
-
             const self = this;
             const actionUrl = this.config.removeHistoryUrl || (typeof Craft !== 'undefined' ? Craft.getActionUrl('launcher/search/remove-history-item') : null);
             const csrfTokenName = this.config.csrfTokenName || (typeof Craft !== 'undefined' ? Craft.csrfTokenName : null);
             const csrfTokenValue = this.config.csrfTokenValue || (typeof Craft !== 'undefined' ? Craft.csrfTokenValue : null);
 
             if (!actionUrl) {
-                console.warn('No remove history URL available');
                 return;
             }
 
@@ -1697,11 +1705,11 @@
             fetch(actionUrl, {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify(requestBody),
+                credentials: 'same-origin'
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Remove history item response:', data);
                 if (data.success) {
                     // Remove the item from current results array
                     self.currentResults.splice(index, 1);
@@ -1713,9 +1721,6 @@
 
                     // Re-render the results
                     self.displayResults(self.currentResults, false, { isPopular: true });
-
-                    // Show a subtle success message
-                    console.log('Item removed from history');
                 } else {
                     console.warn('Failed to remove item from history:', data.error);
                 }
@@ -1745,8 +1750,6 @@
                     return;
                 }
             }
-
-            console.log('Executing integration action:', integration, action, 'for result:', result);
 
             // Disable button and show loading state
             button.disabled = true;
@@ -1788,12 +1791,11 @@
             fetch(actionUrl, {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify(requestBody),
+                credentials: 'same-origin'
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Integration action response:', data);
-
                 if (data.success) {
                     // Show success feedback briefly
                     button.textContent = data.message || 'Done!';
@@ -1957,7 +1959,8 @@
             fetch(this.config.searchUrl, {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify(requestBody),
+                credentials: 'same-origin'
             })
             .then(response => response.json())
             .then(data => {

@@ -485,6 +485,23 @@
     display: block;
 }
 
+.launcher-filter-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    background: var(--gray-050, #f9fafb);
+    border-top: 1px solid var(--hairline-color, #e3e5e8);
+    font-size: 11px;
+    color: var(--light-text-color, #8b92a1);
+}
+
+.launcher-filter-note svg {
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
 .launcher-close {
     position: absolute;
     right: 12px;

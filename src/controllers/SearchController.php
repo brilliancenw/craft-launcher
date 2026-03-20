@@ -38,6 +38,18 @@ class SearchController extends Controller
             }
         }
 
+        // Handle saveFilters request (piggybacked on search endpoint to work around redirect issues)
+        $saveFilters = Craft::$app->getRequest()->getBodyParam('saveFilters', false);
+        if ($saveFilters) {
+            $filters = Craft::$app->getRequest()->getBodyParam('filters', []);
+            $success = Launcher::$plugin->userPreference->setSearchFilters($filters);
+            return $this->asJson([
+                'success' => $success,
+                'message' => $success ? 'Filters saved' : 'Failed to save filters',
+                'filters' => Launcher::$plugin->userPreference->getSearchFilters()
+            ]);
+        }
+
         $query = Craft::$app->getRequest()->getBodyParam('query', '');
         $browseType = Craft::$app->getRequest()->getBodyParam('browseType', '');
         
