@@ -184,7 +184,7 @@ Click the filter icon in the search box to open a dropdown panel with powerful f
 
 #### How It Works
 - **Immediate Apply**: Filters apply instantly when toggled - no submit button needed
-- **Per-User Persistence**: Your filter preferences are saved automatically via Craft's user preferences
+- **Per-User Persistence**: In the control panel, filter preferences are saved to your user account. On the front-end, filters are stored in your browser's localStorage for cache compatibility.
 - **Admin Control**: Administrators can control which filter options are visible to users in plugin settings
 - **Smart Defaults**: All content is included by default; filters are additive restrictions
 
@@ -230,20 +230,24 @@ Once enabled, the launcher works the same way on your front-end as it does in th
 The front-end launcher includes several security measures:
 
 - **Authentication required**: Only visible when you are logged in with launcher permissions
-- **Rate limited**: Prevents abuse with a limit of 30 searches per minute
-- **Bot detection**: Automatically disabled for bots and suspicious requests
+- **Cache-compatible design**: Uses a bootstrap approach that works with full-page caching while still validating each user
+- **Rate limited**: Prevents abuse with a limit of 30 searches per minute (60 for bootstrap requests)
+- **Bot detection**: Automatically disabled for bots and suspicious requests (empty user agents)
 - **Permission validation**: Context validation ensures you can only edit entries you have permission for
 - **Selective loading**: Only loads on legitimate user requests, not for crawlers or automated tools
+- **Local filter storage**: Front-end filter preferences are stored in browser localStorage for privacy and cache compatibility
 
 ### Full Page Caching Compatibility
 
-**Important**: The front-end launcher has not been tested with full page caching solutions such as:
+The front-end launcher is fully compatible with full-page caching solutions:
 - Blitz
 - Cloudflare CDN
 - Varnish
 - Similar full-page caching systems
 
-If you use full page caching, the launcher may not function correctly on cached pages. Consider excluding authenticated users from caching or testing thoroughly in your environment.
+**How it works**: The launcher uses a bootstrap approach where a small script is injected into pages. This script calls an action endpoint (`/actions/launcher/bootstrap`) to check authorization. Since Craft action endpoints bypass page caches, each user gets their own authorization check even on cached pages.
+
+**Filter Storage**: On the front-end, search filter preferences are stored in your browser's localStorage rather than on the server. This ensures filters work correctly with cached pages and provides faster performance. A note in the filter panel indicates when filters are stored locally.
 
 ### Link Behavior Options
 

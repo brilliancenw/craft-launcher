@@ -59,6 +59,14 @@ class Settings extends Model
     // Integration settings
     public array $enabledIntegrations = [];
 
+    /**
+     * Front-end deployment method
+     * - 'disabled' (default): No front-end launcher
+     * - 'twig': Manual deployment via Twig tag only
+     * - 'auto': Auto-inject bootstrap on all front-end pages
+     */
+    public string $frontEndDeployment = 'disabled';
+
     // Result navigation shortcuts
     public string $selectResultModifier = 'cmd';
     public array $resultShortcuts = [
@@ -77,7 +85,9 @@ class Settings extends Model
     public function rules(): array
     {
         return [
-            [['hotkey', 'selectResultModifier'], 'string'],
+            [['hotkey', 'selectResultModifier', 'frontEndDeployment'], 'string'],
+            [['frontEndDeployment'], 'in', 'range' => ['disabled', 'twig', 'auto']],
+            [['frontEndDeployment'], 'default', 'value' => 'disabled'],
             [['hotkey'], 'required'],
             [['debounceDelay', 'maxResults', 'maxHistoryItems'], 'number', 'integerOnly' => true],
             [['debounceDelay'], 'default', 'value' => 300],
@@ -118,6 +128,7 @@ class Settings extends Model
             'selectResultModifier' => 'Result Selection Modifier Key',
             'resultShortcuts' => 'Result Navigation Shortcuts',
             'enabledIntegrations' => 'Enabled Integrations',
+            'frontEndDeployment' => 'Front-End Deployment Method',
         ];
     }
 }

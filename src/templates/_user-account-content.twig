@@ -4,6 +4,10 @@
     <input type="hidden" name="targetUserId" value="{{ targetUserId }}">
 {% endif %}
 
+{% set plugin = craft.app.plugins.getPlugin('launcher') %}
+{% set settings = plugin.settings %}
+{% set frontEndEnabled = settings.frontEndDeployment != 'disabled' %}
+
 <h2>{{ "Search Filters"|t('launcher') }}</h2>
 <p>{{ "Customize search results using the filter icon in the launcher search box. Your filter preferences are saved automatically."|t('launcher') }}</p>
 
@@ -15,7 +19,7 @@
         <ul>
             <li><strong>{{ "Include Drafts"|t('launcher') }}:</strong> {{ "Show draft entries in search results"|t('launcher') }}</li>
             <li><strong>{{ "Include Disabled"|t('launcher') }}:</strong> {{ "Show disabled entries in search results"|t('launcher') }}</li>
-            <li><strong>{{ "Hide Nested Entries"|t('launcher') }}:</strong> {{ "Filter out nested/child entries from results"|t('launcher') }}</li>
+            <li><strong>{{ "Include Nested Entries"|t('launcher') }}:</strong> {{ "Show nested/child entries in results"|t('launcher') }}</li>
             <li><strong>{{ "Sections"|t('launcher') }}:</strong> {{ "Filter by specific sections"|t('launcher') }}</li>
             <li><strong>{{ "Entry Types"|t('launcher') }}:</strong> {{ "Filter by specific entry types"|t('launcher') }}</li>
         </ul>
@@ -23,26 +27,51 @@
     </div>
 </div>
 
+<div class="field">
+    <div class="heading">
+        <label>{{ "Filter Storage"|t('launcher') }}</label>
+    </div>
+    <div class="input">
+        <ul>
+            <li><strong>{{ "Control Panel"|t('launcher') }}:</strong> {{ "Filter preferences are saved to your user account and sync across devices."|t('launcher') }}</li>
+            <li><strong>{{ "Front-end"|t('launcher') }}:</strong> {{ "Filter preferences are stored in your browser's local storage. They persist across sessions but are specific to each browser."|t('launcher') }}</li>
+        </ul>
+    </div>
+</div>
+
 <hr>
 
 <h2>{{ "Front-end Launcher"|t('launcher') }}</h2>
-<p>{{ "Enable the launcher on the front-end of your website, similar to how the debug toolbar works."|t('launcher') }}</p>
 
-<div class="readable">
-    <blockquote class="note warning">
-        <p><strong>{{ "Full Page Caching"|t('launcher') }}</strong></p>
-        <p>{{ "The front-end launcher has not been tested with full page caching solutions such as Blitz, Cloudflare CDN, Varnish, or similar. If you use full page caching, the launcher may not function correctly on cached pages."|t('launcher') }}</p>
-    </blockquote>
-</div>
+{% if not frontEndEnabled %}
+    {# Admin has disabled front-end launcher #}
+    <div class="readable">
+        <blockquote class="note">
+            <p><strong>{{ "Front-end Not Available"|t('launcher') }}</strong></p>
+            <p>{{ "The front-end launcher has not been enabled for this site. Contact your site administrator if you need access to the launcher on front-end pages."|t('launcher') }}</p>
+        </blockquote>
+    </div>
+{% else %}
+    {# Admin has enabled front-end launcher #}
+    <p>{{ "Enable the launcher on the front-end of your website."|t('launcher') }}</p>
 
-{{ forms.lightswitchField({
-    label: 'Enable Front-end Launcher'|t('launcher'),
-    instructions: 'When enabled, you can use the launcher on the public-facing pages of the website. The launcher will appear when you press your configured hotkey (' ~ craft.app.plugins.getPlugin('launcher').settings.hotkey ~ ').'|t('launcher'),
-    id: 'enabled',
-    name: 'enabled',
-    on: isEnabled,
-    toggle: 'launcher-frontend-details'
-}) }}
+    {% if settings.frontEndDeployment == 'twig' %}
+        <div class="readable">
+            <blockquote class="note tip">
+                <p><strong>{{ "Twig Tag Deployment"|t('launcher') }}</strong></p>
+                <p>{{ "Your administrator has configured the launcher to be deployed via Twig tag. The launcher will only appear on pages where the template includes the launcher tag."|t('launcher') }}</p>
+            </blockquote>
+        </div>
+    {% endif %}
+
+    {{ forms.lightswitchField({
+        label: 'Enable Front-end Launcher'|t('launcher'),
+        instructions: 'When enabled, you can use the launcher on the public-facing pages of the website using your configured hotkey (' ~ settings.hotkey ~ ').'|t('launcher'),
+        id: 'enabled',
+        name: 'enabled',
+        on: isEnabled,
+        toggle: 'launcher-frontend-details'
+    }) }}
 
     <div id="launcher-frontend-details"{% if not isEnabled %} class="hidden"{% endif %}>
         {{ forms.lightswitchField({
@@ -74,10 +103,11 @@
             <div class="input">
                 <ul>
                     <li>{{ "Only visible when you are logged in with launcher permissions"|t('launcher') }}</li>
-                    <li>{{ "Rate limited to prevent abuse (30 searches per minute)"|t('launcher') }}</li>
-                    <li>{{ "Automatically disabled for bots and suspicious requests"|t('launcher') }}</li>
+                    <li>{{ "Compatible with full-page caching solutions (Varnish, Blitz, Cloudflare)"|t('launcher') }}</li>
+                    <li>{{ "Rate limited to prevent abuse"|t('launcher') }}</li>
                     <li>{{ "Context validation ensures you can only edit entries you have permission for"|t('launcher') }}</li>
                 </ul>
             </div>
         </div>
     </div>
+{% endif %}
