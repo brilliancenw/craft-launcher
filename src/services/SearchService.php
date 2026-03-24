@@ -203,21 +203,21 @@ class SearchService extends Component
         $results = [];
         $queryLower = strtolower($query);
 
-        // Check if we have current entry context
-        if (isset($context['currentEntry'])) {
-            $entry = $context['currentEntry'];
+        // Check if we have current element context (from front-end)
+        $element = $context['currentElement'] ?? $context['currentEntry'] ?? null;
 
+        if ($element) {
             // Add "Edit this page" action for relevant search terms
             $editTerms = ['edit', 'edit this', 'edit page', 'edit this page', 'modify', 'change', 'update'];
             foreach ($editTerms as $term) {
                 if (stripos($term, $queryLower) === 0 || stripos($queryLower, $term) === 0) {
                     $results[] = [
-                        'id' => $entry['id'],
+                        'id' => $element['id'],
                         'title' => 'Edit this page',
-                        'url' => $entry['editUrl'],
+                        'url' => $element['editUrl'],
                         'type' => 'Context Action',
-                        'entry' => $entry['title'],
-                        'section' => $entry['sectionHandle'],
+                        'entry' => $element['title'],
+                        'section' => $element['sectionHandle'] ?? $element['type'] ?? null,
                         'icon' => 'newspaper',
                         'priority' => 100, // High priority to show first
                     ];
@@ -230,12 +230,12 @@ class SearchService extends Component
             foreach ($detailTerms as $term) {
                 if (stripos($term, $queryLower) === 0 || stripos($queryLower, $term) === 0) {
                     $results[] = [
-                        'id' => $entry['id'],
+                        'id' => $element['id'],
                         'title' => 'View entry details',
-                        'url' => $entry['editUrl'],
+                        'url' => $element['editUrl'],
                         'type' => 'Context Action',
-                        'entry' => $entry['title'],
-                        'section' => $entry['sectionHandle'],
+                        'entry' => $element['title'],
+                        'section' => $element['sectionHandle'] ?? $element['type'] ?? null,
                         'icon' => 'newspaper',
                         'priority' => 90,
                     ];
