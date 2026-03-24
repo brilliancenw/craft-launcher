@@ -7,6 +7,7 @@ use Craft;
 use craft\web\Controller;
 use craft\web\Response;
 use craft\helpers\App;
+use craft\elements\Entry;
 
 /**
  * Utility Controller
@@ -235,6 +236,108 @@ class UtilityController extends Controller
             return $this->asJson([
                 'success' => false,
                 'error' => 'Failed to create table: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Reindex a specific section's entries
+     */
+    public function actionReindexSection(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+        $this->requireAdmin();
+
+        $sectionHandle = Craft::$app->getRequest()->getBodyParam('section');
+
+        if (!$sectionHandle) {
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Section handle is required.'
+            ]);
+        }
+
+        try {
+            $section = Craft::$app->getEntries()->getSectionByHandle($sectionHandle);
+            if (!$section) {
+                return $this->asJson([
+                    'success' => false,
+                    'error' => 'Section not found: ' . $sectionHandle
+                ]);
+            }
+
+            // Get all entries in the section
+            $entries = Entry::find()
+                ->section($sectionHandle)
+                ->status(null)
+                ->all();
+
+            $count = 0;
+            $searchService = Craft::$app->getSearch();
+
+            foreach ($entries as $entry) {
+                // Index the entry's searchable attributes
+                $searchService->indexElementAttributes($entry);
+                $count++;
+            }
+
+            Craft::info("Reindexed {$count} entries in section '{$sectionHandle}'", __METHOD__);
+
+            return $this->asJson([
+                'success' => true,
+                'message' => "Reindexed {$count} entries in '{$section->name}'."
+            ]);
+
+        } catch (\Exception $e) {
+            Craft::error('Failed to reindex section: ' . $e->getMessage(), __METHOD__);
+
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to reindex: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Reindex all sections
+     */
+    public function actionReindexAll(): Response
+    {
+        $this->requirePostRequest();
+        $this->requireAcceptsJson();
+        $this->requireAdmin();
+
+        try {
+            $sections = Craft::$app->getEntries()->getAllSections();
+            $totalCount = 0;
+            $searchService = Craft::$app->getSearch();
+
+            foreach ($sections as $section) {
+                $entries = Entry::find()
+                    ->section($section->handle)
+                    ->status(null)
+                    ->all();
+
+                foreach ($entries as $entry) {
+                    $searchService->indexElementAttributes($entry);
+                    $totalCount++;
+                }
+            }
+
+            Craft::info("Reindexed {$totalCount} entries across all sections", __METHOD__);
+
+            return $this->asJson([
+                'success' => true,
+                'message' => "Reindexed {$totalCount} entries across " . count($sections) . " sections."
+            ]);
+
+        } catch (\Exception $e) {
+            Craft::error('Failed to reindex all sections: ' . $e->getMessage(), __METHOD__);
+
+            return $this->asJson([
+                'success' => false,
+                'error' => 'Failed to reindex: ' . $e->getMessage()
             ]);
         }
     }
