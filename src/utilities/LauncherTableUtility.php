@@ -65,12 +65,82 @@ class LauncherTableUtility extends Utility
 
         $settings = Launcher::$plugin->getSettings();
 
+        // Get search index status
+        $searchIndexStatus = self::getSearchIndexStatus();
+
         return Craft::$app->getView()->renderTemplate('launcher/_utility', [
             'tableStatus' => $tableStatus,
             'stats' => $stats,
             'settings' => $settings,
             'pluginVersion' => Launcher::$plugin->getVersion(),
             'craftVersion' => Craft::$app->getVersion(),
+            'searchIndexStatus' => $searchIndexStatus,
         ]);
+    }
+
+    /**
+     * Get search index status for all sections
+     */
+    private static function getSearchIndexStatus(): array
+    {
+        $status = [
+            'sections' => [],
+            'searchableFields' => [],
+            'totalIndexedKeywords' => 0,
+        ];
+
+        try {
+            // Get all sections
+            $sections = Craft::$app->getEntries()->getAllSections();
+
+            foreach ($sections as $section) {
+                // Count entries in this section
+                $entryCount = \craft\elements\Entry::find()
+                    ->section($section->handle)
+                    ->status(null)
+                    ->count();
+
+                // Count indexed entries for this section
+                $indexedCount = (new \craft\db\Query())
+                    ->from('{{%searchindex}} si')
+                    ->innerJoin('{{%entries}} e', 'si.elementId = e.id')
+                    ->where(['e.sectionId' => $section->id])
+                    ->select('si.elementId')
+                    ->distinct()
+                    ->count();
+
+                $status['sections'][] = [
+                    'name' => $section->name,
+                    'handle' => $section->handle,
+                    'id' => $section->id,
+                    'entryCount' => $entryCount,
+                    'indexedCount' => $indexedCount,
+                    'isFullyIndexed' => $entryCount === $indexedCount,
+                ];
+            }
+
+            // Get searchable fields
+            $fields = Craft::$app->getFields()->getAllFields();
+            foreach ($fields as $field) {
+                if ($field->searchable) {
+                    $status['searchableFields'][] = [
+                        'name' => $field->name,
+                        'handle' => $field->handle,
+                        'type' => $field::displayName(),
+                    ];
+                }
+            }
+
+            // Get total indexed keywords count
+            $status['totalIndexedKeywords'] = (new \craft\db\Query())
+                ->from('{{%searchindex}}')
+                ->count();
+
+        } catch (\Exception $e) {
+            Craft::warning('Could not fetch search index status: ' . $e->getMessage(), __METHOD__);
+            $status['error'] = $e->getMessage();
+        }
+
+        return $status;
     }
 }

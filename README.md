@@ -389,6 +389,41 @@ This is useful for:
 
 ## Recent Improvements
 
+### Version 1.4.0 Features
+
+*Thanks to [Brian Hackett](https://github.com/SETU-WEB) for reporting the front-end launcher issues ([#16](https://github.com/brilliancenw/craft-launcher/issues/16))*
+
+#### **Blitz Cache Compatibility Fix**
+- **Event Timing**: Fixed an issue where the front-end launcher script was not being injected on the first page load when using Blitz cache
+- **Root Cause**: The launcher was using `Response::EVENT_BEFORE_SEND` which fires AFTER Blitz captures the response for caching
+- **Solution**: Changed to `Response::EVENT_AFTER_PREPARE` with handler prepending to ensure the launcher script is injected BEFORE Blitz caches the page
+- **Result**: The launcher now works correctly on the first page load, even with full-page caching enabled
+
+#### **Front-End Action URL Fixes** (Fixes [#16](https://github.com/brilliancenw/craft-launcher/issues/16))
+- Fixed front-end action URLs to use `UrlHelper::actionUrl()` for proper routing
+- Ensures `/actions/launcher/...` URLs work correctly on front-end pages
+- Resolves issue where front-end search returned no results
+
+#### **Search Index Utility**
+A new Search Index Status section has been added to the Rocket Launcher utility (Utilities > Rocket Launcher):
+
+- **Indexed Sections Table**: Shows each section with total entry count, indexed count, and status indicator
+- **Status Indicators**: Green (fully indexed), orange (partially indexed), red (not indexed)
+- **Per-Section Reindex**: Click "Reindex" next to any section to rebuild its search index
+- **Reindex All**: One-click button to reindex all sections at once
+- **Searchable Fields List**: View all fields configured for search indexing
+- **Total Keywords Count**: See the total number of indexed keywords in your database
+
+#### **Search Content Requirements**
+Craft CMS always indexes entry titles and slugs by default. To search content within other fields:
+
+1. **Field Configuration**: Each field must have "Use this field's values as search keywords" enabled in its field settings
+2. **Index Rebuild**: After enabling searchability on a field, run a search index rebuild via the utility or command line:
+   ```bash
+   php craft resave/entries --section=your-section --update-search-index
+   ```
+3. **Verification**: Use the new Search Index Utility to verify entries are properly indexed
+
 ### Version 1.3.0 Features
 
 #### **Gmail-Style Search Filters**
@@ -878,10 +913,12 @@ Stores per-user launch history data:
 - **Keyboard conflicts**: Try changing the shortcut if it conflicts with browser/OS shortcuts
 - **Clear caches**: Run `php craft clear-caches/all`
 
-#### No Search Results  
+#### No Search Results
 - **Permission check**: Verify you can access the content you're searching for
 - **Content type settings**: Check that the content types are enabled in Settings → Launcher
-- **Rebuild indexes**: Run `php craft resave/entries` to rebuild search indexes
+- **Field searchability**: Ensure fields have "Use this field's values as search keywords" enabled in field settings
+- **Check index status**: Use Utilities → Rocket Launcher to view Search Index Status
+- **Rebuild indexes**: Click "Reindex" in the utility or run `php craft resave/entries --update-search-index`
 - **Check filters**: Review content filtering settings (drafts, disabled items, etc.)
 
 #### Popular Items Not Showing

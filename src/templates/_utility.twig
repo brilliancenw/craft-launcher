@@ -123,6 +123,112 @@
 
     <hr>
 
+    <h2>Search Index Status</h2>
+
+    <div class="field">
+        <div class="heading">
+            <label>Indexed Sections</label>
+            <div class="instructions">
+                <p>Shows which sections have entries indexed for search. If entries are missing from search results, try reindexing.</p>
+            </div>
+        </div>
+        <div class="input">
+            {% if searchIndexStatus.error is defined %}
+                <div class="flex items-center">
+                    <span class="status red" data-icon="alert"></span>
+                    <span>Error checking search index: {{ searchIndexStatus.error }}</span>
+                </div>
+            {% else %}
+                <table class="data fullwidth">
+                    <thead>
+                        <tr>
+                            <th>Section</th>
+                            <th>Total Entries</th>
+                            <th>Indexed</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for section in searchIndexStatus.sections %}
+                        <tr>
+                            <td><strong>{{ section.name }}</strong> <span class="light">({{ section.handle }})</span></td>
+                            <td>{{ section.entryCount|number_format }}</td>
+                            <td>{{ section.indexedCount|number_format }}</td>
+                            <td>
+                                {% if section.isFullyIndexed %}
+                                    <span class="status green"></span> Indexed
+                                {% elseif section.indexedCount == 0 %}
+                                    <span class="status red"></span> Not indexed
+                                {% else %}
+                                    <span class="status orange"></span> Partial
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button"
+                                        class="btn small reindex-btn"
+                                        data-section="{{ section.handle }}"
+                                        onclick="reindexSection('{{ section.handle }}', this)">
+                                    Reindex
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 15px;">
+                    <button type="button" class="btn" id="reindex-all-btn" onclick="reindexAllSections()">
+                        Reindex All Sections
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="heading">
+            <label>Searchable Fields</label>
+            <div class="instructions">
+                <p>Fields configured to be included in the search index. Content in these fields will be searchable via the launcher.</p>
+            </div>
+        </div>
+        <div class="input">
+            <div style="padding: 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 4px; margin-bottom: 15px;">
+                <strong>Note:</strong> Entry titles and slugs are always indexed by Craft CMS. The fields below are <em>additional</em> fields that have "Use this field's values as search keywords" enabled.
+            </div>
+
+            {% if searchIndexStatus.searchableFields|length %}
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th>Field Name</th>
+                            <th>Handle</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field in searchIndexStatus.searchableFields %}
+                        <tr>
+                            <td>{{ field.name }}</td>
+                            <td><code>{{ field.handle }}</code></td>
+                            <td>{{ field.type }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="light">No additional searchable fields found. To search content beyond titles, enable "Use this field's values as search keywords" in field settings.</p>
+            {% endif %}
+
+            <p style="margin-top: 15px;">
+                <strong>Total indexed keywords:</strong> {{ searchIndexStatus.totalIndexedKeywords|number_format }}
+            </p>
+        </div>
+    </div>
+
+    <hr>
+
     <h2>Troubleshooting</h2>
 
     <div class="field">
@@ -147,6 +253,74 @@
 </div>
 
 <script>
+function reindexSection(sectionHandle, btn) {
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Reindexing...';
+
+    fetch('{{ actionUrl('launcher/utility/reindex-section') }}', {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': '{{ craft.app.request.csrfToken }}'
+        },
+        body: JSON.stringify({ section: sectionHandle })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data && data.success) {
+            Craft.cp.displayNotice(data.message || 'Section reindexed successfully!');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            Craft.cp.displayError(data?.error || 'Failed to reindex section.');
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Reindex error:', error);
+        Craft.cp.displayError('Error reindexing section: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = originalText;
+    });
+}
+
+function reindexAllSections() {
+    const btn = document.getElementById('reindex-all-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Reindexing All...';
+
+    fetch('{{ actionUrl('launcher/utility/reindex-all') }}', {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': '{{ craft.app.request.csrfToken }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data && data.success) {
+            Craft.cp.displayNotice(data.message || 'All sections reindexed successfully!');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            Craft.cp.displayError(data?.error || 'Failed to reindex sections.');
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Reindex error:', error);
+        Craft.cp.displayError('Error reindexing: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = originalText;
+    });
+}
+
 function createLauncherTable() {
     const btn = document.getElementById('create-table-btn');
     const originalText = btn.textContent;
