@@ -187,11 +187,12 @@ class Launcher extends Plugin
             );
         }
 
-        // Handle front-end launcher injection using Response::EVENT_BEFORE_SEND
-        // This event fires before the response is sent, reliable for front-end pages
+        // Handle front-end launcher injection using Response::EVENT_AFTER_PREPARE
+        // This event fires BEFORE EVENT_BEFORE_SEND and BEFORE Blitz caches the response
+        // Use $append = false to prepend our handler, ensuring it runs before Blitz
         Event::on(
             Response::class,
-            Response::EVENT_BEFORE_SEND,
+            Response::EVENT_AFTER_PREPARE,
             function ($event) {
                 $request = Craft::$app->getRequest();
                 $response = $event->sender;
@@ -223,7 +224,9 @@ class Launcher extends Plugin
                 }
 
                 $this->injectFrontEndLauncherToResponse($response);
-            }
+            },
+            null,  // $data
+            false  // $append = false to prepend handler (run before other handlers)
         );
 
         Event::on(
