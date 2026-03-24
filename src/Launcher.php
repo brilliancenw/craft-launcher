@@ -33,6 +33,7 @@ use craft\web\twig\variables\Cp;
 use craft\web\UrlManager;
 use craft\web\View;
 use craft\web\twig\variables\CraftVariable;
+use craft\helpers\UrlHelper;
 use yii\base\Event;
 use yii\web\Response;
 
@@ -407,24 +408,50 @@ class Launcher extends Plugin
         }
 
         // Build the bootstrap script
-        $bootstrapUrl = Craft::$app->getUrlManager()->createUrl(['launcher/bootstrap']);
-        $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl(
-            '@brilliance/launcher/assetbundles/launcher/dist',
-            true
-        );
+        $bootstrapUrl = UrlHelper::actionUrl('launcher/bootstrap');
+
+        // Explicitly publish assets to ensure they exist
+        $assetManager = Craft::$app->getAssetManager();
+        $sourcePath = Craft::getAlias('@brilliance/launcher/assetbundles/launcher/dist');
+
+        // Debug: Log the source path
+        Craft::info('[Launcher] Source path: ' . $sourcePath, 'launcher');
+        Craft::info('[Launcher] Source exists: ' . (is_dir($sourcePath) ? 'YES' : 'NO'), 'launcher');
+
+        // Publish returns [publishedPath, publishedUrl]
+        $published = $assetManager->publish($sourcePath);
+
+        // Debug: Log publish result
+        Craft::info('[Launcher] Publish result: ' . json_encode($published), 'launcher');
+
+        if (!$published || empty($published[1])) {
+            // If publishing fails, try getPublishedUrl as fallback
+            Craft::warning('[Launcher] Primary publish failed, trying fallback', 'launcher');
+            $assetUrl = $assetManager->getPublishedUrl($sourcePath, true);
+            if (!$assetUrl) {
+                Craft::error('[Launcher] All asset publishing methods failed', 'launcher');
+                return;
+            }
+        } else {
+            $assetUrl = $published[1];
+        }
+
         $bootstrapScriptUrl = $assetUrl . '/js/launcher-bootstrap.js';
+
+        // Debug: Log final URLs
+        Craft::info('[Launcher] Bootstrap URL: ' . $bootstrapUrl, 'launcher');
+        Craft::info('[Launcher] Script URL: ' . $bootstrapScriptUrl, 'launcher');
+
+        // Verify the file actually exists
+        $publishedPath = $published[0] ?? null;
+        if ($publishedPath) {
+            $scriptFile = $publishedPath . '/js/launcher-bootstrap.js';
+            Craft::info('[Launcher] Script file exists: ' . (file_exists($scriptFile) ? 'YES' : 'NO'), 'launcher');
+        }
 
         $script = <<<HTML
 <!-- Rocket Launcher Bootstrap -->
-<script>
-(function() {
-    // Create and load bootstrap script
-    var bootstrapScript = document.createElement('script');
-    bootstrapScript.src = '{$bootstrapScriptUrl}';
-    bootstrapScript.setAttribute('data-bootstrap-url', '{$bootstrapUrl}');
-    document.body.appendChild(bootstrapScript);
-})();
-</script>
+<script src="{$bootstrapScriptUrl}" data-bootstrap-url="{$bootstrapUrl}" defer></script>
 HTML;
 
         // Inject before </body>
@@ -443,12 +470,24 @@ HTML;
      */
     protected function injectBootstrapScript($event = null): void
     {
-        $bootstrapUrl = Craft::$app->getUrlManager()->createUrl(['launcher/bootstrap']);
+        $bootstrapUrl = UrlHelper::actionUrl('launcher/bootstrap');
 
-        $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl(
-            '@brilliance/launcher/assetbundles/launcher/dist',
-            true
-        );
+        // Explicitly publish assets to ensure they exist
+        $assetManager = Craft::$app->getAssetManager();
+        $sourcePath = Craft::getAlias('@brilliance/launcher/assetbundles/launcher/dist');
+
+        // Publish returns [publishedPath, publishedUrl]
+        $published = $assetManager->publish($sourcePath);
+        if (!$published || empty($published[1])) {
+            // If publishing fails, try getPublishedUrl as fallback
+            $assetUrl = $assetManager->getPublishedUrl($sourcePath, true);
+            if (!$assetUrl) {
+                return;
+            }
+        } else {
+            $assetUrl = $published[1];
+        }
+
         $bootstrapScriptUrl = $assetUrl . '/js/launcher-bootstrap.js';
 
         // Build context if available from template variables
@@ -456,41 +495,19 @@ HTML;
         if ($event && !empty($event->variables)) {
             $context = $this->getFrontEndContext($event);
             if (!empty($context)) {
-                // Escape for use in JavaScript string
-                $contextJson = json_encode($context, JSON_HEX_APOS | JSON_HEX_QUOT);
+                $contextJson = json_encode($context);
             }
         }
 
-        // Inject the bootstrap script by dynamically creating script tags
-        // This approach works with Craft's registerJs method
-        $js = <<<JS
-(function() {
-    console.log('[Launcher Bootstrap] Injecting bootstrap script...');
-    console.log('[Launcher Bootstrap] Bootstrap URL:', '{$bootstrapUrl}');
-    console.log('[Launcher Bootstrap] Script URL:', '{$bootstrapScriptUrl}');
+        $view = Craft::$app->getView();
 
-    // Create context script
-    var contextScript = document.createElement('script');
-    contextScript.type = 'application/json';
-    contextScript.id = 'launcher-context';
-    contextScript.textContent = '{$contextJson}';
-    document.body.appendChild(contextScript);
+        // Register context as a JSON script tag (read by bootstrap script)
+        $contextHtml = '<script type="application/json" id="launcher-context">' . $contextJson . '</script>';
+        $view->registerHtml($contextHtml, View::POS_END);
 
-    // Create and load bootstrap script
-    var bootstrapScript = document.createElement('script');
-    bootstrapScript.src = '{$bootstrapScriptUrl}';
-    bootstrapScript.setAttribute('data-bootstrap-url', '{$bootstrapUrl}');
-    bootstrapScript.onload = function() {
-        console.log('[Launcher Bootstrap] Bootstrap script loaded successfully');
-    };
-    bootstrapScript.onerror = function() {
-        console.error('[Launcher Bootstrap] Failed to load bootstrap script');
-    };
-    document.body.appendChild(bootstrapScript);
-})();
-JS;
-
-        Craft::$app->getView()->registerJs($js, View::POS_END);
+        // Register the bootstrap script directly with defer for reliable loading
+        $scriptHtml = '<script src="' . $bootstrapScriptUrl . '" data-bootstrap-url="' . $bootstrapUrl . '" defer></script>';
+        $view->registerHtml($scriptHtml, View::POS_END);
     }
 
     /**

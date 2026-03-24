@@ -3,6 +3,7 @@ namespace brilliance\launcher\variables;
 
 use Craft;
 use craft\helpers\Html;
+use craft\helpers\UrlHelper;
 use brilliance\launcher\Launcher;
 use Twig\Markup;
 
@@ -39,14 +40,25 @@ class LauncherVariable
             return '';
         }
 
-        // Build bootstrap URL
-        $bootstrapUrl = Craft::$app->getUrlManager()->createUrl(['launcher/bootstrap']);
+        // Build bootstrap URL (must use actionUrl for front-end)
+        $bootstrapUrl = UrlHelper::actionUrl('launcher/bootstrap');
 
-        // Get published asset URL for bootstrap script
-        $assetUrl = Craft::$app->getAssetManager()->getPublishedUrl(
-            '@brilliance/launcher/assetbundles/launcher/dist',
-            true
-        );
+        // Explicitly publish assets to ensure they exist
+        $assetManager = Craft::$app->getAssetManager();
+        $sourcePath = Craft::getAlias('@brilliance/launcher/assetbundles/launcher/dist');
+
+        // Publish returns [publishedPath, publishedUrl]
+        $published = $assetManager->publish($sourcePath);
+        if (!$published || empty($published[1])) {
+            // If publishing fails, try getPublishedUrl as fallback
+            $assetUrl = $assetManager->getPublishedUrl($sourcePath, true);
+            if (!$assetUrl) {
+                return '';
+            }
+        } else {
+            $assetUrl = $published[1];
+        }
+
         $bootstrapScriptUrl = $assetUrl . '/js/launcher-bootstrap.js';
 
         // Build context data attribute if element provided

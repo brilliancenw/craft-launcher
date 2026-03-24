@@ -20,6 +20,11 @@ class SearchService extends Component
     private array $currentFilters = [];
 
     /**
+     * Whether the current search is from the front-end (affects URL generation)
+     */
+    private bool $isFrontEndSearch = false;
+
+    /**
      * Check if Craft Commerce is installed
      */
     private function isCommerceInstalled(): bool
@@ -100,7 +105,7 @@ class SearchService extends Component
         return [];
     }
 
-    public function search(string $query, array $context = [], array $filters = []): array
+    public function search(string $query, array $context = [], array $filters = [], bool $isFrontEnd = false): array
     {
 
         if (empty($query)) {
@@ -112,6 +117,9 @@ class SearchService extends Component
 
         // Store filters for use in search methods
         $this->currentFilters = $filters;
+
+        // Store front-end flag for URL generation
+        $this->isFrontEndSearch = $isFrontEnd;
 
         // Add front-end context actions first (if applicable)
         if (!empty($context)) {

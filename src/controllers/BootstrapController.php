@@ -2,6 +2,7 @@
 namespace brilliance\launcher\controllers;
 
 use Craft;
+use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use yii\web\Response;
 use brilliance\launcher\Launcher;
@@ -147,12 +148,12 @@ class BootstrapController extends Controller
 
         return [
             'hotkey' => $settings->hotkey,
-            'searchUrl' => Craft::$app->getUrlManager()->createUrl(['launcher/search']),
-            'navigateUrl' => Craft::$app->getUrlManager()->createUrl(['launcher/search/navigate']),
-            'removeHistoryUrl' => Craft::$app->getUrlManager()->createUrl(['launcher/search/remove-history-item']),
-            'executeIntegrationUrl' => Craft::$app->getUrlManager()->createUrl(['launcher/search/execute-integration']),
-            'setFiltersUrl' => Craft::$app->getUrlManager()->createUrl(['launcher/user-preference/set-search-filters']),
-            'drawerContentUrl' => Craft::$app->getUrlManager()->createUrl(['launcher/search/drawer-content']),
+            'searchUrl' => UrlHelper::actionUrl('launcher/search'),
+            'navigateUrl' => UrlHelper::actionUrl('launcher/search/navigate'),
+            'removeHistoryUrl' => UrlHelper::actionUrl('launcher/search/remove-history-item'),
+            'executeIntegrationUrl' => UrlHelper::actionUrl('launcher/search/execute-integration'),
+            'setFiltersUrl' => UrlHelper::actionUrl('launcher/user-preference/set-search-filters'),
+            'drawerContentUrl' => UrlHelper::actionUrl('launcher/search/drawer-content'),
             'csrfTokenName' => $request->csrfParam,
             'csrfTokenValue' => $request->getCsrfToken(),
             'debounceDelay' => $settings->debounceDelay,

@@ -138,7 +138,10 @@ class SearchController extends Controller
             $userFilters = array_merge($userFilters, $requestFilters);
         }
 
-        $searchResults = Launcher::$plugin->search->search($query, $context, $userFilters);
+        // Determine if this is a front-end request (for URL generation)
+        $isFrontEnd = !Craft::$app->getRequest()->getIsCpRequest();
+
+        $searchResults = Launcher::$plugin->search->search($query, $context, $userFilters, $isFrontEnd);
         $formattedResults = Launcher::$plugin->launcher->formatResults($searchResults);
 
         return $this->asJson([
