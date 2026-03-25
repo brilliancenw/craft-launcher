@@ -61,7 +61,7 @@ class LauncherVariable
 
         $bootstrapScriptUrl = $assetUrl . '/js/launcher-bootstrap.js';
 
-        // Build context data attribute if element provided
+        // Build context script tag if element provided
         $contextHtml = '';
         if (!empty($options['context'])) {
             $element = $options['context'];
@@ -73,7 +73,8 @@ class LauncherVariable
                     'editUrl' => method_exists($element, 'getCpEditUrl') ? $element->getCpEditUrl() : null,
                 ]
             ];
-            $contextHtml = '<script type="application/json" data-launcher-context>' . Html::encode(json_encode($contextData)) . '</script>';
+            // Use id="launcher-context" to match what the bootstrap script expects
+            $contextHtml = '<script type="application/json" id="launcher-context">' . json_encode($contextData) . '</script>';
         }
 
         // Return script tag
