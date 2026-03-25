@@ -44,6 +44,11 @@ class Launcher extends Plugin
     public bool $hasCpSettings = true;
     public bool $hasCpSection = true;
 
+    /**
+     * @var array|null Captured front-end context from template rendering
+     */
+    private ?array $_frontEndContext = null;
+
     public static function config(): array
     {
         return [
@@ -187,47 +192,80 @@ class Launcher extends Plugin
             );
         }
 
-        // Handle front-end launcher injection using Response::EVENT_AFTER_PREPARE
-        // This event fires BEFORE EVENT_BEFORE_SEND and BEFORE Blitz caches the response
-        // Use $append = false to prepend our handler, ensuring it runs before Blitz
+        // Capture template variables BEFORE rendering so context is available for EVENT_END_BODY
         Event::on(
-            Response::class,
-            Response::EVENT_AFTER_PREPARE,
+            View::class,
+            View::EVENT_BEFORE_RENDER_TEMPLATE,
             function ($event) {
-                $request = Craft::$app->getRequest();
-                $response = $event->sender;
-
-                // Only inject on front-end HTML requests
-                if ($request->getIsCpRequest() || $request->getIsConsoleRequest()) {
+                // Only on front-end
+                if (Craft::$app->getRequest()->getIsCpRequest()) {
                     return;
                 }
-
-                // Check if this is an HTML response
-                // Content-type may not be set yet, so also check response format and content
-                $contentType = $response->getHeaders()->get('content-type');
-                $isHtml = $contentType && strpos($contentType, 'text/html') !== false;
-
-                // If content-type not set, check if response format is HTML or content contains HTML
-                if (!$isHtml) {
-                    $format = $response->format;
-                    $isHtml = ($format === Response::FORMAT_HTML);
-
-                    // If still unsure, check if content looks like HTML
-                    if (!$isHtml && is_string($response->content)) {
-                        $isHtml = (stripos($response->content, '<!DOCTYPE html') !== false ||
-                                   stripos($response->content, '<html') !== false);
-                    }
+                if (!empty($this->_frontEndContext)) {
+                    return; // Already captured
                 }
 
-                if (!$isHtml) {
-                    return;
-                }
-
-                $this->injectFrontEndLauncherToResponse($response);
-            },
-            null,  // $data
-            false  // $append = false to prepend handler (run before other handlers)
+                // Capture context from template variables (entry, category, asset, etc.)
+                $variables = $event->variables ?? [];
+                $this->_frontEndContext = $this->buildContextFromVariables($variables);
+            }
         );
+
+        // Inject launcher scripts at end of body during template rendering
+        // This ensures scripts are part of the HTML BEFORE Blitz caches the page
+        Event::on(
+            View::class,
+            View::EVENT_END_BODY,
+            function ($event) {
+                $settings = $this->getSettings();
+
+                // Only auto-inject if deployment method is 'auto'
+                if ($settings->frontEndDeployment !== 'auto') {
+                    return;
+                }
+
+                // Only on front-end
+                if (Craft::$app->getRequest()->getIsCpRequest() || Craft::$app->getRequest()->getIsConsoleRequest()) {
+                    return;
+                }
+
+                // Skip Live Preview
+                if (Craft::$app->getRequest()->getIsLivePreview()) {
+                    return;
+                }
+
+                // Build bootstrap URL
+                $bootstrapUrl = UrlHelper::actionUrl('launcher/bootstrap');
+
+                // Publish assets
+                $assetManager = Craft::$app->getAssetManager();
+                $sourcePath = Craft::getAlias('@brilliance/launcher/assetbundles/launcher/dist');
+                $published = $assetManager->publish($sourcePath);
+
+                if (!$published || empty($published[1])) {
+                    $assetUrl = $assetManager->getPublishedUrl($sourcePath, true);
+                    if (!$assetUrl) {
+                        return;
+                    }
+                } else {
+                    $assetUrl = $published[1];
+                }
+
+                $bootstrapScriptUrl = $assetUrl . '/js/launcher-bootstrap.js';
+
+                // Use captured context
+                $context = $this->_frontEndContext ?? [];
+                $contextJson = !empty($context) ? json_encode($context) : '{}';
+
+                // Output the scripts directly
+                echo '<!-- Rocket Launcher Bootstrap -->' . "\n";
+                echo '<script type="application/json" id="launcher-context">' . $contextJson . '</script>' . "\n";
+                echo '<script src="' . $bootstrapScriptUrl . '" data-bootstrap-url="' . $bootstrapUrl . '" defer></script>' . "\n";
+            }
+        );
+
+        // NOTE: Front-end launcher injection is now handled by EVENT_END_BODY above
+        // This ensures scripts are included in the HTML BEFORE Blitz caches the page
 
         Event::on(
             View::class,
@@ -410,6 +448,13 @@ class Launcher extends Plugin
             return;
         }
 
+        // Don't inject if already present (e.g., cached page from Blitz)
+        if (strpos($content, 'id="launcher-context"') !== false) {
+            $debugLog = Craft::getAlias('@storage/logs/launcher-debug.log');
+            file_put_contents($debugLog, date('Y-m-d H:i:s') . " SKIPPING - already has launcher-context\n\n", FILE_APPEND);
+            return;
+        }
+
         // Build the bootstrap script
         $bootstrapUrl = UrlHelper::actionUrl('launcher/bootstrap');
 
@@ -452,14 +497,211 @@ class Launcher extends Plugin
             Craft::info('[Launcher] Script file exists: ' . (file_exists($scriptFile) ? 'YES' : 'NO'), 'launcher');
         }
 
+        // Use context captured during template rendering
+        $context = $this->_frontEndContext ?? [];
+        $contextJson = !empty($context) ? json_encode($context) : '{}';
+
+        // Debug: Log what's happening
+        $debugLog = Craft::getAlias('@storage/logs/launcher-debug.log');
+        $hasLauncherContext = strpos($content, 'launcher-context') !== false;
+        $msg = date('Y-m-d H:i:s') . " injectFrontEndLauncherToResponse (WILL INJECT)\n";
+        $msg .= "  _frontEndContext: " . json_encode($this->_frontEndContext) . "\n";
+        $msg .= "  contextJson: " . $contextJson . "\n";
+        $msg .= "  Content has 'launcher-context': " . ($hasLauncherContext ? 'YES' : 'NO') . "\n";
+        $msg .= "  Content length: " . strlen($content) . "\n\n";
+        file_put_contents($debugLog, $msg, FILE_APPEND);
+
         $script = <<<HTML
 <!-- Rocket Launcher Bootstrap -->
+<script type="application/json" id="launcher-context">{$contextJson}</script>
 <script src="{$bootstrapScriptUrl}" data-bootstrap-url="{$bootstrapUrl}" defer></script>
 HTML;
 
         // Inject before </body>
         $content = str_ireplace('</body>', $script . '</body>', $content);
         $response->content = $content;
+    }
+
+    /**
+     * Build context from template variables
+     */
+    protected function buildContextFromVariables(array $variables): array
+    {
+        $context = [];
+
+        // Check for Entry/Single
+        $entry = $variables['entry'] ?? null;
+        if ($entry && isset($entry->id)) {
+            $context['currentElement'] = [
+                'id' => $entry->id,
+                'title' => $entry->title,
+                'type' => 'Entry',
+                'section' => $entry->section->handle ?? null,
+                'editUrl' => $entry->getCpEditUrl()
+            ];
+            return $context;
+        }
+
+        // Check for Category
+        $category = $variables['category'] ?? null;
+        if ($category && isset($category->id)) {
+            $context['currentElement'] = [
+                'id' => $category->id,
+                'title' => $category->title,
+                'type' => 'Category',
+                'group' => $category->group->handle ?? null,
+                'editUrl' => $category->getCpEditUrl()
+            ];
+            return $context;
+        }
+
+        // Check for Asset
+        $asset = $variables['asset'] ?? null;
+        if ($asset && isset($asset->id)) {
+            $context['currentElement'] = [
+                'id' => $asset->id,
+                'title' => $asset->title ?: $asset->filename,
+                'type' => 'Asset',
+                'volume' => $asset->volume->handle ?? null,
+                'editUrl' => $asset->getCpEditUrl()
+            ];
+            return $context;
+        }
+
+        // Check for User (but not the current user)
+        $user = $variables['user'] ?? null;
+        if ($user && isset($user->id) && $user->id != Craft::$app->getUser()->getId()) {
+            $context['currentElement'] = [
+                'id' => $user->id,
+                'title' => $user->fullName ?: $user->username,
+                'type' => 'User',
+                'editUrl' => $user->getCpEditUrl()
+            ];
+            return $context;
+        }
+
+        // Check for Commerce Product (if Commerce is installed)
+        if (class_exists('craft\commerce\elements\Product')) {
+            $product = $variables['product'] ?? null;
+            if ($product && isset($product->id)) {
+                $context['currentElement'] = [
+                    'id' => $product->id,
+                    'title' => $product->title,
+                    'type' => 'Product',
+                    'editUrl' => $product->getCpEditUrl()
+                ];
+                return $context;
+            }
+        }
+
+        // Check for Global Set
+        $globalSet = $variables['globalSet'] ?? null;
+        if ($globalSet && isset($globalSet->id)) {
+            $context['currentElement'] = [
+                'id' => $globalSet->id,
+                'title' => $globalSet->name,
+                'type' => 'Global',
+                'editUrl' => $globalSet->getCpEditUrl()
+            ];
+            return $context;
+        }
+
+        return $context;
+    }
+
+    /**
+     * Get context from Twig globals (for Response-level injection)
+     * @deprecated Use buildContextFromVariables() with EVENT_AFTER_RENDER_PAGE_TEMPLATE instead
+     */
+    protected function getFrontEndContextFromGlobals(): array
+    {
+        $context = [];
+
+        try {
+            $twigGlobals = Craft::$app->getView()->getTwig()->getGlobals();
+
+            // Check for Entry/Single
+            $entry = $twigGlobals['entry'] ?? null;
+            if ($entry && isset($entry->id)) {
+                $context['currentElement'] = [
+                    'id' => $entry->id,
+                    'title' => $entry->title,
+                    'type' => 'Entry',
+                    'section' => $entry->section->handle ?? null,
+                    'editUrl' => $entry->getCpEditUrl()
+                ];
+                return $context;
+            }
+
+            // Check for Category
+            $category = $twigGlobals['category'] ?? null;
+            if ($category && isset($category->id)) {
+                $context['currentElement'] = [
+                    'id' => $category->id,
+                    'title' => $category->title,
+                    'type' => 'Category',
+                    'group' => $category->group->handle ?? null,
+                    'editUrl' => $category->getCpEditUrl()
+                ];
+                return $context;
+            }
+
+            // Check for Asset
+            $asset = $twigGlobals['asset'] ?? null;
+            if ($asset && isset($asset->id)) {
+                $context['currentElement'] = [
+                    'id' => $asset->id,
+                    'title' => $asset->title ?: $asset->filename,
+                    'type' => 'Asset',
+                    'volume' => $asset->volume->handle ?? null,
+                    'editUrl' => $asset->getCpEditUrl()
+                ];
+                return $context;
+            }
+
+            // Check for User (but not the current user)
+            $user = $twigGlobals['user'] ?? null;
+            if ($user && isset($user->id) && $user->id != Craft::$app->getUser()->getId()) {
+                $context['currentElement'] = [
+                    'id' => $user->id,
+                    'title' => $user->fullName ?: $user->username,
+                    'type' => 'User',
+                    'editUrl' => $user->getCpEditUrl()
+                ];
+                return $context;
+            }
+
+            // Check for Commerce Product (if Commerce is installed)
+            if (class_exists('craft\commerce\elements\Product')) {
+                $product = $twigGlobals['product'] ?? null;
+                if ($product && isset($product->id)) {
+                    $context['currentElement'] = [
+                        'id' => $product->id,
+                        'title' => $product->title,
+                        'type' => 'Product',
+                        'editUrl' => $product->getCpEditUrl()
+                    ];
+                    return $context;
+                }
+            }
+
+            // Check for Global Set
+            $globalSet = $twigGlobals['globalSet'] ?? null;
+            if ($globalSet && isset($globalSet->id)) {
+                $context['currentElement'] = [
+                    'id' => $globalSet->id,
+                    'title' => $globalSet->name,
+                    'type' => 'Global',
+                    'editUrl' => $globalSet->getCpEditUrl()
+                ];
+                return $context;
+            }
+
+        } catch (\Exception $e) {
+            Craft::warning('[Launcher] Could not get front-end context: ' . $e->getMessage(), 'launcher');
+        }
+
+        return $context;
     }
 
     /**

@@ -1439,11 +1439,12 @@
 
                 const contextResult = {
                     id: currentElement.id,
-                    title: currentElement.title, // Store clean title
+                    title: 'Edit this page',
+                    entry: currentElement.title, // Show as subtitle
                     url: currentElement.editUrl,
-                    type: currentElement.type,
+                    type: 'Context Action',
                     section: currentElement.section || currentElement.group,
-                    icon: currentElement.type.toLowerCase(),
+                    icon: 'edit',
                     // Preserve integrations from the original result if it exists
                     integrations: existingResult?.integrations || []
                 };

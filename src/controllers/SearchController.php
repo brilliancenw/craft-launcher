@@ -52,7 +52,11 @@ class SearchController extends Controller
 
         $query = Craft::$app->getRequest()->getBodyParam('query', '');
         $browseType = Craft::$app->getRequest()->getBodyParam('browseType', '');
-        
+
+        // Get context for front-end searches (needed for both empty and non-empty queries)
+        $context = Craft::$app->getRequest()->getBodyParam('context', []);
+        $context = $this->validateContext($context);
+
         // Handle browse mode requests
         if (!empty($browseType)) {
             try {
@@ -75,16 +79,30 @@ class SearchController extends Controller
                 ], 500);
             }
         }
-        
+
         if (empty($query)) {
             $settings = Launcher::$plugin->getSettings();
-            
+            $results = [];
+
+            // If we have a current element context (front-end page), add "Edit this page" as first item
+            if (!empty($context['currentElement'])) {
+                $element = $context['currentElement'];
+                $results[] = [
+                    'title' => 'Edit this page',
+                    'subtitle' => $element['title'],
+                    'url' => $element['editUrl'],
+                    'type' => 'contextAction',
+                    'icon' => 'edit',
+                    'cpUrl' => $element['editUrl'],
+                ];
+            }
+
             // Get popular items if history tracking is enabled
             if ($settings->enableLaunchHistory ?? true) {
                 $popularItems = Launcher::$plugin->history->getPopularItems($settings->maxHistoryItems ?? 10);
-                
+
                 Craft::info('Popular items requested: Found ' . count($popularItems) . ' items', 'launcher');
-                
+
                 if (!empty($popularItems)) {
                     Craft::info('Returning popular items: ' . json_encode(array_map(function($item) {
                         return $item['title'] . ' (' . $item['launchCount'] . ' launches)';
@@ -96,36 +114,38 @@ class SearchController extends Controller
                     }
                     unset($item);
 
+                    // Merge with context results
+                    $results = array_merge($results, $popularItems);
+
                     return $this->asJson([
                         'success' => true,
-                        'results' => $popularItems,
+                        'results' => $results,
                         'isPopular' => true,
+                        'hasContextAction' => !empty($context['currentElement']),
                     ]);
                 }
             }
-            
+
             // Fallback to recent items if no popular items or history disabled
-            $results = Launcher::$plugin->launcher->getRecentItems();
+            $recentItems = Launcher::$plugin->launcher->getRecentItems();
 
             // Add integration data to recent items
-            $results = array_values($results);
-            foreach ($results as &$item) {
+            $recentItems = array_values($recentItems);
+            foreach ($recentItems as &$item) {
                 $item['integrations'] = Launcher::$plugin->integration->getIntegrationsForItem($item);
             }
             unset($item);
+
+            // Merge with context results
+            $results = array_merge($results, $recentItems);
 
             return $this->asJson([
                 'success' => true,
                 'results' => $results,
                 'isRecent' => true,
+                'hasContextAction' => !empty($context['currentElement']),
             ]);
         }
-
-        // Get context for front-end searches
-        $context = Craft::$app->getRequest()->getBodyParam('context', []);
-
-        // Validate context for security
-        $context = $this->validateContext($context);
 
         // Get user's effective filters (respects admin settings)
         $userFilters = Launcher::$plugin->userPreference->getEffectiveFilters();
@@ -283,18 +303,128 @@ class SearchController extends Controller
     {
         $validatedContext = [];
 
-        // Only allow specific context keys
-        $allowedKeys = ['currentEntry'];
+        // Handle currentElement (generic element context from front-end)
+        if (isset($context['currentElement'])) {
+            $validated = $this->validateElementContext($context['currentElement']);
+            if ($validated) {
+                $validatedContext['currentElement'] = $validated;
+            }
+        }
 
-        foreach ($allowedKeys as $key) {
-            if (isset($context[$key])) {
-                if ($key === 'currentEntry') {
-                    $validatedContext[$key] = $this->validateEntryContext($context[$key]);
-                }
+        // Handle currentEntry (legacy, for backwards compatibility)
+        if (isset($context['currentEntry'])) {
+            $validated = $this->validateEntryContext($context['currentEntry']);
+            if ($validated) {
+                $validatedContext['currentEntry'] = $validated;
             }
         }
 
         return $validatedContext;
+    }
+
+    /**
+     * Validate generic element context data
+     */
+    private function validateElementContext(array $elementData): ?array
+    {
+        if (!is_array($elementData)) {
+            return null;
+        }
+
+        // Required fields
+        if (!isset($elementData['id']) || !is_numeric($elementData['id'])) {
+            return null;
+        }
+
+        if (!isset($elementData['type'])) {
+            return null;
+        }
+
+        $id = (int) $elementData['id'];
+        $type = $elementData['type'];
+
+        // Validate based on element type
+        switch ($type) {
+            case 'Entry':
+                $element = Entry::find()->id($id)->status(null)->one();
+                if (!$element) {
+                    return null;
+                }
+                $section = $element->getSection();
+                if (!$section || !Craft::$app->getUser()->checkPermission('editEntries:' . $section->uid)) {
+                    return null;
+                }
+                break;
+
+            case 'Category':
+                $element = \craft\elements\Category::find()->id($id)->status(null)->one();
+                if (!$element) {
+                    return null;
+                }
+                $group = $element->getGroup();
+                if (!$group || !Craft::$app->getUser()->checkPermission('editCategories:' . $group->uid)) {
+                    return null;
+                }
+                break;
+
+            case 'Asset':
+                $element = \craft\elements\Asset::find()->id($id)->one();
+                if (!$element) {
+                    return null;
+                }
+                $volume = $element->getVolume();
+                if (!$volume || !Craft::$app->getUser()->checkPermission('saveAssets:' . $volume->uid)) {
+                    return null;
+                }
+                break;
+
+            case 'User':
+                $element = \craft\elements\User::find()->id($id)->status(null)->one();
+                if (!$element) {
+                    return null;
+                }
+                if (!Craft::$app->getUser()->checkPermission('editUsers')) {
+                    return null;
+                }
+                break;
+
+            case 'Product':
+                if (!class_exists('craft\commerce\elements\Product')) {
+                    return null;
+                }
+                $element = \craft\commerce\elements\Product::find()->id($id)->status(null)->one();
+                if (!$element) {
+                    return null;
+                }
+                // Commerce products use commerce-manageProducts permission
+                if (!Craft::$app->getUser()->checkPermission('commerce-manageProducts')) {
+                    return null;
+                }
+                break;
+
+            case 'Global':
+            case 'GlobalSet':
+                $element = \craft\elements\GlobalSet::find()->id($id)->one();
+                if (!$element) {
+                    return null;
+                }
+                if (!Craft::$app->getUser()->checkPermission('editGlobalSet:' . $element->uid)) {
+                    return null;
+                }
+                break;
+
+            default:
+                // Unknown element type
+                return null;
+        }
+
+        // Return validated context with edit URL
+        return [
+            'id' => $id,
+            'title' => $elementData['title'] ?? $element->title ?? 'Unknown',
+            'type' => $type,
+            'editUrl' => $elementData['editUrl'] ?? $element->getCpEditUrl()
+        ];
     }
 
     /**
