@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.1 - 2026-05-18
+## v1.4.3 - 2026-05-18
 
 > [!NOTE]
 > Users experiencing the itemHash database error should run `php craft migrate/all` after updating.
