@@ -330,9 +330,13 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         e.stopPropagation();
 
+        // Disable button to prevent double-clicks
+        dismissBtn.disabled = true;
+        dismissBtn.textContent = 'Saving...';
+
         // Save the setting via AJAX
         try {
-            await fetch('{{ actionUrl('launcher/settings/complete-first-run') }}', {
+            const response = await fetch('{{ actionUrl('launcher/settings/complete-first-run') }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -340,14 +344,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Accept': 'application/json'
                 }
             });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Failed to save setting');
+            }
+
+            // Success - dismiss the overlay
+            overlay.classList.add('launcher-dismissing');
+            setTimeout(() => {
+                overlay.remove();
+            }, 500);
         } catch (error) {
             console.error('Failed to save first run setting:', error);
+            // Re-enable button and show error
+            dismissBtn.disabled = false;
+            dismissBtn.textContent = 'Let\'s Get Started!';
+            // Show error message
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'color: #dc3545; margin-top: 10px; font-size: 14px;';
+            errorDiv.textContent = 'Could not save setting. Please try running migrations: php craft migrate/all';
+            if (!dismissBtn.parentNode.querySelector('.error-message')) {
+                errorDiv.className = 'error-message';
+                dismissBtn.parentNode.appendChild(errorDiv);
+            }
         }
-
-        overlay.classList.add('launcher-dismissing');
-        setTimeout(() => {
-            overlay.remove();
-        }, 500);
     });
 });
 </script>

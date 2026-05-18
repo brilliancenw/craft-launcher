@@ -43,7 +43,7 @@ class Install extends Migration
                 'itemId' => $this->integer()->null(),
                 'itemTitle' => $this->text()->notNull(),
                 'itemUrl' => $this->text()->notNull(),
-                'itemHash' => $this->string(32)->notNull(),
+                'itemHash' => $this->string(64)->notNull(),
                 'launchCount' => $this->integer()->defaultValue(1),
                 'firstLaunchedAt' => $this->dateTime()->notNull(),
                 'lastLaunchedAt' => $this->dateTime()->notNull(),

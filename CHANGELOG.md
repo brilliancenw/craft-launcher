@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.1 - 2026-05-18
+
+> [!NOTE]
+> Users experiencing the itemHash database error should run `php craft migrate/all` after updating.
+
+### Fixed
+
+- **Database Schema**: Fixed `itemHash` column in Install migration to use correct 64-character length for SHA-256 hashes. Previously set to 32 characters, causing "Data too long for column 'itemHash'" errors on fresh installations. (Fixes [#19](https://github.com/brilliancenw/craft-launcher/issues/19))
+- **Welcome Screen**: Fixed the "Let's Get Started" welcome popup not dismissing properly. The popup now verifies the setting was saved successfully before closing, and displays a helpful error message if the database table is missing.
+- **Welcome Screen**: Added detection for missing `launcher_interface_settings` table. If the table doesn't exist, the welcome popup is skipped entirely and a warning message is displayed prompting users to run migrations.
+
 ## [v1.4.0] - 2026-03-20
 
 ### Full Page Caching Support (Fixes #12)

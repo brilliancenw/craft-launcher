@@ -1054,15 +1054,27 @@ HTML;
         if (!$tableStatus['exists']) {
             Craft::$app->getSession()->setFlash('launcher-table-missing',
                 'The Rocket Launcher user history table is missing. Launch history and popular items features will not work. ' .
-                'Try reinstalling the plugin or contact your developer.'
+                'Try running migrations: php craft migrate/all'
             );
         }
+
+        // Check interface settings table
+        $interfaceTableExists = $this->interface->tableExists();
+        if (!$interfaceTableExists) {
+            Craft::$app->getSession()->setFlash('launcher-interface-table-missing',
+                'The Rocket Launcher interface settings table is missing. Some features may not work correctly. ' .
+                'Try running migrations: php craft migrate/all'
+            );
+        }
+
+        // Only show welcome if interface table exists (so dismissal can be saved)
+        $firstRunCompleted = $interfaceTableExists ? $this->interface->isFirstRunCompleted() : true;
 
         return Craft::$app->getView()->renderTemplate(
             'launcher/settings',
             [
                 'settings' => $this->getSettings(),
-                'firstRunCompleted' => $this->interface->isFirstRunCompleted()
+                'firstRunCompleted' => $firstRunCompleted
             ]
         );
     }
