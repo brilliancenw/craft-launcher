@@ -1,6 +1,8 @@
 # Changelog
 
-## v1.4.3 - 2026-05-18
+## v1.4.4 - 2026-05-18
+
+*Thanks to [Brian Hackett](https://github.com/SETU-WEB) for reporting the database schema issue ([#19](https://github.com/brilliancenw/craft-launcher/issues/19))*
 
 > [!NOTE]
 > Users experiencing the itemHash database error should run `php craft migrate/all` after updating.
